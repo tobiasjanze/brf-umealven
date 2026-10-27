@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123456">
+  <title>BRF Umeälven – Styrelseverktyg</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; padding: 24px;
+      display: grid; place-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #eef3f8; color: #18314f;
+    }
+    main {
+      width: 100%; max-width: 390px; padding: 28px;
+      background: white; border-radius: 20px;
+      box-shadow: 0 8px 35px #18314f16;
+    }
+    .logo {
+      width: 64px; height: 64px; margin: 0 auto 16px;
+      display: grid; place-items: center;
+      border-radius: 18px; background: #123456;
+      color: white; font-size: 28px; font-weight: bold;
+    }
+    h1 { text-align: center; font-size: 24px; margin: 0 0 8px; }
+    .intro { text-align: center; color: #64748b; margin-bottom: 26px; }
+    label { display: block; font-weight: 600; margin: 16px 0 7px; }
+    input {
+      width: 100%; padding: 13px; border: 1px solid #cbd5e1;
+      border-radius: 10px; font-size: 16px;
+    }
+    button {
+      width: 100%; padding: 14px; margin-top: 22px;
+      border: 0; border-radius: 10px; background: #1769c2;
+      color: white; font-size: 16px; font-weight: bold;
+    }
+    .message { margin-top: 18px; font-size: 14px; line-height: 1.5; }
+    .note { font-size: 12px; color: #64748b; margin-top: 22px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo">U</div>
+    <h1>BRF Umeälven</h1>
+    <p class="intro">Styrelseverktyg</p>
+    <form id="login">
+      <label for="email">E-postadress</label>
+      <input id="email" type="email" autocomplete="username"
+        placeholder="namn@exempel.se" required>
+      <label for="password">Lösenord</label>
+      <input id="password" type="password"
+        autocomplete="current-password" placeholder="Lösenord" required>
+      <button type="submit">Logga in</button>
+      <div id="message" class="message" role="status"></div>
+    </form>
+    <p class="note">
+      Inloggningen är ännu inte ansluten till en säker autentiseringstjänst.
+      Ange inte riktiga lösenord. Nästa steg är att koppla in säker inloggning.
+    </p>
+  </main>
+  <script>
+    document.getElementById("login").addEventListener("submit", function(event) {
+      event.preventDefault();
+      document.getElementById("message").textContent =
+        "Inloggningen är ännu inte aktiverad. Säker inloggning behöver kopplas in först.";
+    });
+  </script>
+</body>
+</html>
