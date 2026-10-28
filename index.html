@@ -748,16 +748,39 @@
             <button class="primary" type="submit">Spara avtal</button>
             <button id="cancelContractEdit" type="button">Rensa</button>
           </div>
-   
+        </form>
+
+        <hr>
+        <div id="contractsList"></div>
+      </div>
+    </section>
+
+  </section>
+
+  <div class="footer">BRF Umeälven · Styrelseportal</div>
+
+</main>
+
+
 <script>
 (() => {
   'use strict';
 
-  const SUPABASE_URL = 'https://nvfgoswznutifhxvqbfg.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ';
+  // ===== SUPABASE =====
+
+  const SUPABASE_URL =
+    'https://nvfgoswznutifhxvqbfg.supabase.co';
+
+  const SUPABASE_KEY =
+    'sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ';
+
   const STORAGE_BUCKET = 'meeting-files';
 
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
   const $ = id => document.getElementById(id);
 
   let currentUser = null;
@@ -767,6 +790,9 @@
   let currentMinutes = {};
   let tasks = [];
   let contracts = [];
+  let loading = false;
+
+  // ===== DAGORDNINGENS PARAGRAFER =====
 
   const sections = [
     ['1', 'Mötets öppnande'],
@@ -794,70 +820,167 @@
     'Hemsidan – statistik'
   ];
 
-  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[c]));
+  // ===== GEMENSAMMA HJÄLPFUNKTIONER =====
 
-  const dateText = value => {
+  const esc = value =>
+    String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+
+  function dateText(value) {
     if (!value) return '—';
-    const d = new Date(value);
-    if (isNaN(d)) return value;
-    return d.toLocaleString('sv-SE', {
-      dateStyle: 'medium',
-      ...(String(value).includes('T') ? { timeStyle: 'short' } : {})
-    });
-  };
 
-  const today = () => new Date().toISOString().slice(0, 10);
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return date.toLocaleString('sv-SE', {
+      dateStyle: 'medium',
+      ...(String(value).includes('T')
+        ? { timeStyle: 'short' }
+        : {})
+    });
+  }
+
+  function today() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
 
   function message(text, type = '') {
     const node = $('appMsg');
+
     node.textContent = text;
     node.className = 'status' + (type ? ' ' + type : '');
     node.classList.remove('hidden');
-    setTimeout(() => node.classList.add('hidden'), 7000);
   }
 
   function loginMessage(text, type = '') {
     const node = $('loginMsg');
+
     node.textContent = text;
     node.className = 'status' + (type ? ' ' + type : '');
     node.classList.remove('hidden');
   }
 
+  function clearLoginMessage() {
+    $('loginMsg').textContent = '';
+    $('loginMsg').className = 'status hidden';
+  }
+
+  function downloadBlob(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+
+    document.body.append(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function safeFile(value) {
+    return String(value || 'fil')
+      .replace(/[^a-z0-9åäö_-]+/gi, '_')
+      .slice(0, 70);
+  }
+
+  function meetingDate(meeting) {
+    return meeting.meeting_date ||
+      meeting.date ||
+      meeting.starts_at ||
+      '';
+  }
+
+  function meetingTitle(meeting) {
+    return meeting.title ||
+      meeting.name ||
+      'Möte utan titel';
+  }
+
+  // Visa JavaScript-fel i stället för att misslyckas tyst.
+  window.addEventListener('error', event => {
+    const text = event.message || 'Okänt JavaScript-fel';
+
+    if (currentUser && $('appMsg')) {
+      message('Tekniskt fel: ' + text, 'error');
+    } else if ($('loginMsg')) {
+      loginMessage('Tekniskt fel: ' + text, 'error');
+    }
+  });
+
+  window.addEventListener('unhandledrejection', event => {
+    const reason = event.reason;
+    const text = reason?.message || String(reason || 'Okänt fel');
+
+    if (currentUser && $('appMsg')) {
+      message('Ett fel uppstod: ' + text, 'error');
+    } else if ($('loginMsg')) {
+      loginMessage('Ett fel uppstod: ' + text, 'error');
+    }
+  });
+
+  // ===== INLOGGNINGENS VISNING =====
+
   function showApp(user) {
     currentUser = user;
+
     $('loginPanel').classList.add('hidden');
     $('appPanel').classList.remove('hidden');
     $('userBar').classList.remove('hidden');
     $('userEmail').textContent = user.email || '';
-    loadAll();
+
+    loadAll().catch(error => {
+      message(
+        'Inloggningen lyckades, men portalen kunde inte läsa alla uppgifter: ' +
+        (error.message || error),
+        'error'
+      );
+    });
   }
 
   function showLogin() {
     currentUser = null;
+
     $('appPanel').classList.add('hidden');
     $('userBar').classList.add('hidden');
     $('loginPanel').classList.remove('hidden');
   }
 
   async function loadAll() {
-    await loadMeetings();
-    await Promise.all([loadTasks(), loadContracts()]);
-    renderDashboard();
+    if (loading) return;
+
+    loading = true;
+
+    try {
+      await loadMeetings();
+
+      await Promise.all([
+        loadTasks(),
+        loadContracts()
+      ]);
+
+      renderDashboard();
+    } finally {
+      loading = false;
+    }
   }
 
-  function meetingDate(meeting) {
-    return meeting.meeting_date || meeting.date || meeting.starts_at || '';
-  }
-
-  function meetingTitle(meeting) {
-    return meeting.title || meeting.name || 'Möte utan titel';
-  }
+  // ===== MÖTEN =====
 
   async function loadMeetings() {
     const { data, error } = await db
@@ -871,6 +994,7 @@
     }
 
     meetings = data || [];
+
     renderMeetings();
     populateMeetingSelects();
     renderDashboard();
@@ -891,13 +1015,15 @@
 
       meetings.forEach(meeting => {
         const option = document.createElement('option');
+
         option.value = meeting.id;
         option.textContent =
           `${meetingTitle(meeting)} – ${dateText(meetingDate(meeting))}`;
+
         select.append(option);
       });
 
-      if ([...select.options].some(o => o.value === oldValue)) {
+      if ([...select.options].some(option => option.value === oldValue)) {
         select.value = oldValue;
       }
     });
@@ -905,12 +1031,16 @@
     const select = $('agendaSection');
     select.innerHTML = '';
 
-    sections.filter(section => section[0] !== '6').forEach(([number, title]) => {
-      const option = document.createElement('option');
-      option.value = number;
-      option.textContent = `§${number} – ${title}`;
-      select.append(option);
-    });
+    sections
+      .filter(([number]) => number !== '6')
+      .forEach(([number, title]) => {
+        const option = document.createElement('option');
+
+        option.value = number;
+        option.textContent = `§${number} – ${title}`;
+
+        select.append(option);
+      });
   }
 
   function renderMeetings() {
@@ -955,9 +1085,21 @@
     event.preventDefault();
 
     const id = $('meetingId').value;
+
+    let meetingDateValue;
+
+    try {
+      meetingDateValue = new Date(
+        $('meetingDate').value
+      ).toISOString();
+    } catch {
+      message('Kontrollera mötets datum och tid.', 'error');
+      return;
+    }
+
     const payload = {
       title: $('meetingTitle').value.trim(),
-      meeting_date: new Date($('meetingDate').value).toISOString(),
+      meeting_date: meetingDateValue,
       location: $('meetingLocation').value.trim(),
       notes: $('meetingNotes').value.trim()
     };
@@ -976,23 +1118,28 @@
 
     resetMeetingForm();
     await loadMeetings();
+
     message('Mötet har sparats.', 'ok');
   });
 
   $('meetingsList').addEventListener('click', async event => {
     const button = event.target.closest('button[data-action]');
+
     if (!button) return;
 
     const meeting = meetings.find(
       item => String(item.id) === button.dataset.id
     );
+
     if (!meeting) return;
 
     if (button.dataset.action === 'select') {
       selectedMeetingId = meeting.id;
+
       $('selectedMeetingPanel').classList.remove('hidden');
       $('selectedMeetingHeading').textContent =
         `Dagordning – ${meetingTitle(meeting)}`;
+
       await loadAgenda();
     }
 
@@ -1002,11 +1149,14 @@
       $('meetingDate').value = meetingDate(meeting).slice(0, 16);
       $('meetingLocation').value = meeting.location || '';
       $('meetingNotes').value = meeting.notes || '';
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    if (button.dataset.action === 'delete' &&
-        confirm(`Ta bort mötet "${meetingTitle(meeting)}"?`)) {
+    if (
+      button.dataset.action === 'delete' &&
+      confirm(`Ta bort mötet "${meetingTitle(meeting)}"?`)
+    ) {
       const { error } = await db
         .from('meetings')
         .delete()
@@ -1026,6 +1176,8 @@
       message('Mötet har tagits bort.', 'ok');
     }
   });
+
+  // ===== DAGORDNING =====
 
   async function loadAgenda() {
     const { data, error } = await db
@@ -1064,7 +1216,12 @@
 
     sections.forEach(([number, title]) => {
       const items = agendaItems.filter(item =>
-        String(item.section_number ?? item.section ?? item.paragraph ?? '') === number
+        String(
+          item.section_number ??
+          item.section ??
+          item.paragraph ??
+          ''
+        ) === number
       );
 
       const details = document.createElement('details');
@@ -1073,40 +1230,41 @@
 
       const summary = document.createElement('summary');
       summary.textContent = `§${number} ${title}`;
-      details.append(summary);
 
       const body = document.createElement('div');
       body.className = 'agenda-body';
 
+      details.append(summary, body);
+
       if (number === '6') {
         reportHeadings.forEach(heading => {
-          body.insertAdjacentHTML(
-            'beforeend',
-            `<div class="subhead">${esc(heading)}</div>`
-          );
+          const headingNode = document.createElement('div');
+          headingNode.className = 'subhead';
+          headingNode.textContent = heading;
+          body.append(headingNode);
 
           items
-            .filter(item => (item.title || '').toLowerCase() === heading.toLowerCase())
+            .filter(item =>
+              (item.title || '').toLowerCase() === heading.toLowerCase()
+            )
             .forEach(item => body.append(agendaItemNode(item)));
         });
-      } else {
+      } else if (items.length) {
         items.forEach(item => body.append(agendaItemNode(item)));
-
-        if (!items.length) {
-          const empty = document.createElement('p');
-          empty.className = 'muted';
-          empty.textContent = 'Ingen extra punkt tillagd.';
-          body.append(empty);
-        }
+      } else {
+        const empty = document.createElement('p');
+        empty.className = 'muted';
+        empty.textContent = 'Ingen extra punkt tillagd.';
+        body.append(empty);
       }
 
-      details.append(body);
       root.append(details);
     });
   }
 
   $('agendaSections').addEventListener('click', async event => {
     const button = event.target.closest('[data-delete-agenda]');
+
     if (!button || !confirm('Ta bort dagordningspunkten?')) return;
 
     const { error } = await db
@@ -1137,7 +1295,9 @@
       created_by: currentUser.id
     };
 
-    const { error } = await db.from('agenda_items').insert(payload);
+    const { error } = await db
+      .from('agenda_items')
+      .insert(payload);
 
     if (error) {
       message('Kunde inte spara punkten: ' + error.message, 'error');
@@ -1146,17 +1306,22 @@
 
     event.target.reset();
     await loadAgenda();
+
     message('Dagordningspunkten har lagts till.', 'ok');
   });
 
   $('printAgenda').addEventListener('click', () => window.print());
+
+  // ===== PROTOKOLL =====
 
   function minutesTemplate() {
     const result = {};
 
     sections.forEach(([number]) => {
       result[number] = number === '6'
-        ? Object.fromEntries(reportHeadings.map(heading => [heading, '']))
+        ? Object.fromEntries(
+            reportHeadings.map(heading => [heading, ''])
+          )
         : '';
     });
 
@@ -1165,6 +1330,7 @@
 
   async function loadMinutes(meetingId) {
     $('minutesEditor').classList.toggle('hidden', !meetingId);
+
     if (!meetingId) return;
 
     currentMinutes = minutesTemplate();
@@ -1180,7 +1346,7 @@
       return;
     }
 
-    if (data && data.content) {
+    if (data?.content) {
       try {
         const saved = typeof data.content === 'string'
           ? JSON.parse(data.content)
@@ -1188,7 +1354,7 @@
 
         currentMinutes = { ...currentMinutes, ...saved };
       } catch {
-        currentMinutes.migratedText = data.content;
+        currentMinutes.migratedText = String(data.content);
       }
     }
 
@@ -1206,7 +1372,6 @@
 
       const summary = document.createElement('summary');
       summary.textContent = `§${number} ${title}`;
-      details.append(summary);
 
       const body = document.createElement('div');
       body.className = 'agenda-body';
@@ -1215,38 +1380,37 @@
         reportHeadings.forEach(heading => {
           const label = document.createElement('label');
           label.textContent = heading;
-          body.append(label);
 
           const textarea = document.createElement('textarea');
           textarea.dataset.minuteSection = number;
           textarea.dataset.minuteSub = heading;
           textarea.placeholder = `Anteckningar: ${heading}`;
           textarea.value = currentMinutes[number]?.[heading] || '';
-          body.append(textarea);
+
+          body.append(label, textarea);
         });
       } else {
         const textarea = document.createElement('textarea');
         textarea.dataset.minuteSection = number;
         textarea.placeholder = `Protokolltext för §${number}`;
         textarea.value = currentMinutes[number] || '';
+
         body.append(textarea);
       }
 
-      details.append(body);
+      details.append(summary, body);
       root.append(details);
     });
 
     if (currentMinutes.migratedText) {
-      const note = document.createElement('p');
-      note.className = 'notice';
-      note.textContent =
-        'Äldre protokolltext visas nedan så att innehållet inte går förlorat.';
-      root.append(note);
+      const label = document.createElement('label');
+      label.textContent = 'Äldre protokolltext';
 
       const textarea = document.createElement('textarea');
       textarea.id = 'migratedMinutes';
       textarea.value = currentMinutes.migratedText;
-      root.append(textarea);
+
+      root.append(label, textarea);
     }
   }
 
@@ -1256,7 +1420,11 @@
 
   $('saveMinutes').addEventListener('click', async () => {
     const meetingId = $('minutesMeetingSelect').value;
-    if (!meetingId) return;
+
+    if (!meetingId) {
+      message('Välj ett möte innan du sparar protokollet.', 'error');
+      return;
+    }
 
     const content = minutesTemplate();
 
@@ -1271,14 +1439,21 @@
     });
 
     const oldText = $('migratedMinutes');
-    if (oldText) content.migratedText = oldText.value;
 
-    const { error } = await db.from('meeting_minutes').upsert({
-      meeting_id: meetingId,
-      content,
-      updated_by: currentUser.id,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'meeting_id' });
+    if (oldText) {
+      content.migratedText = oldText.value;
+    }
+
+    const { error } = await db
+      .from('meeting_minutes')
+      .upsert({
+        meeting_id: meetingId,
+        content,
+        updated_by: currentUser.id,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'meeting_id'
+      });
 
     if (error) {
       message('Kunde inte spara protokollet: ' + error.message, 'error');
@@ -1287,23 +1462,6 @@
       message('Protokollet har sparats.', 'ok');
     }
   });
-
-  function downloadBlob(content, filename, type) {
-    const url = URL.createObjectURL(new Blob([content], { type }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function safeFile(value) {
-    return String(value || 'fil')
-      .replace(/[^a-z0-9åäö_-]+/gi, '_')
-      .slice(0, 70);
-  }
 
   $('downloadMinutes').addEventListener('click', () => {
     const meeting = meetings.find(
@@ -1319,7 +1477,9 @@
 
       if (number === '6') {
         reportHeadings.forEach(heading => {
-          output += `${heading}:\n${currentMinutes[number]?.[heading] || ''}\n\n`;
+          output +=
+            `${heading}:\n` +
+            `${currentMinutes[number]?.[heading] || ''}\n\n`;
         });
       } else {
         output += `${currentMinutes[number] || ''}\n\n`;
@@ -1332,9 +1492,8 @@
       'text/plain;charset=utf-8'
     );
   });
-</script>
-  
-  // ===== MÖTESDOKUMENT =====
+
+ // ===== MÖTESDOKUMENT =====
 
   $('documentsMeetingSelect').addEventListener('change', loadDocuments);
 
@@ -1985,17 +2144,4 @@
 </script>
 </body>
 </html>
-   </form>
 
-        <hr>
-        <div id="contractsList"></div>
-      </div>
-    </section>
-
-  </section>
-
-  <div class="footer">BRF Umeälven · Styrelseportal</div>
-
-</main>
-
-<!-- JavaScript läggs in i del 2 och del 3 före </body> -->
