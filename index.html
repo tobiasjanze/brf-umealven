@@ -200,6 +200,11 @@
     min-width: 0;
     width: 100%;
 }
+    .task-date {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
     .row > * {
       flex: 1;
       min-width: 0px;
@@ -650,7 +655,7 @@
           <div class="row task-details-row">
             <div>
               <label for="taskDue">Sista datum</label>
-              <input id="taskDue" type="date">
+              <input id="taskDue" type="date" class="task-date">
             </div>
 
             <div>
