@@ -15,7 +15,7 @@ main{max-width:1050px;margin:auto}
 h1{text-align:center;font-size:25px}
 h2{font-size:21px}
 label{display:block;font-weight:650;margin:12px 0 6px}
-input,textarea,select{width:100%;padding:12px;border:1px solid #cbd5ce;border-radius:9px;font:inherit;background:#fff;color:inherit}
+input,textarea{width:100%;padding:12px;border:1px solid #cbd5ce;border-radius:9px;font:inherit;background:#fff;color:inherit}
 textarea{min-height:130px}
 button{padding:11px 14px;border:0;border-radius:9px;font:inherit;font-weight:650;cursor:pointer;background:#e8f0eb;color:#244b34;margin:5px 4px 0 0}
 .primary{background:#246b45;color:white}
@@ -28,10 +28,7 @@ button{padding:11px 14px;border:0;border-radius:9px;font:inherit;font-weight:650
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .meeting{display:block;width:100%;text-align:left;margin:7px 0;border:1px solid #d8e2db;background:white}
 .meeting.active{border:2px solid #246b45;background:#f3f8f4}
-.item,.agenda-fixed{border:1px solid #d8e2db;border-radius:9px;padding:12px;margin:9px 0;overflow-wrap:anywhere}
-.agenda-fixed{background:#f5f8f5}
-.agenda-fixed ul{margin:6px 0 0;padding-left:24px}
-.section-title{margin:18px 0 7px;font-size:17px}
+.item{border:1px solid #d8e2db;border-radius:9px;padding:12px;margin:9px 0;overflow-wrap:anywhere}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 #loginCard{max-width:440px;margin:5vh auto}
 @media(max-width:700px){.grid,.fields{grid-template-columns:1fr}.card{padding:15px}}
@@ -39,7 +36,6 @@ button{padding:11px 14px;border:0;border-radius:9px;font:inherit;font-weight:650
 </head>
 <body>
 <main>
-
 <section id="loginCard" class="card">
 <img class="logo" src="brf-umealven-logotyp.png" alt="BRF Umeälven">
 <h1>Styrelseverktyg</h1>
@@ -84,8 +80,14 @@ button{padding:11px 14px;border:0;border-radius:9px;font:inherit;font-weight:650
 <label for="newTitle">Mötets namn</label>
 <input id="newTitle" required maxlength="160" placeholder="Ex. Styrelsemöte 1">
 <div class="fields">
-<div><label for="newDate">Datum</label><input id="newDate" type="date" required></div>
-<div><label for="newTime">Tid</label><input id="newTime" type="time"></div>
+<div>
+<label for="newDate">Datum</label>
+<input id="newDate" type="date" required>
+</div>
+<div>
+<label for="newTime">Tid</label>
+<input id="newTime" type="time">
+</div>
 </div>
 <label for="newPlace">Plats</label>
 <input id="newPlace" placeholder="Ex. föreningslokalen">
@@ -103,10 +105,22 @@ button{padding:11px 14px;border:0;border-radius:9px;font:inherit;font-weight:650
 <button id="deleteMeeting" class="danger">Radera möte</button>
 </div>
 <div class="fields">
-<div><label for="editTitle">Mötets namn</label><input id="editTitle"></div>
-<div><label for="editDate">Datum</label><input id="editDate" type="date"></div>
-<div><label for="editTime">Tid</label><input id="editTime" type="time"></div>
-<div><label for="editPlace">Plats</label><input id="editPlace"></div>
+<div>
+<label for="editTitle">Mötets namn</label>
+<input id="editTitle">
+</div>
+<div>
+<label for="editDate">Datum</label>
+<input id="editDate" type="date">
+</div>
+<div>
+<label for="editTime">Tid</label>
+<input id="editTime" type="time">
+</div>
+<div>
+<label for="editPlace">Plats</label>
+<input id="editPlace">
+</div>
 </div>
 <label for="editPeople">Deltagare / kallade</label>
 <textarea id="editPeople" style="min-height:75px"></textarea>
@@ -116,35 +130,32 @@ button{padding:11px 14px;border:0;border-radius:9px;font:inherit;font-weight:650
 <div class="grid">
 <section class="card">
 <h2>Dagordning</h2>
-<p class="small">§ 1–6 i) är fasta. Rubrikerna § 7–11 är också fasta. Lägg till de ärenden som gäller för just detta möte.</p>
-<button id="makeAgendaPdf" class="primary" type="button">Skapa dagordning som PDF</button>
-
 <form id="agendaForm">
-<label for="agendaSection">Lägg ärende under</label>
-<select id="agendaSection" required>
-<option value="7">§ 7 Ekonomiska frågor</option>
-<option value="8">§ 8 Medlemsärenden</option>
-<option value="9">§ 9 Övriga frågor</option>
-<option value="10">§ 10 Nästa styrelsemöte</option>
-<option value="11">§ 11 Avslutning</option>
-</select>
-<label for="agendaTitle">Ärende</label>
-<input id="agendaTitle" required maxlength="250" placeholder="Skriv ärendet här">
-<label for="agendaNotes">Anteckning / beskrivning (valfritt)</label>
+<label for="agendaTitle">Dagordningspunkt</label>
+<input id="agendaTitle" required maxlength="250">
+<label for="agendaNotes">Anteckning / beskrivning</label>
 <textarea id="agendaNotes" style="min-height:75px"></textarea>
-<button class="primary" type="submit">Lägg till ärende</button>
+<button class="primary" type="submit">Lägg till punkt</button>
 </form>
 <div id="agendaList"></div>
 </section>
 
 <section class="card">
-<h2>Underlag och bilagor</h2>
-<p class="small">Privata filer, max 25 MB per fil.</p>
+<h2>Mötesunderlag och bilagor</h2>
+<p class="small">
+Ladda upp underlag som hör till just detta möte.
+Styrelsemedlemmar som har behörighet och är inloggade
+kan öppna dokumenten här i stället för att få stora filer
+skickade via e-post. Filerna sparas privat i dokumentarkivet.
+Max 25 MB per fil.
+</p>
 <form id="uploadForm">
-<label for="file">Välj fil</label>
+<label for="file">Välj dokument eller bilaga</label>
 <input id="file" type="file" required>
-<button class="primary" type="submit">Ladda upp fil</button>
+<p id="fileInfo" class="small">Välj en fil för att se storleken innan uppladdning.</p>
+<button class="primary" type="submit">Ladda upp till mötet</button>
 </form>
+<h3>Underlag för detta möte</h3>
 <div id="filesList"></div>
 </section>
 </div>
@@ -152,28 +163,29 @@ button{padding:11px 14px;border:0;border-radius:9px;font:inherit;font-weight:650
 <section class="card">
 <h2>Protokoll</h2>
 <label for="minutes">Protokolltext</label>
-<textarea id="minutes" style="min-height:260px" placeholder="§ 1 Mötets öppnande&#10;§ 2 Närvaroförteckning&#10;§ 3 Dagordning&#10;§ 4 Justerare&#10;§ 5 Föregående protokoll&#10;§ 6 Aktuella rapporter&#10;§ 7 Ekonomiska frågor&#10;§ 8 Medlemsärenden&#10;§ 9 Övriga frågor&#10;§ 10 Nästa styrelsemöte&#10;§ 11 Avslutning"></textarea>
+<textarea id="minutes" style="min-height:260px" placeholder="§ 1 Mötets öppnande&#10;§ 2 Val av justerare&#10;§ 3 Dagordning&#10;§ 4 Beslut och åtgärder …"></textarea>
 <button id="saveMinutes" class="primary">Spara protokoll</button>
 <button id="downloadMinutes">Ladda ner som textfil</button>
 <p id="minutesStatus" class="small"></p>
 </section>
 </section>
 
-<p class="small">Begränsa konton till godkända styrelsemedlemmar innan känsliga föreningsuppgifter läggs in.</p>
+<p class="small">
+Viktigt: SQL-inställningarna måste vara installerade i Supabase.
+Begränsa konton till godkända styrelsemedlemmar innan ni lägger in
+känsliga föreningsuppgifter.
+</p>
 </section>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=>{
-"use strict";
-
-const SUPABASE_URL="https://nvfgoswznutifhxvqbfg.supabase.co";
-const SUPABASE_KEY="sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ";
+const URL="https://nvfgoswznutifhxvqbfg.supabase.co";
+const KEY="sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ";
 const BUCKET="meeting-files";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const db=window.supabase.createClient(URL,KEY);
 const $=id=>document.getElementById(id);
-
 let user=null,meetings=[],selected=null,agenda=[],files=[];
 
 const msg=t=>$("appMsg").textContent=t||"";
@@ -181,55 +193,6 @@ const loginMsg=t=>$("loginMsg").textContent=t||"";
 const err=e=>e?.message||"Okänt fel";
 const date=s=>s?new Date(s+"T12:00:00").toLocaleDateString("sv-SE"):"";
 const safe=s=>(s||"fil").replace(/[^\p{L}\p{N}._ -]/gu,"_").slice(0,120);
-
-const FIXED_AGENDA=[
- {title:"§ 1 Mötets öppnande"},
- {title:"§ 2 Närvaroförteckning."},
- {title:"§ 3 Dagordning"},
- {title:"§ 4 Justerare"},
- {title:"§ 5 Föregående protokoll"},
- {title:"§ 6 Aktuella rapporter",children:[
-  "a) Vaktmästeri",
-  "b) Sophantering.",
-  "c) Snöröjning",
-  "d) Parkering",
-  "e) Avtal",
-  "f) Lån",
-  "g) Kostnadskonton",
-  "h) Andrahandsuthyrningar",
-  "i) Hemsidan - statistik"
- ]}
-];
-
-const AGENDA_SECTIONS={
- 7:"§ 7 Ekonomiska frågor",
- 8:"§ 8 Medlemsärenden",
- 9:"§ 9 Övriga frågor",
- 10:"§ 10 Nästa styrelsemöte",
- 11:"§ 11 Avslutning"
-};
-
-function packTitle(section,title){
- return "@@"+section+"@@ "+title;
-}
-function unpackItem(item){
- const match=(item.title||"").match(/^@@(7|8|9|10|11)@@\s*(.*)$/);
- if(match){
-  return {
-   section:Number(match[1]),
-   title:match[2],
-   notes:item.notes||"",
-   id:item.id
-  };
- }
- // Befintliga äldre dagordningspunkter visas under § 7.
- return {
-  section:7,
-  title:item.title||"",
-  notes:item.notes||"",
-  id:item.id
- };
-}
 
 function signedIn(u){
  user=u;
@@ -240,10 +203,10 @@ function signedIn(u){
 }
 function signedOut(){
  user=null;
- selected=null;
  $("app").classList.add("hidden");
  $("loginCard").classList.remove("hidden");
  $("workspace").classList.add("hidden");
+ selected=null;
 }
 
 $("loginForm").addEventListener("submit",async e=>{
@@ -333,14 +296,14 @@ async function loadMeetings(){
   renderMeetings();
   msg("");
   if(selected){
-   const meeting=meetings.find(x=>x.id===selected.id);
-   if(meeting){
-    selected=meeting;
+   const m=meetings.find(x=>x.id===selected.id);
+   if(m){
+    selected=m;
     await loadDetails();
    }else clearWorkspace();
   }
  }catch(e){
-  msg("Kunde inte hämta möten. Fel: "+err(e));
+  msg("Kunde inte hämta möten. Kontrollera SQL-inställningarna i Supabase. Fel: "+err(e));
  }
 }
 
@@ -352,16 +315,13 @@ function renderMeetings(){
   return;
  }
  meetings.forEach(m=>{
-  const button=document.createElement("button");
-  button.className="meeting"+(selected?.id===m.id?" active":"");
-  const strong=document.createElement("strong");
-  strong.textContent=m.title;
-  const line=document.createElement("span");
-  line.className="small";
-  line.textContent=date(m.meeting_date)+(m.meeting_time?" · "+m.meeting_time:"");
-  button.append(strong,document.createElement("br"),line);
-  button.onclick=()=>choose(m);
-  root.append(button);
+  const b=document.createElement("button");
+  b.className="meeting"+(selected?.id===m.id?" active":"");
+  b.innerHTML="<strong></strong><br><span class='small'></span>";
+  b.querySelector("strong").textContent=m.title;
+  b.querySelector("span").textContent=date(m.meeting_date)+(m.meeting_time?" · "+m.meeting_time:"");
+  b.onclick=()=>choose(m);
+  root.append(b);
  });
 }
 
@@ -429,9 +389,8 @@ $("saveMeeting").onclick=async()=>{
 $("deleteMeeting").onclick=async()=>{
  if(!selected||!confirm("Radera mötet, dagordningen, bilagorna och protokollet?"))return;
  try{
-  const {data,error:lookupError}=await db.from("meeting_documents")
-   .select("storage_path").eq("meeting_id",selected.id);
-  if(lookupError)throw lookupError;
+  const {data,error:le}=await db.from("meeting_documents").select("storage_path").eq("meeting_id",selected.id);
+  if(le)throw le;
   if(data?.length){
    const {error}=await db.storage.from(BUCKET).remove(data.map(x=>x.storage_path));
    if(error)throw error;
@@ -450,21 +409,19 @@ $("agendaForm").onsubmit=async e=>{
  e.preventDefault();
  if(!selected)return;
  try{
-  const section=Number($("agendaSection").value);
   const {error}=await db.from("agenda_items").insert({
    meeting_id:selected.id,
-   title:packTitle(section,$("agendaTitle").value.trim()),
+   title:$("agendaTitle").value.trim(),
    notes:$("agendaNotes").value.trim(),
    position:agenda.length+1,
    created_by:user.id
   });
   if(error)throw error;
-  $("agendaTitle").value="";
-  $("agendaNotes").value="";
+  $("agendaForm").reset();
   await loadDetails();
-  msg("Ärendet är sparat för detta möte.");
+  msg("Dagordningspunkt sparad.");
  }catch(e){
-  msg("Kunde inte spara ärendet: "+err(e));
+  msg("Kunde inte spara dagordningen: "+err(e));
  }
 };
 
@@ -476,7 +433,7 @@ async function loadDetails(){
    db.from("meeting_documents").select("*").eq("meeting_id",selected.id).order("created_at",{ascending:false}),
    db.from("meeting_minutes").select("*").eq("meeting_id",selected.id).maybeSingle()
   ]);
-  for(const result of [a,f,m])if(result.error)throw result.error;
+  for(const r of [a,f,m])if(r.error)throw r.error;
   agenda=a.data||[];
   files=f.data||[];
   $("minutes").value=m.data?.content||"";
@@ -490,124 +447,43 @@ async function loadDetails(){
  }
 }
 
-
 function renderAgenda(){
  const root=$("agendaList");
  root.replaceChildren();
-
- // Fasta punkter från § 1 till och med § 6 i)
- FIXED_AGENDA.forEach(item=>{
+ if(!agenda.length){
+  root.textContent="Dagordningen är tom.";
+  return;
+ }
+ agenda.forEach((x,i)=>{
   const box=document.createElement("div");
-  box.className="agenda-fixed";
-
+  box.className="item";
   const title=document.createElement("strong");
-  title.textContent=item.title;
-  box.append(title);
-
-  if(item.children){
-   const ul=document.createElement("ul");
-
-   item.children.forEach(text=>{
-    const li=document.createElement("li");
-    li.textContent=text;
-    ul.append(li);
-   });
-
-   box.append(ul);
-  }
-
+  title.textContent=(i+1)+". "+x.title;
+  const p=document.createElement("p");
+  p.textContent=x.notes||"";
+  p.style.whiteSpace="pre-wrap";
+  const b=document.createElement("button");
+  b.className="danger";
+  b.textContent="Ta bort";
+  b.onclick=async()=>{
+   if(!confirm("Ta bort punkten?"))return;
+   const {error}=await db.from("agenda_items").delete().eq("id",x.id);
+   if(error)msg(err(error));
+   else await loadDetails();
+  };
+  box.append(title,p,b);
   root.append(box);
- });
-
- // Fasta rubriker § 7–11 med automatiska små bokstäver
- Object.entries(AGENDA_SECTIONS).forEach(([key,label])=>{
-  const section=Number(key);
-
-  const heading=document.createElement("h3");
-  heading.className="section-title";
-  heading.textContent=label;
-  root.append(heading);
-
-  const items=agenda
-   .map(unpackItem)
-   .filter(item=>item.section===section);
-
-  if(!items.length){
-   const empty=document.createElement("p");
-   empty.className="small muted";
-   empty.textContent="Inga ärenden tillagda.";
-   root.append(empty);
-  }
-
-  items.forEach((item,index)=>{
-   const box=document.createElement("div");
-   box.className="item";
-
-   const title=document.createElement("strong");
-   const letter=String.fromCharCode(97+index);
-   title.textContent=letter+") "+item.title;
-
-   const notes=document.createElement("p");
-   notes.textContent=item.notes;
-   notes.style.whiteSpace="pre-wrap";
-
-   const edit=document.createElement("button");
-   edit.textContent="Ändra";
-
-   edit.onclick=async()=>{
-    const newTitle=prompt("Ändra ärendet:",item.title);
-    if(newTitle===null)return;
-
-    if(!newTitle.trim()){
-     alert("Ärendet kan inte vara tomt.");
-     return;
-    }
-
-    const newNotes=prompt(
-     "Ändra anteckning (valfritt):",
-     item.notes
-    );
-
-    if(newNotes===null)return;
-
-    const {error}=await db.from("agenda_items")
-     .update({
-      title:packTitle(item.section,newTitle.trim()),
-      notes:newNotes.trim()
-     })
-     .eq("id",item.id);
-
-    if(error){
-     msg("Kunde inte ändra ärendet: "+err(error));
-    }else{
-     await loadDetails();
-    }
-   };
-
-   const del=document.createElement("button");
-   del.className="danger";
-   del.textContent="Ta bort";
-
-   del.onclick=async()=>{
-    if(!confirm("Ta bort ärendet?"))return;
-
-    const {error}=await db.from("agenda_items")
-     .delete()
-     .eq("id",item.id);
-
-    if(error){
-     msg("Kunde inte ta bort ärendet: "+err(error));
-    }else{
-     await loadDetails();
-    }
-   };
-
-   box.append(title,notes,edit,del);
-   root.append(box);
-  });
  });
 }
 
+$("file").onchange=()=>{
+ const f=$("file").files[0];
+ $("fileInfo").textContent=f
+  ?f.name+" · "+(f.size<1024*1024
+   ?(f.size/1024).toFixed(0)+" KB"
+   :(f.size/1024/1024).toFixed(2)+" MB")
+  :"Välj en fil för att se storleken innan uppladdning.";
+};
 
 $("uploadForm").onsubmit=async e=>{
  e.preventDefault();
@@ -615,15 +491,15 @@ $("uploadForm").onsubmit=async e=>{
  const file=$("file").files[0];
  if(!file)return;
  if(file.size>25*1024*1024){
-  msg("Filen är större än 25 MB.");
+  msg("Filen är större än 25 MB. Dela upp eller komprimera dokumentet och försök igen.");
   return;
  }
  try{
   const path=selected.id+"/"+Date.now()+"_"+safe(file.name);
-  const {error:uploadError}=await db.storage.from(BUCKET).upload(path,file,{
+  const {error:up}=await db.storage.from(BUCKET).upload(path,file,{
    contentType:file.type||"application/octet-stream"
   });
-  if(uploadError)throw uploadError;
+  if(up)throw up;
   const {error}=await db.from("meeting_documents").insert({
    meeting_id:selected.id,
    file_name:file.name,
@@ -635,6 +511,7 @@ $("uploadForm").onsubmit=async e=>{
    throw error;
   }
   $("uploadForm").reset();
+  $("fileInfo").textContent="Välj en fil för att se storleken innan uppladdning.";
   await loadDetails();
   msg("Filen är uppladdad.");
  }catch(e){
@@ -646,129 +523,74 @@ function renderFiles(){
  const root=$("filesList");
  root.replaceChildren();
  if(!files.length){
-  root.textContent="Inga bilagor ännu.";
+  root.textContent="Inga underlag uppladdade till detta möte ännu.";
   return;
  }
- files.forEach(file=>{
+ files.forEach(f=>{
   const box=document.createElement("div");
   box.className="item";
   const name=document.createElement("strong");
-  name.textContent=file.file_name;
+  name.textContent=f.file_name;
+  const meta=document.createElement("p");
+  meta.className="small";
+  meta.textContent="Uppladdat "+new Date(f.created_at).toLocaleString("sv-SE");
 
   const open=document.createElement("button");
-  open.textContent="Öppna / hämta";
+  open.className="primary";
+  open.textContent="Öppna dokument";
   open.onclick=async()=>{
-   const {data,error}=await db.storage.from(BUCKET)
-    .createSignedUrl(file.storage_path,60);
-   if(error){msg(err(error));return;}
-   window.open(data.signedUrl,"_blank","noopener");
+   try{
+    const {data,error}=await db.storage.from(BUCKET).createSignedUrl(f.storage_path,300);
+    if(error)throw error;
+    const tab=window.open(data.signedUrl,"_blank");
+    if(!tab)window.location.href=data.signedUrl;
+    msg("Dokumentlänken gäller i 5 minuter.");
+   }catch(e){
+    msg("Kunde inte öppna dokumentet: "+err(e));
+   }
+  };
+
+  const download=document.createElement("button");
+  download.textContent="Ladda ner";
+  download.onclick=async()=>{
+   try{
+    const {data,error}=await db.storage.from(BUCKET).createSignedUrl(
+     f.storage_path,300,{download:f.file_name}
+    );
+    if(error)throw error;
+    const a=document.createElement("a");
+    a.href=data.signedUrl;
+    a.download=f.file_name;
+    a.target="_blank";
+    document.body.append(a);
+    a.click();
+    a.remove();
+   }catch(e){
+    msg("Kunde inte ladda ner dokumentet: "+err(e));
+   }
   };
 
   const del=document.createElement("button");
   del.className="danger";
   del.textContent="Radera";
   del.onclick=async()=>{
-   if(!confirm("Radera bilagan?"))return;
-   const {error:storageError}=await db.storage.from(BUCKET).remove([file.storage_path]);
-   if(storageError){msg(err(storageError));return;}
-   const {error}=await db.from("meeting_documents").delete().eq("id",file.id);
-   if(error){msg(err(error));return;}
-   await loadDetails();
+   if(!confirm("Radera bilagan? Den försvinner för hela styrelsen."))return;
+   try{
+    const {error:se}=await db.storage.from(BUCKET).remove([f.storage_path]);
+    if(se)throw se;
+    const {error}=await db.from("meeting_documents").delete().eq("id",f.id);
+    if(error)throw error;
+    await loadDetails();
+    msg("Bilagan är raderad.");
+   }catch(e){
+    msg("Kunde inte radera bilagan: "+err(e));
+   }
   };
 
-  box.append(name,document.createElement("br"),open,del);
+  box.append(name,meta,open,download,del);
   root.append(box);
  });
 }
-
-function escapeHtml(value){
- return String(value||"").replace(/[&<>"']/g,char=>({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
- }[char]));
-}
-
-$("makeAgendaPdf").onclick=()=>{
- if(!selected){
-  msg("Välj ett möte först.");
-  return;
- }
-
- const details={
-  title:$("editTitle").value.trim()||selected.title,
-  date:$("editDate").value||selected.meeting_date,
-  time:$("editTime").value||selected.meeting_time,
-  place:$("editPlace").value.trim()||selected.location,
-  people:$("editPeople").value.trim()||selected.attendees
- };
-
- let body=FIXED_AGENDA.map(item=>
-  `<div class="entry"><strong>${escapeHtml(item.title)}</strong>${
-   item.children
-    ?`<ul>${item.children.map(text=>`<li>${escapeHtml(text)}</li>`).join("")}</ul>`
-    :""
-  }</div>`
- ).join("");
-
- Object.entries(AGENDA_SECTIONS).forEach(([key,label])=>{
-  body+=`<h2>${escapeHtml(label)}</h2>`;
-  const items=agenda.map(unpackItem).filter(item=>item.section===Number(key));
-  if(items.length){
-   body+=`<ol type="a">${items.map(item=>
-    `<li>${escapeHtml(item.title)}${
-     item.notes?`<p>${escapeHtml(item.notes).replace(/\n/g,"<br>")}</p>`:""
-    }</li>`
-   ).join("")}</ol>`;
-  }else{
-   body+='<p class="blank">&nbsp;</p>';
-  }
- });
-
- const html=`<!doctype html>
-<html lang="sv">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(details.title)} - Dagordning</title>
-<style>
-body{font:12pt Arial,sans-serif;color:#17251c;margin:18mm;line-height:1.45}
-h1{font-size:20pt;margin:0 0 5px}
-h2{font-size:13pt;margin:17px 0 5px;border-bottom:1px solid #aaa;padding-bottom:3px}
-.meta{margin:0 0 20px;color:#333}
-.entry{margin:8px 0}
-.entry ul{margin:4px 0 0;padding-left:30px}
-ol{margin-top:5px;padding-left:28px}
-li{margin:5px 0}
-.blank{height:10px}
-@media print{body{margin:15mm}}
-</style>
-</head>
-<body>
-<img src="https://tobiasjanze.github.io/brf-umealven/brf-umealven-logotyp.png"
-alt="BRF Umeälven" style="width:150px;max-height:90px;object-fit:contain">
-<h1>BRF UMEÄLVEN</h1>
-<h2>${escapeHtml(details.title)}</h2>
-<p class="meta">Dagordning · Datum: ${
- details.date?new Date(details.date+"T12:00:00").toLocaleDateString("sv-SE"):""
- }${details.time?" · Tid: "+escapeHtml(details.time):""}${
- details.place?"<br>Plats: "+escapeHtml(details.place):""
- }${details.people?"<br>Deltagare / kallade: "+escapeHtml(details.people).replace(/\n/g,"<br>"):""}</p>
-${body}
-<p style="margin-top:28px;font-size:9pt;color:#666">BRF Umeälven · Dagordning</p>
-<script>
-window.onload=()=>setTimeout(()=>window.print(),350);
-<\/script>
-</body>
-</html>`;
-
- const printWindow=window.open("","_blank");
- if(!printWindow){
-  msg("Webbläsaren blockerade PDF-fönstret. Tillåt popup-fönster för webbplatsen och försök igen.");
-  return;
- }
- printWindow.document.open();
- printWindow.document.write(html);
- printWindow.document.close();
-};
 
 $("saveMinutes").onclick=async()=>{
  if(!selected)return;
@@ -796,7 +618,7 @@ $("downloadMinutes").onclick=()=>{
  a.href=url;
  a.download=safe(selected.title||"protokoll")+".txt";
  a.click();
- setTimeout(()=>URL.revokeObjectURL(url),1000);
+ URL.revokeObjectURL(url);
 };
 
 db.auth.getSession().then(({data,error})=>{
