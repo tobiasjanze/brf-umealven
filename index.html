@@ -55,6 +55,10 @@
         <label for="password">Lösenord</label>
         <input id="password" type="password" autocomplete="current-password" minlength="8" required>
         <button class="primary" type="submit">Logga in</button>
+        <button type="button" id="forgotPassword"
+        class="secondary">
+  Glömt lösenord?
+</button>
       </form>
       <button id="signup" class="secondary" type="button">Skapa testkonto</button>
       <p id="message" role="status" aria-live="polite"></p>
@@ -162,6 +166,67 @@
       if (data.session?.user) showSignedIn(data.session.user);
       else showSignedOut();
     });
+    document.getElementById("forgotPassword")
+  .addEventListener("click", async () => {
+    const email = document
+      .getElementById("email").value.trim();
+
+    if (!email) {
+      showMessage("Skriv din e-postadress först.");
+      document.getElementById("email").focus();
+      return;
+    }
+
+    const button = document.getElementById("forgotPassword");
+    button.disabled = true;
+
+    try {
+      const { error } = await client.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo:
+            window.location.origin + window.location.pathname
+        }
+      );
+
+      if (error) throw error;
+
+      showMessage(
+        "Om kontot finns skickas en återställningslänk till e-posten."
+      );
+    } catch (error) {
+      showMessage(
+        "Kunde inte skicka återställningslänken: " +
+        (error.message || "Okänt fel")
+      );
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+client.auth.onAuthStateChange(async (event, session) => {
+  if (event !== "PASSWORD_RECOVERY" || !session) return;
+
+  const newPassword = prompt(
+    "Ange ditt nya lösenord (minst 8 tecken):"
+  );
+
+  if (!newPassword || newPassword.length < 8) {
+    showMessage("Lösenordet måste vara minst 8 tecken.");
+    return;
+  }
+
+  const { error } = await client.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) {
+    showMessage("Kunde inte ändra lösenordet: " + error.message);
+  } else {
+    showMessage("Lösenordet är ändrat. Du kan nu logga in.");
+    await client.auth.signOut();
+  }
+});
   </script>
 </body>
 </html>
