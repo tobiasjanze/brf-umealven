@@ -4,71 +4,163 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#123456">
+  <meta name="theme-color" content="#246b45">
   <title>BRF Umeälven – Styrelseverktyg</title>
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh; padding: 24px;
       display: grid; place-items: center;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #eef3f8; color: #18314f;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #eef3f0; color: #24332b;
     }
     main {
-      width: 100%; max-width: 390px; padding: 28px;
+      width: 100%; max-width: 420px; padding: 28px;
       background: white; border-radius: 20px;
-      box-shadow: 0 8px 35px #18314f16;
+      box-shadow: 0 8px 35px #183b2418;
     }
     .logo {
-      width: 64px; height: 64px; margin: 0 auto 16px;
-      display: grid; place-items: center;
-      border-radius: 18px; background: #123456;
-      color: white; font-size: 28px; font-weight: bold;
+      display: block; width: 100%; max-width: 300px;
+      height: auto; margin: 0 auto 24px;
     }
     h1 { text-align: center; font-size: 24px; margin: 0 0 8px; }
-    .intro { text-align: center; color: #64748b; margin-bottom: 26px; }
+    .intro { text-align: center; color: #647468; margin-bottom: 24px; }
     label { display: block; font-weight: 600; margin: 16px 0 7px; }
     input {
-      width: 100%; padding: 13px; border: 1px solid #cbd5e1;
-      border-radius: 10px; font-size: 16px;
+      width: 100%; padding: 13px; border: 1px solid #cbd5ce;
+      border-radius: 9px; font: inherit;
     }
     button {
-      width: 100%; padding: 14px; margin-top: 22px;
-      border: 0; border-radius: 10px; background: #1769c2;
-      color: white; font-size: 16px; font-weight: bold;
+      width: 100%; padding: 13px; margin-top: 14px;
+      border: 0; border-radius: 9px; font: inherit;
+      font-weight: 600; cursor: pointer;
     }
-    .message { margin-top: 18px; font-size: 14px; line-height: 1.5; }
-    .note { font-size: 12px; color: #64748b; margin-top: 22px; line-height: 1.5; }
+    .primary { background: #246b45; color: white; }
+    .secondary { background: #e8f0eb; color: #244b34; }
+    button:disabled { opacity: .6; cursor: wait; }
+    #message { margin-top: 16px; line-height: 1.5; overflow-wrap: anywhere; }
+    #app { display: none; }
+    .small { color: #68756c; font-size: 13px; line-height: 1.5; margin-top: 20px; }
   </style>
 </head>
 <body>
   <main>
-    <img src="brf-umealven-logotyp.png"
-     alt="BRF Umeälvens logotyp"
-     style="width:100%;max-width:320px;height:auto;display:block;margin:0 auto 20px;">
-
-    <h1>BRF Umeälven</h1>
-    <p class="intro">Styrelseverktyg</p>
-    <form id="login">
-      <label for="email">E-postadress</label>
-      <input id="email" type="email" autocomplete="username"
-        placeholder="namn@exempel.se" required>
-      <label for="password">Lösenord</label>
-      <input id="password" type="password"
-        autocomplete="current-password" placeholder="Lösenord" required>
-      <button type="submit">Logga in</button>
-      <div id="message" class="message" role="status"></div>
-    </form>
-    <p class="note">
-      Inloggningen är ännu inte ansluten till en säker autentiseringstjänst.
-      Ange inte riktiga lösenord. Nästa steg är att koppla in säker inloggning.
-    </p>
+    <img class="logo" src="brf-umealven-logotyp.png" alt="BRF Umeälvens logotyp">
+    <section id="login">
+      <h1>Styrelseverktyg</h1>
+      <p class="intro">Logga in för att fortsätta</p>
+      <form id="loginForm">
+        <label for="email">E-postadress</label>
+        <input id="email" type="email" autocomplete="username" required>
+        <label for="password">Lösenord</label>
+        <input id="password" type="password" autocomplete="current-password" minlength="8" required>
+        <button class="primary" type="submit">Logga in</button>
+      </form>
+      <button id="signup" class="secondary" type="button">Skapa testkonto</button>
+      <p id="message" role="status" aria-live="polite"></p>
+      <p class="small">
+        Konton skapas med Supabase. E-postbekräftelse kan krävas.
+        Skapa inte testkonton med uppgifter som används någon annanstans.
+      </p>
+    </section>
+    <section id="app">
+      <h1>Du är inloggad</h1>
+      <p id="welcome" class="intro"></p>
+      <p>Inloggningen fungerar. Styrelsefunktionerna och åtkomstreglerna behöver konfigureras innan föreningens information läggs in.</p>
+      <button id="logout" class="primary" type="button">Logga ut</button>
+    </section>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    document.getElementById("login").addEventListener("submit", function(event) {
+    const SUPABASE_URL = "https://nvfgoswznutifhxvqbfg.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ";
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const loginSection = document.getElementById("login");
+    const appSection = document.getElementById("app");
+    const message = document.getElementById("message");
+    const loginForm = document.getElementById("loginForm");
+    const signupButton = document.getElementById("signup");
+
+    function showMessage(text) {
+      message.textContent = text;
+    }
+
+    function showSignedIn(user) {
+      loginSection.style.display = "none";
+      appSection.style.display = "block";
+      document.getElementById("welcome").textContent =
+        user.email || "Inloggad användare";
+    }
+
+    function showSignedOut() {
+      appSection.style.display = "none";
+      loginSection.style.display = "block";
+    }
+
+    loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      document.getElementById("message").textContent =
-        "Inloggningen är ännu inte aktiverad. Säker inloggning behöver kopplas in först.";
+      const button = loginForm.querySelector("button");
+      button.disabled = true;
+      showMessage("Loggar in …");
+      try {
+        const { data, error } = await client.auth.signInWithPassword({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        });
+        if (error) throw error;
+        showSignedIn(data.user);
+        showMessage("");
+      } catch (error) {
+        showMessage("Inloggningen misslyckades. Kontrollera e-post, lösenord och att kontot är bekräftat.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    signupButton.addEventListener("click", async () => {
+      signupButton.disabled = true;
+      showMessage("Skapar konto …");
+      try {
+        const { data, error } = await client.auth.signUp({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value,
+          options: {
+            emailRedirectTo: window.location.origin + window.location.pathname
+          }
+        });
+        if (error) throw error;
+        if (data.session && data.user) {
+          showSignedIn(data.user);
+          showMessage("");
+        } else {
+          showMessage("Kontoförfrågan skickad. Kontrollera e-posten för att bekräfta kontot innan du loggar in.");
+        }
+      } catch (error) {
+        showMessage("Kunde inte skapa konto. Kontrollera e-postadressen, lösenordet och Supabase-inställningarna.");
+      } finally {
+        signupButton.disabled = false;
+      }
+    });
+
+    document.getElementById("logout").addEventListener("click", async () => {
+      const { error } = await client.auth.signOut();
+      if (error) {
+        showMessage("Utloggningen misslyckades. Försök igen.");
+        return;
+      }
+      showSignedOut();
+    });
+
+    client.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) showSignedIn(session.user);
+      else showSignedOut();
+    });
+
+    client.auth.getSession().then(({ data }) => {
+      if (data.session?.user) showSignedIn(data.session.user);
+      else showSignedOut();
     });
   </script>
 </body>
