@@ -138,7 +138,7 @@
           showMessage("Kontoförfrågan skickad. Kontrollera e-posten för att bekräfta kontot innan du loggar in.");
         }
       } catch (error) {
-        showMessage("Kunde inte skapa konto. Kontrollera e-postadressen, lösenordet och Supabase-inställningarna.");
+        showMessage("Registreringen misslyckades: " + (error.message || "Okänt fel"));
       } finally {
         signupButton.disabled = false;
       }
