@@ -192,8 +192,25 @@
     }
 .task-details-row {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 12px;
+    align-items: end;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.task-details-row > div {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.task-details-row input,
+.task-details-row select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .task-details-row > * {
