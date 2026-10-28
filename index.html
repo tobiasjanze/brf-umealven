@@ -190,7 +190,16 @@
       gap: 12px;
       flex-wrap: wrap;
     }
+.task-details-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
 
+.task-details-row > * {
+    min-width: 0;
+    width: 100%;
+}
     .row > * {
       flex: 1;
       min-width: 0px;
@@ -638,7 +647,7 @@
             </div>
           </div>
 
-          <div class="row">
+          <div class="row task-details-row">
             <div>
               <label for="taskDue">Sista datum</label>
               <input id="taskDue" type="date">
