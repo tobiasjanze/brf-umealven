@@ -1,1029 +1,2001 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#246b45">
-<title>BRF Umeälven – Styrelseverktyg</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-*{box-sizing:border-box}
-body{margin:0;padding:14px;background:#f5f7f5;color:#26372d;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-main{max-width:1100px;margin:auto}
-.card{background:#fff;border:1px solid #e2e9e3;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #183b2408}
-.logo{display:block;width:min(100%,230px);height:auto;margin:0 auto 16px}
-h1{text-align:center;font-size:25px}
-h2{font-size:21px;margin-top:0}
-h3{font-size:16px}
-label{display:block;font-weight:650;margin:12px 0 6px}
-input,textarea,select{width:100%;padding:12px;border:1px solid #cbd5ce;border-radius:8px;font:inherit;background:#fff;color:inherit}
-textarea{min-height:100px;resize:vertical}
-button{padding:10px 14px;border:0;border-radius:8px;font:inherit;font-weight:650;cursor:pointer;background:#edf2ee;color:#244b34;margin:5px 4px 0 0}
-button:hover{filter:brightness(.97)}
-.primary{background:#246b45;color:white}
-.danger{background:#f8e8e6;color:#8d2920}
-.hidden{display:none!important}
-.muted,.small{color:#647468}
-.small{font-size:13px;line-height:1.5}
-.status{white-space:pre-wrap;overflow-wrap:anywhere}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.meeting{display:block;width:100%;text-align:left;margin:7px 0;border:1px solid #d8e2db;background:#fff}
-.meeting.active{border:2px solid #246b45;background:#f3f8f4}
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-#loginCard{max-width:440px;margin:5vh auto}
-.agenda-section,.minutes-section{padding:11px 2px 13px;border-bottom:1px solid #dfe7e1}
-.agenda-section h3,.minutes-section h3{margin:3px 0 9px;color:#244b34;font-size:17px}
-.agenda-section ol{padding-left:28px;margin:5px 0}
-.agenda-entry{padding:5px 0;overflow-wrap:anywhere}
-.agenda-entry-title{font-weight:500}
-.agenda-note{color:#647468;font-size:14px;white-space:pre-wrap;margin:5px 0}
-.remove-agenda{font-size:12px;padding:6px 9px;margin:5px 0 0}
-.report-list{padding-left:28px;margin:5px 0}
-.report-list li{padding:3px 0}
-.file-item{border-bottom:1px solid #e1e8e3;padding:12px 2px;overflow-wrap:anywhere}
-.file-actions{display:flex;flex-wrap:wrap;gap:5px}
-.file-actions button{margin:3px 3px 0 0}
-.minutes-report{margin:8px 0 14px}
-.minutes-report label{font-weight:600}
-.minutes-report textarea{min-height:75px}
-.minutes-section textarea{min-height:90px}
-@media(max-width:700px){
- body{padding:9px}
- .grid,.fields{grid-template-columns:1fr}
- .card{padding:15px}
- h1{font-size:23px}
-}
-</style>
+  <title>BRF Umeälven – Styrelseportal</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --navy: #17324d;
+      --blue: #245b83;
+      --background: #f4f6f8;
+      --white: #ffffff;
+      --text: #24313c;
+      --muted: #687783;
+      --border: #d9e1e7;
+      --green: #27734b;
+      --red: #a73535;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand-logo {
+      display: block;
+      width: 240px;
+      max-width: 42vw;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+
+    .brand-text p {
+      margin: 4px 0 0;
+      color: #d9e6ef;
+      font-size: 0.9rem;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(20, 44, 59, 0.04);
+    }
+
+    .login {
+      max-width: 440px;
+      margin: 45px auto;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      margin: 15px 0 6px;
+      font-size: 1.05rem;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 600;
+      font-size: 0.93rem;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #c5d0d8;
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--text);
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font: inherit;
+      cursor: pointer;
+      background: #e5ebef;
+      color: var(--text);
+    }
+
+    button.primary {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    button.danger {
+      background: #f8e7e7;
+      color: var(--red);
+    }
+
+    button.small {
+      padding: 6px 10px;
+      font-size: 0.9rem;
+    }
+
+    button:focus,
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 2px solid #8fc4e8;
+      outline-offset: 2px;
+    }
+
+    .toolbar,
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 14px 0;
+    }
+
+    .tab {
+      background: #e4ebf0;
+      color: var(--navy);
+    }
+
+    .tab.active {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    .row {
+      display: flex;
+      align-items: end;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .row > * {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .status {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #edf4f8;
+      margin: 10px 0;
+    }
+
+    .status.error {
+      background: #fbeaea;
+      color: var(--red);
+    }
+
+    .status.ok {
+      background: #e6f5eb;
+      color: var(--green);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 15px;
+      background: var(--white);
+    }
+
+    .metric .num {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .item {
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .item:last-child {
+      border-bottom: 0;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 99px;
+      background: #e9eef2;
+      font-size: 0.8rem;
+    }
+
+    .pill.overdue {
+      background: #fbe7e7;
+      color: var(--red);
+    }
+
+    .pill.done {
+      background: #e1f3e8;
+      color: var(--green);
+    }
+
+    .agenda-section {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+
+    .agenda-section summary {
+      padding: 12px 14px;
+      background: #f0f4f7;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .agenda-body {
+      padding: 14px;
+    }
+
+    .subhead {
+      font-weight: 700;
+      margin: 15px 0 4px;
+    }
+
+    .file-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 20px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 15px;
+      }
+
+      .wrap {
+        padding: 12px;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .brand {
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .brand-logo {
+        width: 170px;
+        max-width: 70vw;
+      }
+
+      .row > * {
+        min-width: 100%;
+      }
+    }
+
+    @media print {
+      header,
+      .tabs,
+      .toolbar,
+      button,
+      #loginPanel,
+      #appNav {
+        display: none !important;
+      }
+
+      body {
+        background: white;
+      }
+
+      .wrap {
+        max-width: none;
+        padding: 0;
+      }
+
+      .panel,
+      .agenda-section {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      .agenda-section summary {
+        background: white;
+      }
+    }
+  </style>
 </head>
 
 <body>
-<main>
 
-<section id="loginCard" class="card">
-<img class="logo" src="brf-umealven-logotyp.png" alt="BRF Umeälven">
-<h1>Styrelseverktyg</h1>
-<p class="muted" style="text-align:center">Logga in för att hantera styrelsemöten</p>
+<header>
+  <div class="brand">
+    <img
+      src="brf-umealven-logotyp.png"
+      alt="BRF Umeälvens logotyp"
+      class="brand-logo"
+    >
 
-<form id="loginForm">
-<label for="email">E-postadress</label>
-<input id="email" type="email" autocomplete="username" required>
-<label for="password">Lösenord</label>
-<input id="password" type="password" autocomplete="current-password" minlength="8" required>
-<button class="primary" style="width:100%" type="submit">Logga in</button>
-</form>
+    <div class="brand-text">
+      <h1>Styrelseportal</h1>
+      <p>Möten, protokoll och uppföljning</p>
+    </div>
+  </div>
 
-<button id="forgot" style="width:100%">Glömt lösenord?</button>
-<p id="loginMsg" class="status" role="status"></p>
-<p class="small">Använd endast godkända konton för styrelseverktyget.</p>
-</section>
+  <div id="userBar" class="hidden">
+    <span id="userEmail"></span>
+    <button id="logoutBtn" type="button">Logga ut</button>
+  </div>
+</header>
 
-<section id="app" class="hidden">
+<main class="wrap">
 
-<div class="card">
-<div class="top">
-<div>
-<img src="brf-umealven-logotyp.png" alt="BRF Umeälven" style="width:180px;max-width:55%">
-<h1 style="text-align:left">Styrelsemöten</h1>
-<span id="welcome" class="small"></span>
-</div>
-<div>
-<button id="refresh">Uppdatera</button>
-<button id="logout" class="primary">Logga ut</button>
-</div>
-</div>
-<p id="appMsg" class="status" role="status"></p>
-</div>
+  <!-- INLOGGNING -->
 
-<div class="grid">
-<section class="card">
-<h2>Möten</h2>
-<div id="meetingList" class="small">Laddar …</div>
-</section>
+  <section id="loginPanel" class="panel login">
+    <h2>Logga in</h2>
 
-<section class="card">
-<h2>Skapa nytt möte</h2>
-<form id="newMeeting">
-<label for="newTitle">Mötets namn</label>
-<input id="newTitle" required maxlength="160" placeholder="Ex. Styrelsemöte 1">
+    <p class="muted">
+      Portalen är avsedd för styrelsemedlemmar som har fått behörighet.
+    </p>
 
-<div class="fields">
-<div>
-<label for="newDate">Datum</label>
-<input id="newDate" type="date" required>
-</div>
-<div>
-<label for="newTime">Tid</label>
-<input id="newTime" type="time">
-</div>
-</div>
+    <form id="loginForm">
+      <label for="email">E-post</label>
+      <input
+        id="email"
+        type="email"
+        autocomplete="username"
+        required
+      >
 
-<label for="newPlace">Plats</label>
-<input id="newPlace" placeholder="Ex. föreningslokalen">
-<label for="newPeople">Deltagare / kallade</label>
-<textarea id="newPeople" style="min-height:75px"></textarea>
-<button class="primary" type="submit">Spara möte</button>
-</form>
-</section>
-</div>
+      <label for="password">Lösenord</label>
+      <input
+        id="password"
+        type="password"
+        autocomplete="current-password"
+        required
+      >
 
-<section id="workspace" class="hidden">
+      <div class="toolbar">
+        <button class="primary" type="submit">Logga in</button>
+        <button id="forgotBtn" type="button">Glömt lösenord?</button>
+      </div>
+    </form>
 
-<div class="card">
-<div class="top">
-<h2 id="meetingTitle"></h2>
-<button id="deleteMeeting" class="danger">Radera möte</button>
-</div>
+    <div id="loginMsg" class="status hidden" role="status"></div>
+  </section>
 
-<div class="fields">
-<div><label for="editTitle">Mötets namn</label><input id="editTitle"></div>
-<div><label for="editDate">Datum</label><input id="editDate" type="date"></div>
-<div><label for="editTime">Tid</label><input id="editTime" type="time"></div>
-<div><label for="editPlace">Plats</label><input id="editPlace"></div>
-</div>
+  <!-- STYRELSEPORTAL -->
 
-<label for="editPeople">Deltagare / kallade</label>
-<textarea id="editPeople" style="min-height:75px"></textarea>
-<button id="saveMeeting" class="primary">Spara mötesuppgifter</button>
-</div>
+  <section id="appPanel" class="hidden">
 
-<div class="grid">
+    <nav id="appNav" class="tabs">
+      <button class="tab active" data-tab="dashboard">Översikt</button>
+      <button class="tab" data-tab="meetings">Möten och dagordning</button>
+      <button class="tab" data-tab="minutes">Protokoll</button>
+      <button class="tab" data-tab="documents">Mötesdokument</button>
+      <button class="tab" data-tab="tasks">Uppgifter</button>
+      <button class="tab" data-tab="contracts">Avtal</button>
+    </nav>
 
-<section class="card">
-<h2>Dagordning</h2>
-<button id="exportAgenda" class="primary" type="button">📄 Spara dagordning som PDF</button>
-<p class="small">I utskriftsdialogen väljer du Spara som PDF.</p>
+    <div id="appMsg" class="status hidden" role="status"></div>
 
-<form id="agendaForm">
-<label for="agendaSection">Lägg till punkt under</label>
-<select id="agendaSection" required>
-<option value="7">§ 7 – Ekonomiska frågor</option>
-<option value="8">§ 8 – Medlemsärenden</option>
-<option value="9">§ 9 – Övriga frågor</option>
-<option value="1">§ 1 – Mötets öppnande</option>
-<option value="2">§ 2 – Närvaroförteckning</option>
-<option value="3">§ 3 – Dagordning</option>
-<option value="4">§ 4 – Justerare</option>
-<option value="5">§ 5 – Föregående protokoll</option>
-<option value="10">§ 10 – Nästa styrelsemöte</option>
-<option value="11">§ 11 – Avslutning</option>
-</select>
+    <!-- ÖVERSIKT -->
 
-<p class="small">§ 6 har nio fasta underrubriker. De kan inte tas bort.</p>
+    <section id="tab-dashboard" class="tabcontent">
+      <div class="panel">
+        <h2>Styrelsens översikt</h2>
+        <p class="muted">
+          Samlad bild av uppgifter, avtal och kommande möten.
+        </p>
+        <div id="metrics" class="grid"></div>
+      </div>
 
-<label for="agendaTitle">Dagordningspunkt</label>
-<input id="agendaTitle" required maxlength="250" placeholder="Skriv rubrik för punkten">
+      <div class="grid">
+        <div class="panel">
+          <h2>Närmaste möten</h2>
+          <div id="upcomingMeetings"></div>
+        </div>
 
-<label for="agendaNotes">Anteckning / beskrivning</label>
-<textarea id="agendaNotes" style="min-height:75px" placeholder="Valfri beskrivning"></textarea>
-<button class="primary" type="submit">Lägg till punkt</button>
-</form>
+        <div class="panel">
+          <h2>Uppgifter att följa upp</h2>
+          <div id="dashboardTasks"></div>
+        </div>
 
-<div id="agendaList"></div>
-</section>
+        <div class="panel">
+          <h2>Avtal som behöver bevakas</h2>
+          <div id="dashboardContracts"></div>
+        </div>
+      </div>
+    </section>
 
-<section class="card">
-<h2>Mötesunderlag och bilagor</h2>
-<p class="small">Ladda upp underlag som hör till just detta möte. Filerna sparas privat i dokumentarkivet. Max 25 MB per fil.</p>
+    <!-- MÖTEN OCH DAGORDNING -->
 
-<form id="uploadForm">
-<label for="file">Välj dokument eller bilaga</label>
-<input id="file" type="file" required>
-<p id="fileInfo" class="small">Välj en fil för att se storleken innan uppladdning.</p>
-<button class="primary" type="submit">Ladda upp till mötet</button>
-</form>
+    <section id="tab-meetings" class="tabcontent hidden">
+      <div class="panel">
+        <h2>Möten</h2>
 
-<h3>Underlag för detta möte</h3>
-<div id="filesList"></div>
-</section>
-</div>
+        <form id="meetingForm">
+          <input type="hidden" id="meetingId">
 
-<section class="card" id="minutesCard">
-<h2>Protokoll</h2>
-<p class="small">Skriv anteckningar, rapporter, beslut och åtgärder under rätt paragraf. Protokollet sparas separat för varje möte.</p>
+          <div class="row">
+            <div>
+              <label for="meetingTitle">Mötestitel</label>
+              <input id="meetingTitle" required>
+            </div>
 
-<div id="minutesFields"></div>
+            <div>
+              <label for="meetingDate">Datum och tid</label>
+              <input id="meetingDate" type="datetime-local" required>
+            </div>
+          </div>
 
-<button id="saveMinutes" class="primary" type="button">Spara protokoll</button>
-<button id="downloadMinutes" type="button">Ladda ner protokoll som textfil</button>
-<p id="minutesStatus" class="small" role="status"></p>
-</section>
+          <label for="meetingLocation">Plats</label>
+          <input id="meetingLocation">
 
-</section>
+          <label for="meetingNotes">Anteckningar</label>
+          <textarea id="meetingNotes"></textarea>
 
-<p class="small">Kontrollera att Supabase-behörigheterna endast ger godkända styrelsemedlemmar åtkomst innan känsliga föreningsuppgifter läggs in.</p>
-</section>
-</main>
+          <div class="toolbar">
+            <button class="primary" type="submit">Spara möte</button>
+            <button id="cancelMeetingEdit" type="button">Rensa</button>
+          </div>
+        </form>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <hr>
+        <div id="meetingsList"></div>
+      </div>
+
+      <div id="selectedMeetingPanel" class="panel hidden">
+        <h2 id="selectedMeetingHeading">Dagordning</h2>
+
+        <div class="toolbar">
+          <button id="printAgenda" type="button">
+            Skriv ut / spara dagordning som PDF
+          </button>
+        </div>
+
+        <div id="agendaSections"></div>
+
+        <div class="panel">
+          <h3>Lägg till dagordningspunkt</h3>
+
+          <form id="agendaForm">
+            <div class="row">
+              <div>
+                <label for="agendaSection">Paragraf</label>
+                <select id="agendaSection"></select>
+              </div>
+
+              <div>
+                <label for="agendaTitle">Rubrik</label>
+                <input id="agendaTitle" required>
+              </div>
+            </div>
+
+            <label for="agendaDescription">Anteckning / underlag</label>
+            <textarea id="agendaDescription"></textarea>
+
+            <button class="primary" type="submit">Lägg till punkt</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROTOKOLL -->
+
+    <section id="tab-minutes" class="tabcontent hidden">
+      <div class="panel">
+        <h2>Protokoll</h2>
+
+        <p class="muted">
+          Välj möte och fyll i respektive paragraf.
+        </p>
+
+        <label for="minutesMeetingSelect">Möte</label>
+        <select id="minutesMeetingSelect">
+          <option value="">Välj möte</option>
+        </select>
+
+        <div id="minutesEditor" class="hidden">
+          <div id="minutesFields"></div>
+
+          <div class="toolbar">
+            <button id="saveMinutes" class="primary" type="button">
+              Spara protokoll
+            </button>
+
+            <button id="downloadMinutes" type="button">
+              Ladda ner protokoll (.txt)
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÖTESDOKUMENT -->
+
+    <section id="tab-documents" class="tabcontent hidden">
+      <div class="panel">
+        <h2>Mötesdokument</h2>
+
+        <label for="documentsMeetingSelect">Möte</label>
+        <select id="documentsMeetingSelect">
+          <option value="">Välj möte</option>
+        </select>
+
+        <form id="uploadForm">
+          <label for="documentFile">Ladda upp fil</label>
+          <input id="documentFile" type="file" required>
+
+          <label for="documentDescription">Beskrivning (valfritt)</label>
+          <input id="documentDescription">
+
+          <div class="toolbar">
+            <button class="primary" type="submit">Ladda upp dokument</button>
+          </div>
+        </form>
+
+        <div id="documentsList"></div>
+      </div>
+    </section>
+
+    <!-- STYRELSEUPPGIFTER -->
+
+    <section id="tab-tasks" class="tabcontent hidden">
+      <div class="panel">
+        <h2>Styrelsens uppgifter</h2>
+
+        <form id="taskForm">
+          <input type="hidden" id="taskId">
+
+          <div class="row">
+            <div>
+              <label for="taskTitle">Uppgift</label>
+              <input id="taskTitle" required>
+            </div>
+
+            <div>
+              <label for="taskAssigned">Ansvarig</label>
+              <input id="taskAssigned">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="taskDue">Sista datum</label>
+              <input id="taskDue" type="date">
+            </div>
+
+            <div>
+              <label for="taskPriority">Prioritet</label>
+              <select id="taskPriority">
+                <option>Normal</option>
+                <option>Hög</option>
+                <option>Låg</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="taskStatus">Status</label>
+              <select id="taskStatus">
+                <option>Öppen</option>
+                <option>Pågår</option>
+                <option>Klar</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="taskDescription">Beskrivning</label>
+          <textarea id="taskDescription"></textarea>
+
+          <label for="taskMeeting">Koppla till möte (valfritt)</label>
+          <select id="taskMeeting">
+            <option value="">Inget möte valt</option>
+          </select>
+
+          <div class="toolbar">
+            <button class="primary" type="submit">Spara uppgift</button>
+            <button id="cancelTaskEdit" type="button">Rensa</button>
+          </div>
+        </form>
+
+        <hr>
+        <div id="tasksList"></div>
+      </div>
+    </section>
+
+    <!-- AVTALSBEVAKNING -->
+
+    <section id="tab-contracts" class="tabcontent hidden">
+      <div class="panel">
+        <h2>Avtalsbevakning</h2>
+
+        <form id="contractForm">
+          <input type="hidden" id="contractId">
+
+          <div class="row">
+            <div>
+              <label for="contractTitle">Avtal</label>
+              <input id="contractTitle" required>
+            </div>
+
+            <div>
+              <label for="contractSupplier">Leverantör</label>
+              <input id="contractSupplier">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="contractCost">Kostnad (kr/år)</label>
+              <input id="contractCost" type="number" min="0" step="0.01">
+            </div>
+
+            <div>
+              <label for="contractResponsible">Ansvarig</label>
+              <input id="contractResponsible">
+            </div>
+
+            <div>
+              <label for="contractStatus">Status</label>
+              <select id="contractStatus">
+                <option>Aktivt</option>
+                <option>Under uppsägning</option>
+                <option>Avslutat</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="contractStart">Startdatum</label>
+              <input id="contractStart" type="date">
+            </div>
+
+            <div>
+              <label for="contractEnd">Slutdatum</label>
+              <input id="contractEnd" type="date">
+            </div>
+
+            <div>
+              <label for="contractNotice">Sista uppsägningsdag</label>
+              <input id="contractNotice" type="date">
+            </div>
+          </div>
+
+          <label for="contractNotes">Anteckningar</label>
+          <textarea id="contractNotes"></textarea>
+
+          <div class="toolbar">
+            <button class="primary" type="submit">Spara avtal</button>
+            <button id="cancelContractEdit" type="button">Rensa</button>
+          </div>
+   
 <script>
-(()=>{
-"use strict";
+(() => {
+  'use strict';
 
-const SUPABASE_URL="https://nvfgoswznutifhxvqbfg.supabase.co";
-const SUPABASE_KEY="sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ";
-const BUCKET="meeting-files";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const $=id=>document.getElementById(id);
+  const SUPABASE_URL = 'https://nvfgoswznutifhxvqbfg.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ';
+  const STORAGE_BUCKET = 'meeting-files';
 
-let user=null,meetings=[],selected=null,agenda=[],files=[];
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = id => document.getElementById(id);
 
-const sections=[
- ["1","Mötets öppnande"],
- ["2","Närvaroförteckning"],
- ["3","Dagordning"],
- ["4","Justerare"],
- ["5","Föregående protokoll"],
- ["6","Aktuella rapporter"],
- ["7","Ekonomiska frågor"],
- ["8","Medlemsärenden"],
- ["9","Övriga frågor"],
- ["10","Nästa styrelsemöte"],
- ["11","Avslutning"]
-];
+  let currentUser = null;
+  let meetings = [];
+  let selectedMeetingId = null;
+  let agendaItems = [];
+  let currentMinutes = {};
+  let tasks = [];
+  let contracts = [];
 
-const reports=[
- "Vaktmästeri",
- "Sophantering",
- "Snöröjning",
- "Parkering",
- "Avtal",
- "Lån",
- "Kostnadskonton",
- "Andrahandsuthyrningar",
- "Hemsidan – statistik"
-];
+  const sections = [
+    ['1', 'Mötets öppnande'],
+    ['2', 'Val av mötesordförande'],
+    ['3', 'Val av sekreterare'],
+    ['4', 'Val av justerare'],
+    ['5', 'Godkännande av dagordning'],
+    ['6', 'Rapporter'],
+    ['7', 'Föregående protokoll'],
+    ['8', 'Ekonomi'],
+    ['9', 'Övriga frågor'],
+    ['10', 'Nästa möte'],
+    ['11', 'Mötets avslutande']
+  ];
 
-const msg=t=>$("appMsg").textContent=t||"";
-const loginMsg=t=>$("loginMsg").textContent=t||"";
-const err=e=>e?.message||"Okänt fel";
-const date=s=>s?new Date(s+"T12:00:00").toLocaleDateString("sv-SE"):"";
-const safe=s=>(s||"fil").replace(/[^\p{L}\p{N}._ -]/gu,"_").slice(0,120);
+  const reportHeadings = [
+    'Vaktmästeri',
+    'Sophantering',
+    'Snöröjning',
+    'Parkering',
+    'Avtal',
+    'Lån',
+    'Kostnadskonton',
+    'Andrahandsuthyrningar',
+    'Hemsidan – statistik'
+  ];
 
-function escapeHtml(value){
- return String(value??"").replace(/[&<>"']/g,char=>({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
- })[char]);
-}
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[c]));
 
-function signedIn(u){
- user=u;
- $("loginCard").classList.add("hidden");
- $("app").classList.remove("hidden");
- $("welcome").textContent=u.email||"";
- loadMeetings();
-}
+  const dateText = value => {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (isNaN(d)) return value;
+    return d.toLocaleString('sv-SE', {
+      dateStyle: 'medium',
+      ...(String(value).includes('T') ? { timeStyle: 'short' } : {})
+    });
+  };
 
-function signedOut(){
- user=null;
- $("app").classList.add("hidden");
- $("loginCard").classList.remove("hidden");
- $("workspace").classList.add("hidden");
- selected=null;
-}
+  const today = () => new Date().toISOString().slice(0, 10);
 
-$("loginForm").addEventListener("submit",async e=>{
- e.preventDefault();
- try{
-  const {data,error}=await db.auth.signInWithPassword({
-   email:$("email").value.trim(),
-   password:$("password").value
-  });
-  if(error)throw error;
-  loginMsg("");
-  signedIn(data.user);
- }catch(e){
-  loginMsg("Inloggningen misslyckades: "+err(e));
- }
-});
-
-$("forgot").onclick=async()=>{
- if(!$("email").value.trim()){
-  loginMsg("Skriv e-postadressen först.");
-  return;
- }
- try{
-  const {error}=await db.auth.resetPasswordForEmail(
-   $("email").value.trim(),
-   {redirectTo:"https://tobiasjanze.github.io/brf-umealven/"}
-  );
-  if(error)throw error;
-  loginMsg("Om kontot finns skickas en återställningslänk.");
- }catch(e){
-  loginMsg("Kunde inte skicka länk: "+err(e));
- }
-};
-
-db.auth.onAuthStateChange(async(event,session)=>{
- if(event==="PASSWORD_RECOVERY"&&session){
-  const p=prompt("Ange nytt lösenord (minst 8 tecken):");
-  if(!p||p.length<8){
-   loginMsg("Lösenordet måste vara minst 8 tecken.");
-   return;
-  }
-  const {error}=await db.auth.updateUser({password:p});
-  if(error)loginMsg("Kunde inte ändra lösenordet: "+error.message);
-  else{
-   alert("Lösenordet är ändrat.");
-   await db.auth.signOut();
-  }
-  return;
- }
- if(session?.user)signedIn(session.user);
- else signedOut();
-});
-
-$("logout").onclick=async()=>{
- const {error}=await db.auth.signOut();
- if(error)msg(err(error));
- else signedOut();
-};
-
-$("refresh").onclick=loadMeetings;
-
-async function loadMeetings(){
- if(!user)return;
- msg("Hämtar möten …");
- try{
-  const {data,error}=await db.from("meetings")
-   .select("*").order("meeting_date",{ascending:false});
-  if(error)throw error;
-  meetings=data||[];
-  renderMeetings();
-  msg("");
-
-  if(selected){
-   const m=meetings.find(x=>x.id===selected.id);
-   if(m){
-    selected=m;
-    await loadDetails();
-   }else clearWorkspace();
-  }
- }catch(e){
-  msg("Kunde inte hämta möten. Kontrollera Supabase-inställningarna. Fel: "+err(e));
- }
-}
-
-function renderMeetings(){
- const root=$("meetingList");
- root.replaceChildren();
- if(!meetings.length){
-  root.textContent="Inga möten ännu. Skapa ett möte i formuläret.";
-  return;
- }
-
- meetings.forEach(m=>{
-  const b=document.createElement("button");
-  b.className="meeting"+(selected?.id===m.id?" active":"");
-  const strong=document.createElement("strong");
-  strong.textContent=m.title;
-  const span=document.createElement("span");
-  span.className="small";
-  span.textContent=date(m.meeting_date)+(m.meeting_time?" · "+m.meeting_time:"");
-  b.append(strong,document.createElement("br"),span);
-  b.onclick=()=>choose(m);
-  root.append(b);
- });
-}
-
-$("newMeeting").onsubmit=async e=>{
- e.preventDefault();
- try{
-  const {data,error}=await db.from("meetings").insert({
-   title:$("newTitle").value.trim(),
-   meeting_date:$("newDate").value,
-   meeting_time:$("newTime").value||null,
-   location:$("newPlace").value.trim(),
-   attendees:$("newPeople").value.trim(),
-   created_by:user.id
-  }).select().single();
-
-  if(error)throw error;
-  $("newMeeting").reset();
-  await loadMeetings();
-  await choose(data);
-  msg("Mötet är sparat.");
- }catch(e){
-  msg("Kunde inte spara mötet: "+err(e));
- }
-};
-
-async function choose(m){
- selected=m;
- $("workspace").classList.remove("hidden");
- $("meetingTitle").textContent=m.title;
- $("editTitle").value=m.title||"";
- $("editDate").value=m.meeting_date||"";
- $("editTime").value=m.meeting_time||"";
- $("editPlace").value=m.location||"";
- $("editPeople").value=m.attendees||"";
- renderMeetings();
- await loadDetails();
- $("workspace").scrollIntoView({behavior:"smooth",block:"start"});
-}
-
-function clearWorkspace(){
- selected=null;
- $("workspace").classList.add("hidden");
- renderMeetings();
-}
-
-$("saveMeeting").onclick=async()=>{
- if(!selected)return;
- try{
-  const {data,error}=await db.from("meetings").update({
-   title:$("editTitle").value.trim(),
-   meeting_date:$("editDate").value,
-   meeting_time:$("editTime").value||null,
-   location:$("editPlace").value.trim(),
-   attendees:$("editPeople").value.trim()
-  }).eq("id",selected.id).select().single();
-
-  if(error)throw error;
-  selected=data;
-  $("meetingTitle").textContent=data.title;
-  await loadMeetings();
-  msg("Mötesuppgifterna är sparade.");
- }catch(e){
-  msg("Kunde inte spara mötet: "+err(e));
- }
-};
-
-$("deleteMeeting").onclick=async()=>{
- if(!selected||!confirm("Radera mötet, dagordningen, bilagorna och protokollet?"))return;
- try{
-  const {data,error:le}=await db.from("meeting_documents")
-   .select("storage_path").eq("meeting_id",selected.id);
-  if(le)throw le;
-
-  if(data?.length){
-   const {error}=await db.storage.from(BUCKET).remove(data.map(x=>x.storage_path));
-   if(error)throw error;
+  function message(text, type = '') {
+    const node = $('appMsg');
+    node.textContent = text;
+    node.className = 'status' + (type ? ' ' + type : '');
+    node.classList.remove('hidden');
+    setTimeout(() => node.classList.add('hidden'), 7000);
   }
 
-  const {error}=await db.from("meetings").delete().eq("id",selected.id);
-  if(error)throw error;
+  function loginMessage(text, type = '') {
+    const node = $('loginMsg');
+    node.textContent = text;
+    node.className = 'status' + (type ? ' ' + type : '');
+    node.classList.remove('hidden');
+  }
 
-  clearWorkspace();
-  await loadMeetings();
-  msg("Mötet är raderat.");
- }catch(e){
-  msg("Kunde inte radera: "+err(e));
- }
-};
+  function showApp(user) {
+    currentUser = user;
+    $('loginPanel').classList.add('hidden');
+    $('appPanel').classList.remove('hidden');
+    $('userBar').classList.remove('hidden');
+    $('userEmail').textContent = user.email || '';
+    loadAll();
+  }
 
-$("agendaForm").onsubmit=async e=>{
- e.preventDefault();
- if(!selected)return;
+  function showLogin() {
+    currentUser = null;
+    $('appPanel').classList.add('hidden');
+    $('userBar').classList.add('hidden');
+    $('loginPanel').classList.remove('hidden');
+  }
 
- try{
-  const section=$("agendaSection").value;
-  const title=$("agendaTitle").value.trim();
+  async function loadAll() {
+    await loadMeetings();
+    await Promise.all([loadTasks(), loadContracts()]);
+    renderDashboard();
+  }
 
-  const {error}=await db.from("agenda_items").insert({
-   meeting_id:selected.id,
-   title:"@@"+section+"@@ "+title,
-   notes:$("agendaNotes").value.trim(),
-   position:agenda.length+1,
-   created_by:user.id
-  });
+  function meetingDate(meeting) {
+    return meeting.meeting_date || meeting.date || meeting.starts_at || '';
+  }
 
-  if(error)throw error;
-  $("agendaForm").reset();
-  $("agendaSection").value="7";
-  await loadDetails();
-  msg("Dagordningspunkt sparad under § "+section+".");
- }catch(e){
-  msg("Kunde inte spara dagordningen: "+err(e));
- }
-};
+  function meetingTitle(meeting) {
+    return meeting.title || meeting.name || 'Möte utan titel';
+  }
 
-function getGroupedAgenda(){
- const grouped={};
- agenda.forEach(item=>{
-  const match=(item.title||"").match(/^@@(\d+)@@\s*/);
-  const section=match?match[1]:"7";
-  const title=(item.title||"").replace(/^@@\d+@@\s*/,"");
-  if(!grouped[section])grouped[section]=[];
-  grouped[section].push({...item,displayTitle:title});
- });
- return grouped;
-}
+  async function loadMeetings() {
+    const { data, error } = await db
+      .from('meetings')
+      .select('*')
+      .order('meeting_date', { ascending: false });
 
-async function loadDetails(){
- if(!selected)return;
-
- try{
-  const [a,f,m]=await Promise.all([
-   db.from("agenda_items").select("*")
-    .eq("meeting_id",selected.id).order("position"),
-   db.from("meeting_documents").select("*")
-    .eq("meeting_id",selected.id).order("created_at",{ascending:false}),
-   db.from("meeting_minutes").select("*")
-    .eq("meeting_id",selected.id).maybeSingle()
-  ]);
-
-  for(const r of [a,f,m])if(r.error)throw r.error;
-
-  agenda=a.data||[];
-  files=f.data||[];
-
-  buildMinutesFields();
-
-  const stored=m.data?.content||"";
-  let content={};
-
-  if(stored){
-   try{
-    const parsed=JSON.parse(stored);
-    if(parsed&&parsed.format==="brf-minutes-v1"&&parsed.fields&&typeof parsed.fields==="object"){
-     content=parsed.fields;
-    }else{
-     content.migratedText=stored;
+    if (error) {
+      message('Kunde inte läsa möten: ' + error.message, 'error');
+      return;
     }
-   }catch{
-    content.migratedText=stored;
-   }
+
+    meetings = data || [];
+    renderMeetings();
+    populateMeetingSelects();
+    renderDashboard();
   }
 
-  fillMinutesFields(content);
+  function populateMeetingSelects() {
+    [
+      'minutesMeetingSelect',
+      'documentsMeetingSelect',
+      'taskMeeting'
+    ].forEach(id => {
+      const select = $(id);
+      const oldValue = select.value;
 
-  $("minutesStatus").textContent=m.data?.updated_at
-   ?"Senast sparat: "+new Date(m.data.updated_at).toLocaleString("sv-SE")
-   :"Inget protokoll sparat ännu.";
+      select.innerHTML = id === 'taskMeeting'
+        ? '<option value="">Inget möte valt</option>'
+        : '<option value="">Välj möte</option>';
 
-  renderAgenda();
-  renderFiles();
- }catch(e){
-  msg("Kunde inte läsa mötesinnehåll: "+err(e));
- }
-}
+      meetings.forEach(meeting => {
+        const option = document.createElement('option');
+        option.value = meeting.id;
+        option.textContent =
+          `${meetingTitle(meeting)} – ${dateText(meetingDate(meeting))}`;
+        select.append(option);
+      });
 
-function renderAgenda(){
- const root=$("agendaList");
- root.replaceChildren();
- const grouped=getGroupedAgenda();
-
- sections.forEach(([number,heading])=>{
-  const sectionBox=document.createElement("section");
-  sectionBox.className="agenda-section";
-
-  const title=document.createElement("h3");
-  title.textContent="§ "+number+"  "+heading;
-  sectionBox.append(title);
-
-  if(number==="6"){
-   const list=document.createElement("ol");
-   list.type="a";
-   list.className="report-list";
-
-   reports.forEach(report=>{
-    const li=document.createElement("li");
-    li.textContent=report;
-    list.append(li);
-   });
-
-   sectionBox.append(list);
-  }else{
-   const items=grouped[number]||[];
-   if(items.length){
-    const list=document.createElement("ol");
-    list.type="a";
-
-    items.forEach(item=>{
-     const li=document.createElement("li");
-     li.className="agenda-entry";
-
-     const text=document.createElement("div");
-     text.className="agenda-entry-title";
-     text.textContent=item.displayTitle;
-     li.append(text);
-
-     if(item.notes){
-      const note=document.createElement("p");
-      note.className="agenda-note";
-      note.textContent=item.notes;
-      li.append(note);
-     }
-
-     const remove=document.createElement("button");
-     remove.className="danger remove-agenda";
-     remove.type="button";
-     remove.textContent="Ta bort";
-
-     remove.onclick=async()=>{
-      if(!confirm("Ta bort dagordningspunkten?"))return;
-      try{
-       const {error}=await db.from("agenda_items").delete().eq("id",item.id);
-       if(error)throw error;
-       await loadDetails();
-       msg("Dagordningspunkten är borttagen.");
-      }catch(e){
-       msg("Kunde inte ta bort punkten: "+err(e));
+      if ([...select.options].some(o => o.value === oldValue)) {
+        select.value = oldValue;
       }
-     };
-
-     li.append(remove);
-     list.append(li);
     });
 
-    sectionBox.append(list);
-   }
+    const select = $('agendaSection');
+    select.innerHTML = '';
+
+    sections.filter(section => section[0] !== '6').forEach(([number, title]) => {
+      const option = document.createElement('option');
+      option.value = number;
+      option.textContent = `§${number} – ${title}`;
+      select.append(option);
+    });
   }
 
-  if(number==="10"){
-   const details=document.createElement("p");
-   details.textContent="Datum, plats och tid.";
-   sectionBox.append(details);
+  function renderMeetings() {
+    const root = $('meetingsList');
+    root.innerHTML = '';
+
+    if (!meetings.length) {
+      root.textContent = 'Inga möten registrerade ännu.';
+      return;
+    }
+
+    meetings.forEach(meeting => {
+      const node = document.createElement('div');
+      node.className = 'item';
+
+      node.innerHTML = `
+        <h3>${esc(meetingTitle(meeting))}</h3>
+        <p>${esc(dateText(meetingDate(meeting)))}
+          · ${esc(meeting.location || 'Ingen plats angiven')}</p>
+        <p class="muted">${esc(meeting.notes || '')}</p>
+        <div class="item-actions">
+          <button class="small primary" data-action="select"
+            data-id="${esc(meeting.id)}">Öppna dagordning</button>
+          <button class="small" data-action="edit"
+            data-id="${esc(meeting.id)}">Redigera</button>
+          <button class="small danger" data-action="delete"
+            data-id="${esc(meeting.id)}">Ta bort</button>
+        </div>`;
+
+      root.append(node);
+    });
   }
 
-  root.append(sectionBox);
- });
-}
-
-/* ---------- Strukturerat protokoll ---------- */
-
-function buildMinutesFields(){
- const root=$("minutesFields");
- root.replaceChildren();
-
- sections.forEach(([number,heading])=>{
-  const section=document.createElement("section");
-  section.className="minutes-section";
-
-  const title=document.createElement("h3");
-  title.textContent="§ "+number+" "+heading;
-  section.append(title);
-
-  if(number==="6"){
-   reports.forEach((report,index)=>{
-    const wrap=document.createElement("div");
-    wrap.className="minutes-report";
-
-    const label=document.createElement("label");
-    const fieldId="minutesReport"+index;
-    label.htmlFor=fieldId;
-    label.textContent=String.fromCharCode(97+index)+") "+report;
-
-    const textarea=document.createElement("textarea");
-    textarea.id=fieldId;
-    textarea.dataset.minutesKey="report"+index;
-    textarea.placeholder="Rapport, diskussion, beslut och åtgärder";
-
-    wrap.append(label,textarea);
-    section.append(wrap);
-   });
-  }else{
-   const label=document.createElement("label");
-   label.htmlFor="minutesSection"+number;
-   label.textContent="Anteckningar, beslut och åtgärder";
-
-   const textarea=document.createElement("textarea");
-   textarea.id="minutesSection"+number;
-   textarea.dataset.minutesKey="section"+number;
-   textarea.placeholder=number==="10"
-    ?"Nästa mötes datum, plats och tid samt förberedelser"
-    :"Anteckningar, diskussion, beslut och eventuella åtgärder";
-
-   section.append(label,textarea);
+  function resetMeetingForm() {
+    $('meetingForm').reset();
+    $('meetingId').value = '';
   }
 
-  root.append(section);
- });
+  $('cancelMeetingEdit').addEventListener('click', resetMeetingForm);
 
- const legacy=document.createElement("section");
- legacy.className="minutes-section";
+  $('meetingForm').addEventListener('submit', async event => {
+    event.preventDefault();
 
- const legacyTitle=document.createElement("h3");
- legacyTitle.textContent="Äldre protokolltext";
+    const id = $('meetingId').value;
+    const payload = {
+      title: $('meetingTitle').value.trim(),
+      meeting_date: new Date($('meetingDate').value).toISOString(),
+      location: $('meetingLocation').value.trim(),
+      notes: $('meetingNotes').value.trim()
+    };
 
- const legacyLabel=document.createElement("label");
- legacyLabel.htmlFor="minutesLegacy";
- legacyLabel.textContent="Tidigare sparat innehåll";
+    const result = id
+      ? await db.from('meetings').update(payload).eq('id', id)
+      : await db.from('meetings').insert({
+          ...payload,
+          created_by: currentUser.id
+        });
 
- const legacyText=document.createElement("textarea");
- legacyText.id="minutesLegacy";
- legacyText.dataset.minutesKey="migratedText";
- legacyText.placeholder="Äldre protokolltext visas här om den fanns i den tidigare versionen.";
+    if (result.error) {
+      message('Kunde inte spara mötet: ' + result.error.message, 'error');
+      return;
+    }
 
- legacy.append(legacyTitle,legacyLabel,legacyText);
- root.append(legacy);
-}
-
-function readMinutesFields(){
- const content={};
- $("minutesFields").querySelectorAll("[data-minutes-key]").forEach(field=>{
-  content[field.dataset.minutesKey]=field.value;
- });
- return content;
-}
-
-function fillMinutesFields(content){
- $("minutesFields").querySelectorAll("[data-minutes-key]").forEach(field=>{
-  field.value=content[field.dataset.minutesKey]||"";
- });
-}
-
-function minutesAsText(content){
- const lines=[
-  "BRF UMEÄLVEN",
-  "PROTOKOLL",
-  "Möte: "+(selected?.title||""),
-  "Datum: "+date(selected?.meeting_date),
-  "Tid: "+(selected?.meeting_time||"Ej angiven"),
-  "Plats: "+(selected?.location||"Ej angiven"),
-  "Deltagare / kallade: "+(selected?.attendees||"Ej angivna"),
-  ""
- ];
-
- sections.forEach(([number,heading])=>{
-  lines.push("§ "+number+" "+heading);
-
-  if(number==="6"){
-   reports.forEach((report,index)=>{
-    lines.push(String.fromCharCode(97+index)+") "+report);
-    const note=content["report"+index]||"";
-    if(note.trim())lines.push(note.trim());
-    lines.push("");
-   });
-  }else{
-   const note=content["section"+number]||"";
-   if(note.trim())lines.push(note.trim());
-   if(number==="10"&&!note.trim())lines.push("Datum, plats och tid för nästa möte.");
-   lines.push("");
-  }
- });
-
- const legacy=(content.migratedText||"").trim();
- if(legacy){
-  lines.push("ÄLDRE PROTOKOLLANTECKNINGAR",legacy,"");
- }
-
- return lines.join("\n");
-}
-
-$("saveMinutes").onclick=async()=>{
- if(!selected)return;
-
- try{
-  const savedContent={
-   format:"brf-minutes-v1",
-   fields:readMinutesFields()
-  };
-
-  const {error}=await db.from("meeting_minutes").upsert({
-   meeting_id:selected.id,
-   content:JSON.stringify(savedContent),
-   updated_by:user.id,
-   updated_at:new Date().toISOString()
-  },{onConflict:"meeting_id"});
-
-  if(error)throw error;
-
-  $("minutesStatus").textContent=
-   "Protokollet sparat "+new Date().toLocaleString("sv-SE");
- }catch(e){
-  $("minutesStatus").textContent="Kunde inte spara protokollet: "+err(e);
- }
-};
-
-$("downloadMinutes").onclick=()=>{
- if(!selected)return;
-
- const text=minutesAsText(readMinutesFields());
- const blob=new Blob(["\uFEFF",text],{type:"text/plain;charset=utf-8"});
- const url=URL.createObjectURL(blob);
- const a=document.createElement("a");
-
- a.href=url;
- a.download=safe(selected.title||"protokoll")+".txt";
- document.body.append(a);
- a.click();
- a.remove();
-
- setTimeout(()=>URL.revokeObjectURL(url),1000);
-};
-
-/* ---------- PDF för dagordningen ---------- */
-
-$("exportAgenda").onclick=()=>{
- if(!selected){
-  alert("Välj ett möte först.");
-  return;
- }
-
- const printWindow=window.open("","_blank");
- if(!printWindow){
-  alert("Utskriftsfönstret blockerades. Tillåt popup-fönster och försök igen.");
-  return;
- }
-
- const grouped=getGroupedAgenda();
-
- const agendaHtml=sections.map(([number,heading])=>{
-  let html=`<section><h2>§ ${number} ${escapeHtml(heading)}</h2>`;
-
-  if(number==="6"){
-   html+="<ol type='a'>"+
-    reports.map(report=>`<li>${escapeHtml(report)}</li>`).join("")+
-    "</ol>";
-  }else{
-   const items=grouped[number]||[];
-   if(items.length){
-    html+="<ol type='a'>"+items.map(item=>
-     `<li>${escapeHtml(item.displayTitle)}${
-      item.notes?`<p>${escapeHtml(item.notes).replace(/\n/g,"<br>")}</p>`:""
-     }</li>`
-    ).join("")+"</ol>";
-   }
-  }
-
-  if(number==="10")html+="<p>Datum, plats och tid.</p>";
-  return html+"</section>";
- }).join("");
-
- printWindow.document.open();
- printWindow.document.write(`<!doctype html>
-<html lang="sv">
-<head>
-<meta charset="utf-8">
-<title>Dagordning – ${escapeHtml(selected.title)}</title>
-<style>
-body{font-family:Arial,sans-serif;color:#222;font-size:11pt;line-height:1.4}
-h1{text-align:center;font-size:19pt;margin:0 0 8px}
-.details{text-align:center;margin-bottom:24px}
-h2{font-size:12pt;border-bottom:1px solid #aaa;padding-bottom:4px;margin-top:16px;break-after:avoid}
-section{break-inside:avoid}
-ol{padding-left:28px}
-li{padding:2px 0}
-p{margin:4px 0 8px}
-@page{size:A4;margin:16mm}
-</style>
-</head>
-<body>
-<h1>BRF UMEÄLVEN</h1>
-<h1>DAGORDNING</h1>
-<div class="details">
-<strong>${escapeHtml(selected.title)}</strong><br>
-Datum: ${escapeHtml(date(selected.meeting_date))}<br>
-Tid: ${escapeHtml(selected.meeting_time||"Ej angiven")}<br>
-Plats: ${escapeHtml(selected.location||"Ej angiven")}<br>
-Deltagare / kallade: ${escapeHtml(selected.attendees||"Ej angivna")}
-</div>
-${agendaHtml}
-</body>
-</html>`);
-
- printWindow.document.close();
- setTimeout(()=>{
-  printWindow.focus();
-  printWindow.print();
- },500);
-};
-
-/* ---------- Dokument och bilagor ---------- */
-
-$("file").onchange=()=>{
- const f=$("file").files[0];
- $("fileInfo").textContent=f
-  ?f.name+" · "+(f.size<1024*1024
-   ?(f.size/1024).toFixed(0)+" KB"
-   :(f.size/1024/1024).toFixed(2)+" MB")
-  :"Välj en fil för att se storleken innan uppladdning.";
-};
-
-$("uploadForm").onsubmit=async e=>{
- e.preventDefault();
- if(!selected)return;
-
- const file=$("file").files[0];
- if(!file)return;
-
- if(file.size>25*1024*1024){
-  msg("Filen är större än 25 MB. Dela upp eller komprimera dokumentet och försök igen.");
-  return;
- }
-
- try{
-  const path=selected.id+"/"+Date.now()+"_"+safe(file.name);
-  const {error:up}=await db.storage.from(BUCKET).upload(path,file,{
-   contentType:file.type||"application/octet-stream"
-  });
-  if(up)throw up;
-
-  const {error}=await db.from("meeting_documents").insert({
-   meeting_id:selected.id,
-   file_name:file.name,
-   storage_path:path,
-   uploaded_by:user.id
+    resetMeetingForm();
+    await loadMeetings();
+    message('Mötet har sparats.', 'ok');
   });
 
-  if(error){
-   await db.storage.from(BUCKET).remove([path]);
-   throw error;
-  }
+  $('meetingsList').addEventListener('click', async event => {
+    const button = event.target.closest('button[data-action]');
+    if (!button) return;
 
-  $("uploadForm").reset();
-  $("fileInfo").textContent="Välj en fil för att se storleken innan uppladdning.";
-  await loadDetails();
-  msg("Filen är uppladdad.");
- }catch(e){
-  msg("Kunde inte ladda upp: "+err(e));
- }
-};
-
-function renderFiles(){
- const root=$("filesList");
- root.replaceChildren();
-
- if(!files.length){
-  root.textContent="Inga underlag uppladdade till detta möte ännu.";
-  return;
- }
-
- files.forEach(f=>{
-  const box=document.createElement("div");
-  box.className="file-item";
-
-  const name=document.createElement("strong");
-  name.textContent="📄 "+f.file_name;
-
-  const meta=document.createElement("p");
-  meta.className="small";
-  meta.textContent="Uppladdat "+new Date(f.created_at).toLocaleString("sv-SE");
-
-  const actions=document.createElement("div");
-  actions.className="file-actions";
-
-  const open=document.createElement("button");
-  open.className="primary";
-  open.textContent="Öppna";
-  open.onclick=async()=>{
-   try{
-    const {data,error}=await db.storage.from(BUCKET).createSignedUrl(f.storage_path,300);
-    if(error)throw error;
-    const tab=window.open(data.signedUrl,"_blank");
-    if(!tab)window.location.href=data.signedUrl;
-    msg("Dokumentlänken gäller i 5 minuter.");
-   }catch(e){
-    msg("Kunde inte öppna dokumentet: "+err(e));
-   }
-  };
-
-  const download=document.createElement("button");
-  download.textContent="Ladda ner";
-  download.onclick=async()=>{
-   try{
-    const {data,error}=await db.storage.from(BUCKET).createSignedUrl(
-     f.storage_path,300,{download:f.file_name}
+    const meeting = meetings.find(
+      item => String(item.id) === button.dataset.id
     );
-    if(error)throw error;
+    if (!meeting) return;
 
-    const a=document.createElement("a");
-    a.href=data.signedUrl;
-    a.download=f.file_name;
-    a.target="_blank";
-    document.body.append(a);
-    a.click();
-    a.remove();
-   }catch(e){
-    msg("Kunde inte ladda ner dokumentet: "+err(e));
-   }
-  };
+    if (button.dataset.action === 'select') {
+      selectedMeetingId = meeting.id;
+      $('selectedMeetingPanel').classList.remove('hidden');
+      $('selectedMeetingHeading').textContent =
+        `Dagordning – ${meetingTitle(meeting)}`;
+      await loadAgenda();
+    }
 
-  const del=document.createElement("button");
-  del.className="danger";
-  del.textContent="Radera";
-  del.onclick=async()=>{
-   if(!confirm("Radera bilagan? Den försvinner för hela styrelsen."))return;
-   try{
-    const {error:se}=await db.storage.from(BUCKET).remove([f.storage_path]);
-    if(se)throw se;
+    if (button.dataset.action === 'edit') {
+      $('meetingId').value = meeting.id;
+      $('meetingTitle').value = meetingTitle(meeting);
+      $('meetingDate').value = meetingDate(meeting).slice(0, 16);
+      $('meetingLocation').value = meeting.location || '';
+      $('meetingNotes').value = meeting.notes || '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-    const {error}=await db.from("meeting_documents").delete().eq("id",f.id);
-    if(error)throw error;
+    if (button.dataset.action === 'delete' &&
+        confirm(`Ta bort mötet "${meetingTitle(meeting)}"?`)) {
+      const { error } = await db
+        .from('meetings')
+        .delete()
+        .eq('id', meeting.id);
 
-    await loadDetails();
-    msg("Bilagan är raderad.");
-   }catch(e){
-    msg("Kunde inte radera bilagan: "+err(e));
-   }
-  };
+      if (error) {
+        message('Kunde inte ta bort mötet: ' + error.message, 'error');
+        return;
+      }
 
-  actions.append(open,download,del);
-  box.append(name,meta,actions);
-  root.append(box);
- });
-}
+      if (String(selectedMeetingId) === String(meeting.id)) {
+        selectedMeetingId = null;
+        $('selectedMeetingPanel').classList.add('hidden');
+      }
 
-db.auth.getSession().then(({data,error})=>{
- if(error)loginMsg(err(error));
- else if(data.session?.user)signedIn(data.session.user);
- else signedOut();
-});
+      await loadMeetings();
+      message('Mötet har tagits bort.', 'ok');
+    }
+  });
+
+  async function loadAgenda() {
+    const { data, error } = await db
+      .from('agenda_items')
+      .select('*')
+      .eq('meeting_id', selectedMeetingId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      message('Kunde inte läsa dagordningen: ' + error.message, 'error');
+      return;
+    }
+
+    agendaItems = data || [];
+    renderAgenda();
+  }
+
+  function agendaItemNode(item) {
+    const node = document.createElement('div');
+    node.className = 'item';
+
+    node.innerHTML = `
+      <h3>${esc(item.title || 'Dagordningspunkt')}</h3>
+      <p>${esc(item.description || item.notes || '')}</p>
+      <div class="item-actions">
+        <button class="small danger"
+          data-delete-agenda="${esc(item.id)}">Ta bort punkt</button>
+      </div>`;
+
+    return node;
+  }
+
+  function renderAgenda() {
+    const root = $('agendaSections');
+    root.innerHTML = '';
+
+    sections.forEach(([number, title]) => {
+      const items = agendaItems.filter(item =>
+        String(item.section_number ?? item.section ?? item.paragraph ?? '') === number
+      );
+
+      const details = document.createElement('details');
+      details.className = 'agenda-section';
+      details.open = true;
+
+      const summary = document.createElement('summary');
+      summary.textContent = `§${number} ${title}`;
+      details.append(summary);
+
+      const body = document.createElement('div');
+      body.className = 'agenda-body';
+
+      if (number === '6') {
+        reportHeadings.forEach(heading => {
+          body.insertAdjacentHTML(
+            'beforeend',
+            `<div class="subhead">${esc(heading)}</div>`
+          );
+
+          items
+            .filter(item => (item.title || '').toLowerCase() === heading.toLowerCase())
+            .forEach(item => body.append(agendaItemNode(item)));
+        });
+      } else {
+        items.forEach(item => body.append(agendaItemNode(item)));
+
+        if (!items.length) {
+          const empty = document.createElement('p');
+          empty.className = 'muted';
+          empty.textContent = 'Ingen extra punkt tillagd.';
+          body.append(empty);
+        }
+      }
+
+      details.append(body);
+      root.append(details);
+    });
+  }
+
+  $('agendaSections').addEventListener('click', async event => {
+    const button = event.target.closest('[data-delete-agenda]');
+    if (!button || !confirm('Ta bort dagordningspunkten?')) return;
+
+    const { error } = await db
+      .from('agenda_items')
+      .delete()
+      .eq('id', button.dataset.deleteAgenda);
+
+    if (error) {
+      message('Kunde inte ta bort punkten: ' + error.message, 'error');
+    } else {
+      await loadAgenda();
+    }
+  });
+
+  $('agendaForm').addEventListener('submit', async event => {
+    event.preventDefault();
+
+    if (!selectedMeetingId) {
+      message('Välj först ett möte.', 'error');
+      return;
+    }
+
+    const payload = {
+      meeting_id: selectedMeetingId,
+      section_number: $('agendaSection').value,
+      title: $('agendaTitle').value.trim(),
+      description: $('agendaDescription').value.trim(),
+      created_by: currentUser.id
+    };
+
+    const { error } = await db.from('agenda_items').insert(payload);
+
+    if (error) {
+      message('Kunde inte spara punkten: ' + error.message, 'error');
+      return;
+    }
+
+    event.target.reset();
+    await loadAgenda();
+    message('Dagordningspunkten har lagts till.', 'ok');
+  });
+
+  $('printAgenda').addEventListener('click', () => window.print());
+
+  function minutesTemplate() {
+    const result = {};
+
+    sections.forEach(([number]) => {
+      result[number] = number === '6'
+        ? Object.fromEntries(reportHeadings.map(heading => [heading, '']))
+        : '';
+    });
+
+    return result;
+  }
+
+  async function loadMinutes(meetingId) {
+    $('minutesEditor').classList.toggle('hidden', !meetingId);
+    if (!meetingId) return;
+
+    currentMinutes = minutesTemplate();
+
+    const { data, error } = await db
+      .from('meeting_minutes')
+      .select('*')
+      .eq('meeting_id', meetingId)
+      .maybeSingle();
+
+    if (error) {
+      message('Kunde inte läsa protokollet: ' + error.message, 'error');
+      return;
+    }
+
+    if (data && data.content) {
+      try {
+        const saved = typeof data.content === 'string'
+          ? JSON.parse(data.content)
+          : data.content;
+
+        currentMinutes = { ...currentMinutes, ...saved };
+      } catch {
+        currentMinutes.migratedText = data.content;
+      }
+    }
+
+    renderMinutesFields();
+  }
+
+  function renderMinutesFields() {
+    const root = $('minutesFields');
+    root.innerHTML = '';
+
+    sections.forEach(([number, title]) => {
+      const details = document.createElement('details');
+      details.className = 'agenda-section';
+      details.open = true;
+
+      const summary = document.createElement('summary');
+      summary.textContent = `§${number} ${title}`;
+      details.append(summary);
+
+      const body = document.createElement('div');
+      body.className = 'agenda-body';
+
+      if (number === '6') {
+        reportHeadings.forEach(heading => {
+          const label = document.createElement('label');
+          label.textContent = heading;
+          body.append(label);
+
+          const textarea = document.createElement('textarea');
+          textarea.dataset.minuteSection = number;
+          textarea.dataset.minuteSub = heading;
+          textarea.placeholder = `Anteckningar: ${heading}`;
+          textarea.value = currentMinutes[number]?.[heading] || '';
+          body.append(textarea);
+        });
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.dataset.minuteSection = number;
+        textarea.placeholder = `Protokolltext för §${number}`;
+        textarea.value = currentMinutes[number] || '';
+        body.append(textarea);
+      }
+
+      details.append(body);
+      root.append(details);
+    });
+
+    if (currentMinutes.migratedText) {
+      const note = document.createElement('p');
+      note.className = 'notice';
+      note.textContent =
+        'Äldre protokolltext visas nedan så att innehållet inte går förlorat.';
+      root.append(note);
+
+      const textarea = document.createElement('textarea');
+      textarea.id = 'migratedMinutes';
+      textarea.value = currentMinutes.migratedText;
+      root.append(textarea);
+    }
+  }
+
+  $('minutesMeetingSelect').addEventListener('change', () => {
+    loadMinutes($('minutesMeetingSelect').value);
+  });
+
+  $('saveMinutes').addEventListener('click', async () => {
+    const meetingId = $('minutesMeetingSelect').value;
+    if (!meetingId) return;
+
+    const content = minutesTemplate();
+
+    document.querySelectorAll('[data-minute-section]').forEach(textarea => {
+      const number = textarea.dataset.minuteSection;
+
+      if (textarea.dataset.minuteSub) {
+        content[number][textarea.dataset.minuteSub] = textarea.value;
+      } else {
+        content[number] = textarea.value;
+      }
+    });
+
+    const oldText = $('migratedMinutes');
+    if (oldText) content.migratedText = oldText.value;
+
+    const { error } = await db.from('meeting_minutes').upsert({
+      meeting_id: meetingId,
+      content,
+      updated_by: currentUser.id,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'meeting_id' });
+
+    if (error) {
+      message('Kunde inte spara protokollet: ' + error.message, 'error');
+    } else {
+      currentMinutes = content;
+      message('Protokollet har sparats.', 'ok');
+    }
+  });
+
+  function downloadBlob(content, filename, type) {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function safeFile(value) {
+    return String(value || 'fil')
+      .replace(/[^a-z0-9åäö_-]+/gi, '_')
+      .slice(0, 70);
+  }
+
+  $('downloadMinutes').addEventListener('click', () => {
+    const meeting = meetings.find(
+      item => String(item.id) === $('minutesMeetingSelect').value
+    );
+
+    let output =
+      `${meeting ? meetingTitle(meeting) : 'Protokoll'}\n` +
+      `${meeting ? dateText(meetingDate(meeting)) : ''}\n\n`;
+
+    sections.forEach(([number, title]) => {
+      output += `§${number} ${title}\n`;
+
+      if (number === '6') {
+        reportHeadings.forEach(heading => {
+          output += `${heading}:\n${currentMinutes[number]?.[heading] || ''}\n\n`;
+        });
+      } else {
+        output += `${currentMinutes[number] || ''}\n\n`;
+      }
+    });
+
+    downloadBlob(
+      output,
+      `${safeFile(meeting ? meetingTitle(meeting) : 'protokoll')}.txt`,
+      'text/plain;charset=utf-8'
+    );
+  });
+</script>
+  
+  // ===== MÖTESDOKUMENT =====
+
+  $('documentsMeetingSelect').addEventListener('change', loadDocuments);
+
+  async function loadDocuments() {
+    const meetingId = $('documentsMeetingSelect').value;
+    const root = $('documentsList');
+    root.innerHTML = '';
+
+    if (!meetingId) return;
+
+    const { data, error } = await db
+      .from('meeting_documents')
+      .select('*')
+      .eq('meeting_id', meetingId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      message('Kunde inte läsa dokument: ' + error.message, 'error');
+      return;
+    }
+
+    if (!data || !data.length) {
+      root.textContent = 'Inga dokument uppladdade för mötet.';
+      return;
+    }
+
+    data.forEach(doc => {
+      const row = document.createElement('div');
+      row.className = 'file-row';
+
+      const info = document.createElement('div');
+      info.innerHTML = `
+        <strong>${esc(doc.file_name || doc.name || 'Dokument')}</strong>
+        <div class="muted">
+          ${esc(doc.description || '')} · ${esc(dateText(doc.created_at))}
+        </div>`;
+
+      const actions = document.createElement('div');
+      actions.className = 'right';
+
+      const openButton = document.createElement('button');
+      openButton.className = 'small';
+      openButton.textContent = 'Öppna/ladda ner';
+      openButton.addEventListener('click', () => openDocument(doc));
+
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'small danger';
+      deleteButton.textContent = 'Ta bort';
+      deleteButton.addEventListener('click', () => deleteDocument(doc));
+
+      actions.append(openButton, deleteButton);
+      row.append(info, actions);
+      root.append(row);
+    });
+  }
+
+  function storagePath(doc) {
+    return doc.storage_path || doc.file_path || doc.path || '';
+  }
+
+  async function openDocument(doc) {
+    const path = storagePath(doc);
+
+    if (!path) {
+      message('Dokumentet saknar sökväg till lagringsfilen.', 'error');
+      return;
+    }
+
+    const { data, error } = await db.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(path, 300);
+
+    if (error) {
+      message('Kunde inte öppna filen: ' + error.message, 'error');
+      return;
+    }
+
+    window.open(data.signedUrl, '_blank', 'noopener');
+  }
+
+  async function deleteDocument(doc) {
+    if (!confirm('Ta bort dokumentet?')) return;
+
+    const path = storagePath(doc);
+
+    if (path) {
+      const { error } = await db.storage
+        .from(STORAGE_BUCKET)
+        .remove([path]);
+
+      if (error) {
+        message('Kunde inte ta bort lagringsfilen: ' + error.message, 'error');
+        return;
+      }
+    }
+
+    const { error } = await db
+      .from('meeting_documents')
+      .delete()
+      .eq('id', doc.id);
+
+    if (error) {
+      message('Kunde inte ta bort dokumentposten: ' + error.message, 'error');
+    } else {
+      await loadDocuments();
+      message('Dokumentet har tagits bort.', 'ok');
+    }
+  }
+
+  $('uploadForm').addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const meetingId = $('documentsMeetingSelect').value;
+    const file = $('documentFile').files[0];
+
+    if (!meetingId || !file) {
+      message('Välj möte och fil.', 'error');
+      return;
+    }
+
+    const path =
+      `${currentUser.id}/${meetingId}/${Date.now()}_${safeFile(file.name)}`;
+
+    const { error: uploadError } = await db.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, file, { upsert: false });
+
+    if (uploadError) {
+      message('Uppladdningen misslyckades: ' + uploadError.message, 'error');
+      return;
+    }
+
+    const { error } = await db.from('meeting_documents').insert({
+      meeting_id: meetingId,
+      file_name: file.name,
+      description: $('documentDescription').value.trim(),
+      storage_path: path,
+      uploaded_by: currentUser.id
+    });
+
+    if (error) {
+      message(
+        'Filen laddades upp men dokumentposten kunde inte sparas: ' +
+        error.message,
+        'error'
+      );
+      return;
+    }
+
+    event.target.reset();
+    await loadDocuments();
+    message('Dokumentet har laddats upp.', 'ok');
+  });
+
+
+  // ===== STYRELSEUPPGIFTER =====
+
+  function taskTitle(task) {
+    return task.title || task.task || task.name || 'Uppgift utan rubrik';
+  }
+
+  async function loadTasks() {
+    const { data, error } = await db
+      .from('board_tasks')
+      .select('*')
+      .order('due_date', { ascending: true, nullsFirst: false });
+
+    if (error) {
+      $('tasksList').innerHTML =
+        `<p class="status error">Kunde inte läsa uppgifter: ${esc(error.message)}</p>`;
+      tasks = [];
+      return;
+    }
+
+    tasks = data || [];
+    renderTasks();
+  }
+
+  function renderTasks() {
+    const root = $('tasksList');
+    root.innerHTML = '';
+
+    if (!tasks.length) {
+      root.textContent = 'Inga uppgifter registrerade.';
+      return;
+    }
+
+    tasks.forEach(task => {
+      const overdue =
+        task.due_date &&
+        task.due_date < today() &&
+        !['klar', 'completed', 'done'].includes(
+          String(task.status || '').toLowerCase()
+        );
+
+      const node = document.createElement('div');
+      node.className = 'item';
+
+      node.innerHTML = `
+        <h3>
+          ${esc(taskTitle(task))}
+          ${overdue ? '<span class="pill overdue">Försenad</span>' : ''}
+        </h3>
+        <p>${esc(task.description || '')}</p>
+        <p class="muted">
+          Ansvarig: ${esc(task.assigned_to || 'Ej tilldelad')}
+          · Slutdatum: ${esc(dateText(task.due_date))}
+          · Prioritet: ${esc(task.priority || 'Normal')}
+          · Status: ${esc(task.status || 'Öppen')}
+        </p>
+        <div class="item-actions">
+          <button class="small" data-edit-task="${esc(task.id)}">Redigera</button>
+          <button class="small danger" data-delete-task="${esc(task.id)}">Ta bort</button>
+        </div>`;
+
+      root.append(node);
+    });
+  }
+
+  function taskPayload() {
+    return {
+      title: $('taskTitle').value.trim(),
+      description: $('taskDescription').value.trim(),
+      status: $('taskStatus').value,
+      priority: $('taskPriority').value,
+      due_date: $('taskDue').value || null,
+      assigned_to: $('taskAssigned').value.trim() || null,
+      meeting_id: $('taskMeeting').value || null,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  function resetTaskForm() {
+    $('taskForm').reset();
+    $('taskId').value = '';
+  }
+
+  $('cancelTaskEdit').addEventListener('click', resetTaskForm);
+
+  $('taskForm').addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const id = $('taskId').value;
+    const payload = taskPayload();
+
+    if (!id) payload.created_by = currentUser.id;
+
+    const result = id
+      ? await db.from('board_tasks').update(payload).eq('id', id)
+      : await db.from('board_tasks').insert(payload);
+
+    if (result.error) {
+      message('Kunde inte spara uppgiften: ' + result.error.message, 'error');
+      return;
+    }
+
+    resetTaskForm();
+    await loadTasks();
+    renderDashboard();
+    message('Uppgiften har sparats.', 'ok');
+  });
+
+  $('tasksList').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-edit-task]');
+    const deleteButton = event.target.closest('[data-delete-task]');
+
+    if (editButton) {
+      const task = tasks.find(
+        item => String(item.id) === editButton.dataset.editTask
+      );
+
+      if (!task) return;
+
+      $('taskId').value = task.id;
+      $('taskTitle').value = taskTitle(task);
+      $('taskDescription').value = task.description || '';
+      $('taskStatus').value = task.status || 'Öppen';
+      $('taskPriority').value = task.priority || 'Normal';
+      $('taskDue').value = task.due_date || '';
+      $('taskAssigned').value = task.assigned_to || '';
+      $('taskMeeting').value = task.meeting_id || '';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    if (deleteButton && confirm('Ta bort uppgiften?')) {
+      const { error } = await db
+        .from('board_tasks')
+        .delete()
+        .eq('id', deleteButton.dataset.deleteTask);
+
+      if (error) {
+        message('Kunde inte ta bort uppgiften: ' + error.message, 'error');
+      } else {
+        await loadTasks();
+        renderDashboard();
+      }
+    }
+  });
+
+
+  // ===== AVTALSBEVAKNING =====
+
+  function contractTitle(contract) {
+    return contract.title ||
+      contract.contract_name ||
+      contract.name ||
+      'Avtal utan rubrik';
+  }
+
+  function contractCost(contract) {
+    return contract.annual_cost ??
+      contract.cost ??
+      contract.yearly_cost ??
+      null;
+  }
+
+  async function loadContracts() {
+    const { data, error } = await db
+      .from('board_contracts')
+      .select('*')
+      .order('end_date', { ascending: true, nullsFirst: false });
+
+    if (error) {
+      $('contractsList').innerHTML =
+        `<p class="status error">Kunde inte läsa avtal: ${esc(error.message)}</p>`;
+      contracts = [];
+      return;
+    }
+
+    contracts = data || [];
+    renderContracts();
+  }
+
+  function renderContracts() {
+    const root = $('contractsList');
+    root.innerHTML = '';
+
+    if (!contracts.length) {
+      root.textContent = 'Inga avtal registrerade.';
+      return;
+    }
+
+    contracts.forEach(contract => {
+      const date = contract.notice_date || contract.end_date;
+      const deadline = new Date();
+      deadline.setDate(deadline.getDate() + 60);
+
+      const active = !['avslutat', 'avslutad', 'terminated'].includes(
+        String(contract.status || '').toLowerCase()
+      );
+
+      const soon = active && date &&
+        date >= today() &&
+        date < deadline.toISOString().slice(0, 10);
+
+      const overdue = active && date && date < today();
+
+      const node = document.createElement('div');
+      node.className = 'item';
+
+      node.innerHTML = `
+        <h3>
+          ${esc(contractTitle(contract))}
+          ${soon ? '<span class="pill overdue">Datum närmar sig</span>' : ''}
+          ${overdue ? '<span class="pill overdue">Datum passerat</span>' : ''}
+        </h3>
+        <p>
+          Leverantör: ${esc(contract.supplier || '—')}
+          · Kostnad/år:
+          ${contractCost(contract) == null
+            ? '—'
+            : esc(Number(contractCost(contract)).toLocaleString('sv-SE') + ' kr')}
+        </p>
+        <p class="muted">
+          Start: ${esc(dateText(contract.start_date))}
+          · Slut: ${esc(dateText(contract.end_date))}
+          · Sista uppsägningsdag: ${esc(dateText(contract.notice_date))}
+          · Ansvarig: ${esc(contract.responsible || '—')}
+        </p>
+        <p>${esc(contract.notes || '')}</p>
+        <p>Status: ${esc(contract.status || 'Aktivt')}</p>
+        <div class="item-actions">
+          <button class="small" data-edit-contract="${esc(contract.id)}">Redigera</button>
+          <button class="small danger" data-delete-contract="${esc(contract.id)}">Ta bort</button>
+        </div>`;
+
+      root.append(node);
+    });
+  }
+
+  function contractPayload() {
+    return {
+      title: $('contractTitle').value.trim(),
+      supplier: $('contractSupplier').value.trim() || null,
+      annual_cost: $('contractCost').value === ''
+        ? null
+        : Number($('contractCost').value),
+      responsible: $('contractResponsible').value.trim() || null,
+      status: $('contractStatus').value,
+      start_date: $('contractStart').value || null,
+      end_date: $('contractEnd').value || null,
+      notice_date: $('contractNotice').value || null,
+      notes: $('contractNotes').value.trim() || null,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  function resetContractForm() {
+    $('contractForm').reset();
+    $('contractId').value = '';
+  }
+
+  $('cancelContractEdit').addEventListener('click', resetContractForm);
+
+  $('contractForm').addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const id = $('contractId').value;
+    const payload = contractPayload();
+
+    if (!id) payload.created_by = currentUser.id;
+
+    const result = id
+      ? await db.from('board_contracts').update(payload).eq('id', id)
+      : await db.from('board_contracts').insert(payload);
+
+    if (result.error) {
+      message('Kunde inte spara avtalet: ' + result.error.message, 'error');
+      return;
+    }
+
+    resetContractForm();
+    await loadContracts();
+    renderDashboard();
+    message('Avtalet har sparats.', 'ok');
+  });
+
+  $('contractsList').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-edit-contract]');
+    const deleteButton = event.target.closest('[data-delete-contract]');
+
+    if (editButton) {
+      const contract = contracts.find(
+        item => String(item.id) === editButton.dataset.editContract
+      );
+
+      if (!contract) return;
+
+      $('contractId').value = contract.id;
+      $('contractTitle').value = contractTitle(contract);
+      $('contractSupplier').value = contract.supplier || '';
+      $('contractCost').value = contractCost(contract) ?? '';
+      $('contractResponsible').value = contract.responsible || '';
+      $('contractStatus').value = contract.status || 'Aktivt';
+      $('contractStart').value = contract.start_date || '';
+      $('contractEnd').value = contract.end_date || '';
+      $('contractNotice').value = contract.notice_date || '';
+      $('contractNotes').value = contract.notes || '';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    if (deleteButton && confirm('Ta bort avtalet?')) {
+      const { error } = await db
+        .from('board_contracts')
+        .delete()
+        .eq('id', deleteButton.dataset.deleteContract);
+
+      if (error) {
+        message('Kunde inte ta bort avtalet: ' + error.message, 'error');
+      } else {
+        await loadContracts();
+        renderDashboard();
+      }
+    }
+  });
+
+
+  // ===== ÖVERSIKT =====
+
+  function renderDashboard() {
+    const openTasks = tasks.filter(task =>
+      !['klar', 'completed', 'done'].includes(
+        String(task.status || '').toLowerCase()
+      )
+    );
+
+    const overdueTasks = openTasks.filter(task =>
+      task.due_date && task.due_date < today()
+    );
+
+    const activeContracts = contracts.filter(contract =>
+      !['avslutat', 'avslutad', 'terminated'].includes(
+        String(contract.status || '').toLowerCase()
+      )
+    );
+
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + 60);
+    const deadlineString = deadline.toISOString().slice(0, 10);
+
+    const soonContracts = activeContracts.filter(contract => {
+      const date = contract.notice_date || contract.end_date;
+      return date && date >= today() && date < deadlineString;
+    });
+
+    $('metrics').innerHTML = '';
+
+    [
+      ['Öppna uppgifter', openTasks.length],
+      ['Försenade uppgifter', overdueTasks.length],
+      ['Aktiva avtal', activeContracts.length],
+      ['Avtalsdatum inom 60 dagar', soonContracts.length]
+    ].forEach(([label, number]) => {
+      const card = document.createElement('div');
+      card.className = 'metric';
+      card.innerHTML = `
+        <div class="num">${number}</div>
+        <div class="label">${label}</div>`;
+      $('metrics').append(card);
+    });
+
+    const upcoming = meetings
+      .filter(meeting =>
+        meetingDate(meeting) &&
+        meetingDate(meeting) >= new Date().toISOString()
+      )
+      .sort((a, b) =>
+        meetingDate(a).localeCompare(meetingDate(b))
+      )
+      .slice(0, 5);
+
+    $('upcomingMeetings').innerHTML = upcoming.length
+      ? upcoming.map(meeting => `
+          <div class="item">
+            <strong>${esc(meetingTitle(meeting))}</strong>
+            <p class="muted">${esc(dateText(meetingDate(meeting)))}</p>
+          </div>`).join('')
+      : '<p class="muted">Inga kommande möten registrerade.</p>';
+
+    $('dashboardTasks').innerHTML = openTasks
+      .sort((a, b) =>
+        (a.due_date || '9999').localeCompare(b.due_date || '9999')
+      )
+      .slice(0, 5)
+      .map(task => `
+        <div class="item">
+          <strong>${esc(taskTitle(task))}</strong>
+          <p class="muted">
+            ${esc(task.assigned_to || 'Ej tilldelad')}
+            · ${esc(dateText(task.due_date))}
+          </p>
+        </div>`).join('') ||
+      '<p class="muted">Inga öppna uppgifter.</p>';
+
+    $('dashboardContracts').innerHTML = soonContracts
+      .slice(0, 5)
+      .map(contract => `
+        <div class="item">
+          <strong>${esc(contractTitle(contract))}</strong>
+          <p class="muted">
+            Bevakningsdatum:
+            ${esc(dateText(contract.notice_date || contract.end_date))}
+          </p>
+        </div>`).join('') ||
+      '<p class="muted">Inga avtalsdatum inom 60 dagar.</p>';
+  }
+
+
+  // ===== NAVIGERING =====
+
+  document.querySelectorAll('.tab').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab === button);
+      });
+
+      document.querySelectorAll('.tabcontent').forEach(section => {
+        section.classList.toggle(
+          'hidden',
+          section.id !== 'tab-' + button.dataset.tab
+        );
+      });
+    });
+  });
+
+
+  // ===== INLOGGNING OCH UTLOGGNING =====
+
+  $('loginForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    loginMessage('Loggar in…');
+
+    const { data, error } = await db.auth.signInWithPassword({
+      email: $('email').value.trim(),
+      password: $('password').value
+    });
+
+    if (error) {
+      loginMessage('Inloggningen misslyckades: ' + error.message, 'error');
+      return;
+    }
+
+    loginMessage('Inloggad.', 'ok');
+    showApp(data.user);
+  });
+
+  $('forgotBtn').addEventListener('click', async () => {
+    const email = $('email').value.trim();
+
+    if (!email) {
+      loginMessage('Skriv in din e-postadress först.', 'error');
+      return;
+    }
+
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.href
+    });
+
+    loginMessage(
+      error
+        ? 'Kunde inte skicka återställningslänk: ' + error.message
+        : 'Om adressen finns registrerad har en återställningslänk skickats.'
+    );
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    await db.auth.signOut();
+    showLogin();
+  });
+
+  db.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      if (!currentUser) showApp(session.user);
+    } else {
+      showLogin();
+    }
+  });
+
+  db.auth.getSession().then(({ data }) => {
+    if (data.session?.user && !currentUser) {
+      showApp(data.session.user);
+    }
+  });
 
 })();
 </script>
 </body>
 </html>
+   </form>
+
+        <hr>
+        <div id="contractsList"></div>
+      </div>
+    </section>
+
+  </section>
+
+  <div class="footer">BRF Umeälven · Styrelseportal</div>
+
+</main>
+
+<!-- JavaScript läggs in i del 2 och del 3 före </body> -->
