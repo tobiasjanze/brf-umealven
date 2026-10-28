@@ -490,35 +490,48 @@ async function loadDetails(){
  }
 }
 
+
 function renderAgenda(){
  const root=$("agendaList");
  root.replaceChildren();
 
+ // Fasta punkter från § 1 till och med § 6 i)
  FIXED_AGENDA.forEach(item=>{
   const box=document.createElement("div");
   box.className="agenda-fixed";
+
   const title=document.createElement("strong");
   title.textContent=item.title;
   box.append(title);
+
   if(item.children){
    const ul=document.createElement("ul");
+
    item.children.forEach(text=>{
     const li=document.createElement("li");
     li.textContent=text;
     ul.append(li);
    });
+
    box.append(ul);
   }
+
   root.append(box);
  });
 
+ // Fasta rubriker § 7–11 med automatiska små bokstäver
  Object.entries(AGENDA_SECTIONS).forEach(([key,label])=>{
+  const section=Number(key);
+
   const heading=document.createElement("h3");
   heading.className="section-title";
   heading.textContent=label;
   root.append(heading);
 
-  const items=agenda.map(unpackItem).filter(x=>x.section===Number(key));
+  const items=agenda
+   .map(unpackItem)
+   .filter(item=>item.section===section);
+
   if(!items.length){
    const empty=document.createElement("p");
    empty.className="small muted";
@@ -526,42 +539,67 @@ function renderAgenda(){
    root.append(empty);
   }
 
-  items.forEach(item=>{
+  items.forEach((item,index)=>{
    const box=document.createElement("div");
    box.className="item";
+
    const title=document.createElement("strong");
-   title.textContent=item.title;
+   const letter=String.fromCharCode(97+index);
+   title.textContent=letter+") "+item.title;
+
    const notes=document.createElement("p");
    notes.textContent=item.notes;
    notes.style.whiteSpace="pre-wrap";
 
    const edit=document.createElement("button");
    edit.textContent="Ändra";
+
    edit.onclick=async()=>{
     const newTitle=prompt("Ändra ärendet:",item.title);
     if(newTitle===null)return;
+
     if(!newTitle.trim()){
      alert("Ärendet kan inte vara tomt.");
      return;
     }
-    const newNotes=prompt("Ändra anteckning (valfritt):",item.notes);
+
+    const newNotes=prompt(
+     "Ändra anteckning (valfritt):",
+     item.notes
+    );
+
     if(newNotes===null)return;
-    const {error}=await db.from("agenda_items").update({
-     title:packTitle(item.section,newTitle.trim()),
-     notes:newNotes.trim()
-    }).eq("id",item.id);
-    if(error)msg("Kunde inte ändra ärendet: "+err(error));
-    else await loadDetails();
+
+    const {error}=await db.from("agenda_items")
+     .update({
+      title:packTitle(item.section,newTitle.trim()),
+      notes:newNotes.trim()
+     })
+     .eq("id",item.id);
+
+    if(error){
+     msg("Kunde inte ändra ärendet: "+err(error));
+    }else{
+     await loadDetails();
+    }
    };
 
    const del=document.createElement("button");
    del.className="danger";
    del.textContent="Ta bort";
+
    del.onclick=async()=>{
     if(!confirm("Ta bort ärendet?"))return;
-    const {error}=await db.from("agenda_items").delete().eq("id",item.id);
-    if(error)msg("Kunde inte ta bort ärendet: "+err(error));
-    else await loadDetails();
+
+    const {error}=await db.from("agenda_items")
+     .delete()
+     .eq("id",item.id);
+
+    if(error){
+     msg("Kunde inte ta bort ärendet: "+err(error));
+    }else{
+     await loadDetails();
+    }
    };
 
    box.append(title,notes,edit,del);
@@ -569,6 +607,7 @@ function renderAgenda(){
   });
  });
 }
+
 
 $("uploadForm").onsubmit=async e=>{
  e.preventDefault();
