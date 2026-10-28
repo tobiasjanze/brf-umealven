@@ -448,6 +448,7 @@ async function loadDetails(){
 }
 
 
+
 function renderAgenda() {
   const root = $("agendaList");
   root.replaceChildren();
@@ -466,6 +467,18 @@ function renderAgenda() {
     ["11", "Avslutning"]
   ];
 
+  const reports = [
+    "Vaktmästeri",
+    "Sophantering",
+    "Snöröjning",
+    "Parkering",
+    "Avtal",
+    "Lån",
+    "Kostnadskonton",
+    "Andrahandsuthyrningar",
+    "Hemsidan – statistik"
+  ];
+
   const grouped = {};
 
   agenda.forEach(item => {
@@ -478,35 +491,25 @@ function renderAgenda() {
   });
 
   sections.forEach(([number, heading]) => {
-    const sectionBox = document.createElement("div");
-    sectionBox.className = "item";
-
-    const title = document.createElement("strong");
-    title.textContent = "§ " + number + " " + heading;
-    sectionBox.append(title);
-
     const items = grouped[number] || [];
 
-    if (number === "6") {
-      const reports = [
-        "Vaktmästeri",
-        "Sophantering",
-        "Snöröjning",
-        "Parkering",
-        "Avtal",
-        "Lån",
-        "Kostnadskonton",
-        "Andrahandsuthyrningar",
-        "Hemsidan - statistik"
-      ];
+    const sectionBox = document.createElement("div");
+    sectionBox.className = "agenda-section";
 
+    const title = document.createElement("h3");
+    title.textContent = "§ " + number + "  " + heading;
+    sectionBox.append(title);
+
+    if (number === "6") {
       const list = document.createElement("ol");
       list.type = "a";
+
       reports.forEach(report => {
         const li = document.createElement("li");
         li.textContent = report;
         list.append(li);
       });
+
       sectionBox.append(list);
     }
 
@@ -516,22 +519,25 @@ function renderAgenda() {
 
       items.forEach(item => {
         const li = document.createElement("li");
-        li.style.marginTop = "8px";
+        li.className = "agenda-entry";
 
-        const text = document.createElement("span");
+        const text = document.createElement("div");
+        text.className = "agenda-entry-title";
         text.textContent = item.displayTitle;
         li.append(text);
 
         if (item.notes) {
           const note = document.createElement("p");
+          note.className = "agenda-note";
           note.textContent = item.notes;
-          note.style.whiteSpace = "pre-wrap";
           li.append(note);
         }
 
         const remove = document.createElement("button");
-        remove.className = "danger";
+        remove.className = "danger remove-agenda";
+        remove.type = "button";
         remove.textContent = "Ta bort";
+
         remove.onclick = async () => {
           if (!confirm("Ta bort dagordningspunkten?")) return;
 
@@ -563,6 +569,7 @@ function renderAgenda() {
     root.append(sectionBox);
   });
 }
+
 
 
 $("file").onchange=()=>{
