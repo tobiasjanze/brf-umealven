@@ -1,232 +1,390 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#246b45">
-  <title>BRF Umeälven – Styrelseverktyg</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; min-height: 100vh; padding: 24px;
-      display: grid; place-items: center;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #eef3f0; color: #24332b;
-    }
-    main {
-      width: 100%; max-width: 420px; padding: 28px;
-      background: white; border-radius: 20px;
-      box-shadow: 0 8px 35px #183b2418;
-    }
-    .logo {
-      display: block; width: 100%; max-width: 300px;
-      height: auto; margin: 0 auto 24px;
-    }
-    h1 { text-align: center; font-size: 24px; margin: 0 0 8px; }
-    .intro { text-align: center; color: #647468; margin-bottom: 24px; }
-    label { display: block; font-weight: 600; margin: 16px 0 7px; }
-    input {
-      width: 100%; padding: 13px; border: 1px solid #cbd5ce;
-      border-radius: 9px; font: inherit;
-    }
-    button {
-      width: 100%; padding: 13px; margin-top: 14px;
-      border: 0; border-radius: 9px; font: inherit;
-      font-weight: 600; cursor: pointer;
-    }
-    .primary { background: #246b45; color: white; }
-    .secondary { background: #e8f0eb; color: #244b34; }
-    button:disabled { opacity: .6; cursor: wait; }
-    #message { margin-top: 16px; line-height: 1.5; overflow-wrap: anywhere; }
-    #app { display: none; }
-    .small { color: #68756c; font-size: 13px; line-height: 1.5; margin-top: 20px; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#246b45">
+<title>BRF Umeälven – Styrelseverktyg</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:14px;background:#eef3f0;color:#24332b;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1050px;margin:auto}
+.card{background:white;border-radius:15px;padding:20px;margin:0 0 15px;box-shadow:0 5px 24px #183b2410}
+.logo{display:block;width:min(100%,230px);height:auto;margin:0 auto 16px}
+h1{text-align:center;font-size:25px}h2{font-size:21px}
+label{display:block;font-weight:650;margin:12px 0 6px}
+input,textarea{width:100%;padding:12px;border:1px solid #cbd5ce;border-radius:9px;font:inherit;background:#fff;color:inherit}
+textarea{min-height:130px}
+button{padding:11px 14px;border:0;border-radius:9px;font:inherit;font-weight:650;cursor:pointer;background:#e8f0eb;color:#244b34;margin:5px 4px 0 0}
+.primary{background:#246b45;color:white}.danger{background:#f8e8e6;color:#8d2920}
+.hidden{display:none!important}.muted,.small{color:#647468}
+.small{font-size:13px;line-height:1.5}.status{white-space:pre-wrap;overflow-wrap:anywhere}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meeting{display:block;width:100%;text-align:left;margin:7px 0;border:1px solid #d8e2db;background:white}
+.meeting.active{border:2px solid #246b45;background:#f3f8f4}
+.item{border:1px solid #d8e2db;border-radius:9px;padding:12px;margin:9px 0;overflow-wrap:anywhere}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#loginCard{max-width:440px;margin:5vh auto}
+@media(max-width:700px){.grid,.fields{grid-template-columns:1fr}.card{padding:15px}}
+</style>
 </head>
 <body>
-  <main>
-    <img class="logo" src="brf-umealven-logotyp.png" alt="BRF Umeälvens logotyp">
-    <section id="login">
-      <h1>Styrelseverktyg</h1>
-      <p class="intro">Logga in för att fortsätta</p>
-      <form id="loginForm">
-        <label for="email">E-postadress</label>
-        <input id="email" type="email" autocomplete="username" required>
-        <label for="password">Lösenord</label>
-        <input id="password" type="password" autocomplete="current-password" minlength="8" required>
-        <button class="primary" type="submit">Logga in</button>
-        <button type="button" id="forgotPassword"
-        class="secondary">
-  Glömt lösenord?
-</button>
-      </form>
-      <button id="signup" class="secondary" type="button">Skapa testkonto</button>
-      <p id="message" role="status" aria-live="polite"></p>
-      <p class="small">
-        Konton skapas med Supabase. E-postbekräftelse kan krävas.
-        Skapa inte testkonton med uppgifter som används någon annanstans.
-      </p>
-    </section>
-    <section id="app">
-      <h1>Du är inloggad</h1>
-      <p id="welcome" class="intro"></p>
-      <p>Inloggningen fungerar. Styrelsefunktionerna och åtkomstreglerna behöver konfigureras innan föreningens information läggs in.</p>
-      <button id="logout" class="primary" type="button">Logga ut</button>
-    </section>
-  </main>
+<main>
+<section id="loginCard" class="card">
+<img class="logo" src="brf-umealven-logotyp.png" alt="BRF Umeälven">
+<h1>Styrelseverktyg</h1>
+<p class="muted" style="text-align:center">Logga in för att hantera styrelsemöten</p>
+<form id="loginForm">
+<label for="email">E-postadress</label>
+<input id="email" type="email" autocomplete="username" required>
+<label for="password">Lösenord</label>
+<input id="password" type="password" autocomplete="current-password" minlength="8" required>
+<button class="primary" style="width:100%" type="submit">Logga in</button>
+</form>
+<button id="forgot" style="width:100%">Glömt lösenord?</button>
+<button id="signup" style="width:100%">Skapa konto</button>
+<p id="loginMsg" class="status" role="status"></p>
+<p class="small">Använd endast konton avsedda för styrelseverktyget.</p>
+</section>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "https://nvfgoswznutifhxvqbfg.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ";
-    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<section id="app" class="hidden">
+<div class="card">
+<div class="top">
+<div>
+<img src="brf-umealven-logotyp.png" alt="BRF Umeälven" style="width:180px;max-width:55%">
+<h1 style="text-align:left">Styrelsemöten</h1>
+<span id="welcome" class="small"></span>
+</div>
+<div><button id="refresh">Uppdatera</button><button id="logout" class="primary">Logga ut</button></div>
+</div>
+<p id="appMsg" class="status"></p>
+</div>
 
-    const loginSection = document.getElementById("login");
-    const appSection = document.getElementById("app");
-    const message = document.getElementById("message");
-    const loginForm = document.getElementById("loginForm");
-    const signupButton = document.getElementById("signup");
+<div class="grid">
+<section class="card"><h2>Möten</h2><div id="meetingList" class="small">Laddar …</div></section>
+<section class="card">
+<h2>Skapa nytt möte</h2>
+<form id="newMeeting">
+<label for="newTitle">Mötets namn</label>
+<input id="newTitle" required maxlength="160" placeholder="Ex. Styrelsemöte 1">
+<div class="fields">
+<div><label for="newDate">Datum</label><input id="newDate" type="date" required></div>
+<div><label for="newTime">Tid</label><input id="newTime" type="time"></div>
+</div>
+<label for="newPlace">Plats</label><input id="newPlace" placeholder="Ex. föreningslokalen">
+<label for="newPeople">Deltagare / kallade</label>
+<textarea id="newPeople" style="min-height:75px"></textarea>
+<button class="primary" type="submit">Spara möte</button>
+</form>
+</section>
+</div>
 
-    function showMessage(text) {
-      message.textContent = text;
-    }
+<section id="workspace" class="hidden">
+<div class="card">
+<div class="top"><h2 id="meetingTitle"></h2><button id="deleteMeeting" class="danger">Radera möte</button></div>
+<div class="fields">
+<div><label for="editTitle">Mötets namn</label><input id="editTitle"></div>
+<div><label for="editDate">Datum</label><input id="editDate" type="date"></div>
+<div><label for="editTime">Tid</label><input id="editTime" type="time"></div>
+<div><label for="editPlace">Plats</label><input id="editPlace"></div>
+</div>
+<label for="editPeople">Deltagare / kallade</label>
+<textarea id="editPeople" style="min-height:75px"></textarea>
+<button id="saveMeeting" class="primary">Spara mötesuppgifter</button>
+</div>
 
-    function showSignedIn(user) {
-      loginSection.style.display = "none";
-      appSection.style.display = "block";
-      document.getElementById("welcome").textContent =
-        user.email || "Inloggad användare";
-    }
+<div class="grid">
+<section class="card">
+<h2>Dagordning</h2>
+<form id="agendaForm">
+<label for="agendaTitle">Dagordningspunkt</label>
+<input id="agendaTitle" required maxlength="250">
+<label for="agendaNotes">Anteckning / beskrivning</label>
+<textarea id="agendaNotes" style="min-height:75px"></textarea>
+<button class="primary" type="submit">Lägg till punkt</button>
+</form>
+<div id="agendaList"></div>
+</section>
+<section class="card">
+<h2>Underlag och bilagor</h2>
+<p class="small">Privata filer, max 25 MB per fil.</p>
+<form id="uploadForm">
+<label for="file">Välj fil</label><input id="file" type="file" required>
+<button class="primary" type="submit">Ladda upp fil</button>
+</form>
+<div id="filesList"></div>
+</section>
+</div>
 
-    function showSignedOut() {
-      appSection.style.display = "none";
-      loginSection.style.display = "block";
-    }
+<section class="card">
+<h2>Protokoll</h2>
+<label for="minutes">Protokolltext</label>
+<textarea id="minutes" style="min-height:260px" placeholder="§ 1 Mötets öppnande&#10;§ 2 Val av justerare&#10;§ 3 Dagordning&#10;§ 4 Beslut och åtgärder …"></textarea>
+<button id="saveMinutes" class="primary">Spara protokoll</button>
+<button id="downloadMinutes">Ladda ner som textfil</button>
+<p id="minutesStatus" class="small"></p>
+</section>
+</section>
+<p class="small">Begränsa konton till godkända styrelsemedlemmar innan känsliga föreningsuppgifter läggs in.</p>
+</section>
+</main>
 
-    loginForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const button = loginForm.querySelector("button");
-      button.disabled = true;
-      showMessage("Loggar in …");
-      try {
-        const { data, error } = await client.auth.signInWithPassword({
-          email: document.getElementById("email").value.trim(),
-          password: document.getElementById("password").value
-        });
-        if (error) throw error;
-        showSignedIn(data.user);
-        showMessage("");
-      } catch (error) {
-        showMessage("Inloggningen misslyckades. Kontrollera e-post, lösenord och att kontot är bekräftat.");
-      } finally {
-        button.disabled = false;
-      }
-    });
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(()=>{
+const URL="https://nvfgoswznutifhxvqbfg.supabase.co";
+const KEY="sb_publishable_I_Y6_Y6UkUM0D04tHWrE7w_4gqjh0QQ";
+const BUCKET="meeting-files";
+const db=window.supabase.createClient(URL,KEY);
+const $=id=>document.getElementById(id);
+let user=null,meetings=[],selected=null,agenda=[],files=[];
+const msg=t=>$("appMsg").textContent=t||"";
+const loginMsg=t=>$("loginMsg").textContent=t||"";
+const err=e=>e?.message||"Okänt fel";
+const date=s=>s?new Date(s+"T12:00:00").toLocaleDateString("sv-SE"):"";
+const safe=s=>(s||"fil").replace(/[^\p{L}\p{N}._ -]/gu,"_").slice(0,120);
 
-    signupButton.addEventListener("click", async () => {
-      signupButton.disabled = true;
-      showMessage("Skapar konto …");
-      try {
-        const { data, error } = await client.auth.signUp({
-          email: document.getElementById("email").value.trim(),
-          password: document.getElementById("password").value,
-          options: {
-            emailRedirectTo: window.location.origin + window.location.pathname
-          }
-        });
-        if (error) throw error;
-        if (data.session && data.user) {
-          showSignedIn(data.user);
-          showMessage("");
-        } else {
-          showMessage("Kontoförfrågan skickad. Kontrollera e-posten för att bekräfta kontot innan du loggar in.");
-        }
-      } catch (error) {
-        showMessage("Registreringen misslyckades: " + (error.message || "Okänt fel"));
-      } finally {
-        signupButton.disabled = false;
-      }
-    });
-
-    document.getElementById("logout").addEventListener("click", async () => {
-      const { error } = await client.auth.signOut();
-      if (error) {
-        showMessage("Utloggningen misslyckades. Försök igen.");
-        return;
-      }
-      showSignedOut();
-    });
-
-    client.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) showSignedIn(session.user);
-      else showSignedOut();
-    });
-
-    client.auth.getSession().then(({ data }) => {
-      if (data.session?.user) showSignedIn(data.session.user);
-      else showSignedOut();
-    });
-    document.getElementById("forgotPassword")
-  .addEventListener("click", async () => {
-    const email = document
-      .getElementById("email").value.trim();
-
-    if (!email) {
-      showMessage("Skriv din e-postadress först.");
-      document.getElementById("email").focus();
-      return;
-    }
-
-    const button = document.getElementById("forgotPassword");
-    button.disabled = true;
-
-    try {
-      const { error } = await client.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo:
-            window.location.origin + window.location.pathname
-        }
-      );
-
-      if (error) throw error;
-
-      showMessage(
-        "Om kontot finns skickas en återställningslänk till e-posten."
-      );
-    } catch (error) {
-      showMessage(
-        "Kunde inte skicka återställningslänken: " +
-        (error.message || "Okänt fel")
-      );
-    } finally {
-      button.disabled = false;
-    }
-  });
-
-client.auth.onAuthStateChange(async (event, session) => {
-  if (event !== "PASSWORD_RECOVERY" || !session) return;
-
-  const newPassword = prompt(
-    "Ange ditt nya lösenord (minst 8 tecken):"
-  );
-
-  if (!newPassword || newPassword.length < 8) {
-    showMessage("Lösenordet måste vara minst 8 tecken.");
-    return;
-  }
-
-  const { error } = await client.auth.updateUser({
-    password: newPassword
-  });
-
-  if (error) {
-    showMessage("Kunde inte ändra lösenordet: " + error.message);
-  } else {
-    showMessage("Lösenordet är ändrat. Du kan nu logga in.");
-    await client.auth.signOut();
-  }
+function signedIn(u){
+ user=u;
+ $("loginCard").classList.add("hidden");
+ $("app").classList.remove("hidden");
+ $("welcome").textContent=u.email||"";
+ loadMeetings();
+}
+function signedOut(){
+ user=null;selected=null;
+ $("app").classList.add("hidden");
+ $("loginCard").classList.remove("hidden");
+ $("workspace").classList.add("hidden");
+}
+$("loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ try{
+  const {data,error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+  if(error)throw error;
+  loginMsg("");signedIn(data.user);
+ }catch(e){loginMsg("Inloggningen misslyckades: "+err(e));}
 });
-  </script>
+$("signup").onclick=async()=>{
+ if(!$("email").value.trim()||$("password").value.length<8){
+  loginMsg("Fyll i e-post och lösenord på minst 8 tecken.");return;
+ }
+ try{
+  const {data,error}=await db.auth.signUp({
+   email:$("email").value.trim(),password:$("password").value,
+   options:{emailRedirectTo:"https://tobiasjanze.github.io/brf-umealven/"}
+  });
+  if(error)throw error;
+  loginMsg(data.session?"Kontot är skapat.":"Kontoförfrågan skickad. Bekräfta via e-post.");
+  if(data.session)signedIn(data.user);
+ }catch(e){loginMsg("Kunde inte skapa konto: "+err(e));}
+};
+$("forgot").onclick=async()=>{
+ if(!$("email").value.trim()){loginMsg("Skriv e-postadressen först.");return;}
+ try{
+  const {error}=await db.auth.resetPasswordForEmail($("email").value.trim(),{
+   redirectTo:"https://tobiasjanze.github.io/brf-umealven/"
+  });
+  if(error)throw error;
+  loginMsg("Om kontot finns skickas en återställningslänk.");
+ }catch(e){loginMsg("Kunde inte skicka länk: "+err(e));}
+};
+db.auth.onAuthStateChange(async(event,session)=>{
+ if(event==="PASSWORD_RECOVERY"&&session){
+  const p=prompt("Ange nytt lösenord (minst 8 tecken):");
+  if(!p||p.length<8){loginMsg("Lösenordet måste vara minst 8 tecken.");return;}
+  const {error}=await db.auth.updateUser({password:p});
+  if(error)loginMsg("Kunde inte ändra lösenordet: "+error.message);
+  else{alert("Lösenordet är ändrat.");await db.auth.signOut();}
+  return;
+ }
+ if(session?.user)signedIn(session.user);else signedOut();
+});
+$("logout").onclick=async()=>{
+ const {error}=await db.auth.signOut();
+ if(error)msg(err(error));else signedOut();
+};
+$("refresh").onclick=loadMeetings;
+
+async function loadMeetings(){
+ if(!user)return;
+ msg("Hämtar möten …");
+ try{
+  const {data,error}=await db.from("meetings").select("*").order("meeting_date",{ascending:false});
+  if(error)throw error;
+  meetings=data||[];renderMeetings();msg("");
+  if(selected){
+   const m=meetings.find(x=>x.id===selected.id);
+   if(m){selected=m;await loadDetails();}else clearWorkspace();
+  }
+ }catch(e){msg("Kunde inte hämta möten. Kontrollera databasen. Fel: "+err(e));}
+}
+function renderMeetings(){
+ const root=$("meetingList");root.replaceChildren();
+ if(!meetings.length){root.textContent="Inga möten ännu. Skapa ett möte i formuläret.";return;}
+ meetings.forEach(m=>{
+  const b=document.createElement("button");
+  b.className="meeting"+(selected?.id===m.id?" active":"");
+  b.innerHTML="<strong></strong><br><span class='small'></span>";
+  b.querySelector("strong").textContent=m.title;
+  b.querySelector("span").textContent=date(m.meeting_date)+(m.meeting_time?" · "+m.meeting_time:"");
+  b.onclick=()=>choose(m);root.append(b);
+ });
+}
+$("newMeeting").onsubmit=async e=>{
+ e.preventDefault();
+ try{
+  const {data,error}=await db.from("meetings").insert({
+   title:$("newTitle").value.trim(),meeting_date:$("newDate").value,
+   meeting_time:$("newTime").value||null,location:$("newPlace").value.trim(),
+   attendees:$("newPeople").value.trim(),created_by:user.id
+  }).select().single();
+  if(error)throw error;
+  $("newMeeting").reset();await loadMeetings();await choose(data);msg("Mötet är sparat.");
+ }catch(e){msg("Kunde inte spara mötet: "+err(e));}
+};
+async function choose(m){
+ selected=m;$("workspace").classList.remove("hidden");
+ $("meetingTitle").textContent=m.title;
+ $("editTitle").value=m.title||"";$("editDate").value=m.meeting_date||"";
+ $("editTime").value=m.meeting_time||"";$("editPlace").value=m.location||"";
+ $("editPeople").value=m.attendees||"";
+ renderMeetings();await loadDetails();
+ $("workspace").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function clearWorkspace(){selected=null;$("workspace").classList.add("hidden");renderMeetings();}
+$("saveMeeting").onclick=async()=>{
+ if(!selected)return;
+ try{
+  const {data,error}=await db.from("meetings").update({
+   title:$("editTitle").value.trim(),meeting_date:$("editDate").value,
+   meeting_time:$("editTime").value||null,location:$("editPlace").value.trim(),
+   attendees:$("editPeople").value.trim()
+  }).eq("id",selected.id).select().single();
+  if(error)throw error;
+  selected=data;await loadMeetings();$("meetingTitle").textContent=data.title;msg("Mötesuppgifterna är sparade.");
+ }catch(e){msg("Kunde inte spara mötet: "+err(e));}
+};
+$("deleteMeeting").onclick=async()=>{
+ if(!selected||!confirm("Radera mötet, dagordningen, bilagorna och protokollet?"))return;
+ try{
+  const {data,error:le}=await db.from("meeting_documents").select("storage_path").eq("meeting_id",selected.id);
+  if(le)throw le;
+  if(data?.length){
+   const {error}=await db.storage.from(BUCKET).remove(data.map(x=>x.storage_path));
+   if(error)throw error;
+  }
+  const {error}=await db.from("meetings").delete().eq("id",selected.id);
+  if(error)throw error;
+  clearWorkspace();await loadMeetings();msg("Mötet är raderat.");
+ }catch(e){msg("Kunde inte radera: "+err(e));}
+};
+$("agendaForm").onsubmit=async e=>{
+ e.preventDefault();if(!selected)return;
+ try{
+  const {error}=await db.from("agenda_items").insert({
+   meeting_id:selected.id,title:$("agendaTitle").value.trim(),
+   notes:$("agendaNotes").value.trim(),position:agenda.length+1,created_by:user.id
+  });
+  if(error)throw error;
+  $("agendaForm").reset();await loadDetails();msg("Dagordningspunkt sparad.");
+ }catch(e){msg("Kunde inte spara dagordningen: "+err(e));}
+};
+async function loadDetails(){
+ if(!selected)return;
+ try{
+  const [a,f,m]=await Promise.all([
+   db.from("agenda_items").select("*").eq("meeting_id",selected.id).order("position"),
+   db.from("meeting_documents").select("*").eq("meeting_id",selected.id).order("created_at",{ascending:false}),
+   db.from("meeting_minutes").select("*").eq("meeting_id",selected.id).maybeSingle()
+  ]);
+  for(const r of [a,f,m])if(r.error)throw r.error;
+  agenda=a.data||[];files=f.data||[];
+  $("minutes").value=m.data?.content||"";
+  $("minutesStatus").textContent=m.data?.updated_at?"Senast sparat: "+new Date(m.data.updated_at).toLocaleString("sv-SE"):"Inget protokoll sparat ännu.";
+  renderAgenda();renderFiles();
+ }catch(e){msg("Kunde inte läsa mötesinnehåll: "+err(e));}
+}
+function renderAgenda(){
+ const root=$("agendaList");root.replaceChildren();
+ if(!agenda.length){root.textContent="Dagordningen är tom.";return;}
+ agenda.forEach((x,i)=>{
+  const box=document.createElement("div");box.className="item";
+  const title=document.createElement("strong");title.textContent=(i+1)+". "+x.title;
+  const p=document.createElement("p");p.textContent=x.notes||"";p.style.whiteSpace="pre-wrap";
+  const b=document.createElement("button");b.className="danger";b.textContent="Ta bort";
+  b.onclick=async()=>{
+   if(!confirm("Ta bort punkten?"))return;
+   const {error}=await db.from("agenda_items").delete().eq("id",x.id);
+   if(error)msg(err(error));else await loadDetails();
+  };
+  box.append(title,p,b);root.append(box);
+ });
+}
+$("uploadForm").onsubmit=async e=>{
+ e.preventDefault();if(!selected)return;
+ const file=$("file").files[0];if(!file)return;
+ if(file.size>25*1024*1024){msg("Filen är större än 25 MB.");return;}
+ try{
+  const path=selected.id+"/"+Date.now()+"_"+safe(file.name);
+  const {error:up}=await db.storage.from(BUCKET).upload(path,file,{contentType:file.type||"application/octet-stream"});
+  if(up)throw up;
+  const {error}=await db.from("meeting_documents").insert({
+   meeting_id:selected.id,file_name:file.name,storage_path:path,uploaded_by:user.id
+  });
+  if(error){await db.storage.from(BUCKET).remove([path]);throw error;}
+  $("uploadForm").reset();await loadDetails();msg("Filen är uppladdad.");
+ }catch(e){msg("Kunde inte ladda upp: "+err(e));}
+};
+function renderFiles(){
+ const root=$("filesList");root.replaceChildren();
+ if(!files.length){root.textContent="Inga bilagor ännu.";return;}
+ files.forEach(f=>{
+  const box=document.createElement("div");box.className="item";
+  const name=document.createElement("strong");name.textContent=f.file_name;
+  const open=document.createElement("button");open.textContent="Öppna / hämta";
+  open.onclick=async()=>{
+   const {data,error}=await db.storage.from(BUCKET).createSignedUrl(f.storage_path,60);
+   if(error){msg(err(error));return;}
+   window.open(data.signedUrl,"_blank","noopener");
+  };
+  const del=document.createElement("button");del.className="danger";del.textContent="Radera";
+  del.onclick=async()=>{
+   if(!confirm("Radera bilagan?"))return;
+   const {error:se}=await db.storage.from(BUCKET).remove([f.storage_path]);
+   if(se){msg(err(se));return;}
+   const {error}=await db.from("meeting_documents").delete().eq("id",f.id);
+   if(error){msg(err(error));return;}
+   await loadDetails();
+  };
+  box.append(name,document.createElement("br"),open,del);root.append(box);
+ });
+}
+$("saveMinutes").onclick=async()=>{
+ if(!selected)return;
+ try{
+  const {error}=await db.from("meeting_minutes").upsert({
+   meeting_id:selected.id,content:$("minutes").value,
+   updated_by:user.id,updated_at:new Date().toISOString()
+  },{onConflict:"meeting_id"});
+  if(error)throw error;
+  $("minutesStatus").textContent="Protokollet sparat "+new Date().toLocaleString("sv-SE");
+ }catch(e){$("minutesStatus").textContent="Kunde inte spara: "+err(e);}
+};
+$("downloadMinutes").onclick=()=>{
+ if(!selected)return;
+ const blob=new Blob(["BRF Umeälven\n"+selected.title+"\nDatum: "+date(selected.meeting_date)+"\n\n"+$("minutes").value],{type:"text/plain;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download=safe(selected.title||"protokoll")+".txt";a.click();URL.revokeObjectURL(url);
+};
+db.auth.getSession().then(({data,error})=>{
+ if(error)loginMsg(err(error));
+ else if(data.session?.user)signedIn(data.session.user);
+ else signedOut();
+});
+})();
+</script>
 </body>
 </html>
