@@ -2486,7 +2486,7 @@ input[type="date"] {
     await originalLoadAll();
     await renderCalendarMeetings();
     await loadAnnualEvents();
-  // ===== LÄGG TILL MÖTE I KALENDER =====
+};  // ===== LÄGG TILL MÖTE I KALENDER =====
 
   function downloadMeetingCalendar(meeting) {
     const start = new Date(meetingDate(meeting));
@@ -2543,7 +2543,7 @@ input[type="date"] {
   URL.revokeObjectURL(url);
 
     message('Kalenderfilen har skapats.', 'ok');
-  }  };
+    };
 })();
 </script>
 </body>
