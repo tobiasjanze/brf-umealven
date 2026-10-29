@@ -1180,7 +1180,25 @@ input[type="date"] {
         <p>${esc(dateText(meetingDate(meeting)))}
           · ${esc(meeting.location || 'Ingen plats angiven')}</p>
         <p class="muted">${esc(meeting.notes || '')}</p>
-        <div class="item-actions">
+       
+        <div>
+          <p data-my-response>Ditt svar: Inte besvarat</p>
+          <div class="item-actions">
+            <button class="small"
+              data-meeting-id="${esc(meeting.id)}"
+              data-meeting-response="Kommer">Kommer</button>
+            <button class="small"
+              data-meeting-id="${esc(meeting.id)}"
+              data-meeting-response="Kommer inte">Kommer inte</button>
+            <button class="small"
+              data-meeting-id="${esc(meeting.id)}"
+              data-meeting-response="Inte bestämt">Inte bestämt</button>
+          </div>
+          <p class="muted" data-response-summary="${esc(meeting.id)}">
+            Hämtar svar …
+          </p>
+        </div>
+ <div class="item-actions">
           <button class="small primary" data-action="select"
             data-id="${esc(meeting.id)}">Öppna dagordning</button>
           <button class="small" data-action="edit"
@@ -1192,6 +1210,74 @@ input[type="date"] {
       root.append(node);
     });
   }
+
+  // ===== MÖTESANMÄLNINGAR =====
+
+  async function saveMeetingResponse(meetingId, response) {
+    const { error } = await db
+      .from('meeting_responses')
+      .upsert({
+        meeting_id: meetingId,
+        user_id: currentUser.id,
+        response: response,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'meeting_id,user_id'
+      });
+
+    if (error) {
+      message('Kunde inte spara svar: ' + error.message, 'error');
+      return;
+    }
+
+    message('Ditt svar har sparats.', 'ok');
+    await loadMeetingResponses(meetingId);
+  }
+
+  async function loadMeetingResponses(meetingId) {
+    const { data, error } = await db
+      .from('meeting_responses')
+      .select('user_id, response')
+      .eq('meeting_id', meetingId);
+
+    if (error) {
+      message('Kunde inte läsa svar: ' + error.message, 'error');
+      return;
+    }
+
+    const root = document.querySelector(
+      `[data-response-summary="${meetingId}"]`
+    );
+
+    if (!root) return;
+
+    const counts = {
+      'Kommer': 0,
+      'Kommer inte': 0,
+      'Inte bestämt': 0
+    };
+
+    (data || []).forEach(item => {
+      if (counts[item.response] !== undefined) {
+        counts[item.response]++;
+      }
+    });
+
+    root.textContent =
+      `Kommer: ${counts['Kommer']} · ` +
+      `Kommer inte: ${counts['Kommer inte']} · ` +
+      `Inte bestämt: ${counts['Inte bestämt']}`;
+  }
+
+  $('meetingsList').addEventListener('click', async event => {
+    const button = event.target.closest('[data-meeting-response]');
+    if (!button) return;
+
+    await saveMeetingResponse(
+      button.dataset.meetingId,
+      button.dataset.meetingResponse
+    );
+  });
 
   function resetMeetingForm() {
     $('meetingForm').reset();
