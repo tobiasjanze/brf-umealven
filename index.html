@@ -1282,7 +1282,21 @@ input[type="date"] {
       button.dataset.meetingResponse
     );
   });
+  $('meetingsList').addEventListener('click', event => {
+    const button = event.target.closest('[data-calendar-meeting]');
+    if (!button) return;
 
+    const meeting = meetings.find(
+      item => String(item.id) === button.dataset.calendarMeeting
+    );
+
+    if (!meeting) {
+      message('Kunde inte hitta mötet.', 'error');
+      return;
+    }
+
+    downloadMeetingCalendar(meeting);
+  });
   function resetMeetingForm() {
     $('meetingForm').reset();
     $('meetingId').value = '';
