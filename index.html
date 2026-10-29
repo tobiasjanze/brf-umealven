@@ -884,7 +884,13 @@ input[type="date"] {
 <script>
 (() => {
   'use strict';
-
+window.addEventListener('error', event => {
+  const box = document.getElementById('loginMsg');
+  if (!box) return;
+  box.textContent = 'JavaScript-fel: ' + (event.message || 'Okänt fel') +
+    (event.lineno ? ' (rad ' + event.lineno + ')' : '');
+  box.className = 'status error';
+});
   // ===== SUPABASE =====
 
   const SUPABASE_URL =
