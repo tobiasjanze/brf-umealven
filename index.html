@@ -880,7 +880,16 @@ input[type="date"] {
 
 </main>
 
-
+<script>
+window.onerror = function(message, source, lineno) {
+  var box = document.getElementById('loginMsg');
+  if (box) {
+    box.textContent = 'JavaScript-fel: ' + message +
+      ' (rad ' + lineno + ')';
+    box.className = 'status error';
+  }
+};
+</script>
 <script>
 (() => {
   'use strict';
