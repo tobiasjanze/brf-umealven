@@ -507,6 +507,7 @@
       <button class="tab" data-tab="documents">Mötesdokument</button>
       <button class="tab" data-tab="tasks">Uppgifter</button>
       <button class="tab" data-tab="contracts">Avtal</button>
+      <button class="tab" data-tab="calendar">Kalender och årshjul</button>
     </nav>
 
     <div id="appMsg" class="status hidden" role="status"></div>
@@ -808,7 +809,63 @@
         <div id="contractsList"></div>
       </div>
     </section>
+    <!-- KALENDER OCH ÅRSHJUL -->
 
+    <section id="tab-calendar" class="tabcontent hidden">
+      <div class="panel">
+        <h2>Kalender och årshjul</h2>
+        <p class="muted">
+          Styrelsens möten och återkommande aktiviteter.
+        </p>
+
+        <h3>Kommande möten</h3>
+        <div id="calendarMeetings"></div>
+
+        <hr>
+
+        <h3>Årshjul – aktiviteter</h3>
+
+        <form id="annualEventForm">
+          <label for="annualEventTitle">Aktivitet</label>
+          <input id="annualEventTitle" required
+            placeholder="Exempel: Vårstädning">
+
+          <div class="row">
+            <div>
+              <label for="annualEventDate">Datum</label>
+              <input id="annualEventDate" type="date" required>
+            </div>
+            <div>
+              <label for="annualEventMonth">Återkommande månad</label>
+              <select id="annualEventMonth">
+                <option value="">Ingen upprepning</option>
+                <option value="1">Januari</option>
+                <option value="2">Februari</option>
+                <option value="3">Mars</option>
+                <option value="4">April</option>
+                <option value="5">Maj</option>
+                <option value="6">Juni</option>
+                <option value="7">Juli</option>
+                <option value="8">Augusti</option>
+                <option value="9">September</option>
+                <option value="10">Oktober</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="annualEventNotes">Anteckningar</label>
+          <textarea id="annualEventNotes"></textarea>
+
+          <button class="primary" type="submit">
+            Lägg till aktivitet
+          </button>
+        </form>
+
+        <div id="annualEventsList"></div>
+      </div>
+    </section>
   </section>
 
   <div class="footer">BRF Umeälven · Styrelseportal</div>
@@ -2193,7 +2250,131 @@
       showApp(data.session.user);
     }
   });
+  // ===== KALENDER OCH ÅRSHJUL =====
 
+  async function renderCalendarMeetings() {
+    const root = $('calendarMeetings');
+    if (!root) return;
+
+    const upcoming = meetings
+      .filter(meeting => meetingDate(meeting))
+      .sort((a, b) =>
+        meetingDate(a).localeCompare(meetingDate(b))
+      );
+
+    root.innerHTML = '';
+
+    if (!upcoming.length) {
+      root.textContent = 'Inga möten registrerade.';
+      return;
+    }
+
+    upcoming.forEach(meeting => {
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.innerHTML = `
+        <strong>${esc(meetingTitle(meeting))}</strong>
+        <p>${esc(dateText(meetingDate(meeting)))}</p>
+        <p class="muted">${esc(meeting.location || 'Ingen plats angiven')}</p>
+      `;
+      root.append(item);
+    });
+  }
+
+  async function loadAnnualEvents() {
+    const root = $('annualEventsList');
+    if (!root) return;
+
+    const { data, error } = await db
+      .from('annual_events')
+      .select('*')
+      .order('event_date', { ascending: true });
+
+    if (error) {
+      root.textContent =
+        'Kunde inte läsa årshjulet. Databastabellen behöver skapas i Supabase.';
+      return;
+    }
+
+    root.innerHTML = '';
+
+    if (!data || !data.length) {
+      root.textContent = 'Inga aktiviteter registrerade.';
+      return;
+    }
+
+    data.forEach(item => {
+      const node = document.createElement('div');
+      node.className = 'item';
+
+      node.innerHTML = `
+        <strong>${esc(item.title)}</strong>
+        <p>${esc(dateText(item.event_date))}</p>
+        <p class="muted">${esc(item.notes || '')}</p>
+        <div class="item-actions">
+          <button class="small danger"
+            data-delete-annual-event="${esc(item.id)}">
+            Ta bort
+          </button>
+        </div>
+      `;
+
+      root.append(node);
+    });
+  }
+
+  $('annualEventForm').addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const payload = {
+      title: $('annualEventTitle').value.trim(),
+      event_date: $('annualEventDate').value,
+      recurring_month: $('annualEventMonth').value
+        ? Number($('annualEventMonth').value)
+        : null,
+      notes: $('annualEventNotes').value.trim() || null,
+      created_by: currentUser.id
+    };
+
+    const { error } = await db
+      .from('annual_events')
+      .insert(payload);
+
+    if (error) {
+      message('Kunde inte spara aktiviteten: ' + error.message, 'error');
+      return;
+    }
+
+    event.target.reset();
+    await loadAnnualEvents();
+    message('Aktiviteten har sparats.', 'ok');
+  });
+
+  $('annualEventsList').addEventListener('click', async event => {
+    const button = event.target.closest('[data-delete-annual-event]');
+    if (!button || !confirm('Ta bort aktiviteten?')) return;
+
+    const { error } = await db
+      .from('annual_events')
+      .delete()
+      .eq('id', button.dataset.deleteAnnualEvent);
+
+    if (error) {
+      message('Kunde inte ta bort aktiviteten: ' + error.message, 'error');
+      return;
+    }
+
+    await loadAnnualEvents();
+    message('Aktiviteten har tagits bort.', 'ok');
+  });
+
+  const originalLoadAll = loadAll;
+
+  loadAll = async function () {
+    await originalLoadAll();
+    await renderCalendarMeetings();
+    await loadAnnualEvents();
+  };
 })();
 </script>
 </body>
