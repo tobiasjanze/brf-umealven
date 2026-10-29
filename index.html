@@ -382,7 +382,14 @@
       .row:not(.task-details-row) > * {
   min-width: 100%;
 }
+      .task-details-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
 
+      .task-details-row > div {
+        width: 100%;
+        min-width: 0;
+      }
 
     @media print {
       header,
