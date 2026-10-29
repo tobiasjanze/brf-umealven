@@ -1205,7 +1205,11 @@ input[type="date"] {
             data-id="${esc(meeting.id)}">Redigera</button>
           <button class="small danger" data-action="delete"
             data-id="${esc(meeting.id)}">Ta bort</button>
-        </div>`;
+   <button class="small"
+  data-calendar-meeting="${esc(meeting.id)}">
+  Lägg till i min kalender
+</button>
+</div>`;
 
       root.append(node);
     });
@@ -2468,7 +2472,58 @@ input[type="date"] {
     await originalLoadAll();
     await renderCalendarMeetings();
     await loadAnnualEvents();
-  };
+  // ===== LÄGG TILL MÖTE I KALENDER =====
+
+  function downloadMeetingCalendar(meeting) {
+    const start = new Date(meetingDate(meeting));
+
+    if (Number.isNaN(start.getTime())) {
+      message('Mötet saknar ett giltigt datum.', 'error');
+      return;
+    }
+
+    // Standardlängd: 1 timme
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    function toICSDate(date) {
+      return date.toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d{3}/, '');
+    }
+
+    function escapeICS(value) {
+      return String(value || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/\n/g, '\\n')
+        .replace(/,/g, '\\,')
+        .replace(/;/g, '\\;');
+    }
+
+    const content = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//BRF Umeälven//Styrelseportal//SV',
+      'CALSCALE:GREGORIAN',
+      'BEGIN:VEVENT',
+      `UID:brf-umealven-${meeting.id}@styrelseportal`,
+      `DTSTAMP:${toICSDate(new Date())}`,
+      `DTSTART:${toICSDate(start)}`,
+      `DTEND:${toICSDate(end)}`,
+      `SUMMARY:${escapeICS(meetingTitle(meeting))}`,
+      `LOCATION:${escapeICS(meeting.location)}`,
+      `DESCRIPTION:${escapeICS(meeting.notes)}`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    downloadBlob(
+      content,
+      `${safeFile(meetingTitle(meeting))}.ics`,
+      'text/calendar;charset=utf-8'
+    );
+
+    message('Kalenderfilen har skapats.', 'ok');
+  }  };
 })();
 </script>
 </body>
