@@ -2322,23 +2322,52 @@ window.addEventListener('error', event => {
 
   // ===== INLOGGNING OCH UTLOGGNING =====
 
-  $('loginForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    loginMessage('Loggar in…');
+  
+$('loginForm').addEventListener('submit', async event => {
+  event.preventDefault();
 
+  const button = $('loginForm').querySelector(
+    'button[type="submit"]'
+  );
+
+  button.disabled = true;
+  button.textContent = 'Loggar in…';
+  loginMessage('Kontrollerar inloggningen…');
+
+  try {
     const { data, error } = await db.auth.signInWithPassword({
       email: $('email').value.trim(),
       password: $('password').value
     });
 
     if (error) {
-      loginMessage('Inloggningen misslyckades: ' + error.message, 'error');
+      loginMessage(
+        'Inloggningen misslyckades: ' + error.message,
+        'error'
+      );
       return;
     }
 
-    loginMessage('Inloggad.', 'ok');
+    if (!data.user) {
+      loginMessage('Ingen användare returnerades.', 'error');
+      return;
+    }
+
+    loginMessage('Inloggningen lyckades.', 'ok');
     showApp(data.user);
-  });
+
+  } catch (error) {
+    loginMessage(
+      'Tekniskt fel vid inloggning: ' +
+      (error.message || 'Kontrollera internetanslutningen.'),
+      'error'
+    );
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Logga in';
+  }
+});
+
 
   $('forgotBtn').addEventListener('click', async () => {
     const email = $('email').value.trim();
