@@ -2514,6 +2514,7 @@ input[type="date"] {
         .replace(/;/g, '\\;');
     }
 
+    
     const content = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -2529,18 +2530,20 @@ input[type="date"] {
       `DESCRIPTION:${escapeICS(meeting.notes)}`,
       'END:VEVENT',
       'END:VCALENDAR'
-        message('Kalenderfilen har skapats.', 'ok');
-  }
-})();
-</script>
-</body>
-</html>nk = document.createElement('a');
-  link.href = url;
-  link.download = `${safeFile(meetingTitle(meeting))}.ics`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+    ].join('\r\n');
+
+    const blob = new Blob([content], {
+      type: 'text/calendar;charset=utf-8'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `${safeFile(meetingTitle(meeting))}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 
         message('Kalenderfilen har skapats.', 'ok');
   }
