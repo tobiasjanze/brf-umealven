@@ -2365,12 +2365,14 @@ window.addEventListener('error', event => {
   });
 
   db.auth.onAuthStateChange((_event, session) => {
+  setTimeout(() => {
     if (session?.user) {
       if (!currentUser) showApp(session.user);
     } else {
       showLogin();
     }
-  });
+  }, 0);
+});
 
   db.auth.getSession().then(({ data }) => {
     if (data.session?.user && !currentUser) {
