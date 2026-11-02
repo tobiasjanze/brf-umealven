@@ -1064,20 +1064,20 @@
     renderAgenda();
   }
 
-  function agendaItemNode(item) {
-    const node = document.createElement('div');
-    node.className = 'item';
+  function agendaItemNode(item, letter) {
+  const node = document.createElement('div');
+  node.className = 'item';
 
-    node.innerHTML = `
-      <h3>${esc(item.title || 'Dagordningspunkt')}</h3>
-      <p>${esc(item.description || item.notes || '')}</p>
-      <div class="item-actions">
-        <button class="small danger"
-          data-delete-agenda="${esc(item.id)}">Ta bort punkt</button>
-      </div>`;
+  node.innerHTML = `
+    <h3>${letter}) ${esc(item.title || 'Dagordningspunkt')}</h3>
+    <p>${esc(item.description || item.notes || '')}</p>
+    <div class="item-actions">
+      <button class="small danger"
+        data-delete-agenda="${esc(item.id)}">Ta bort punkt</button>
+    </div>`;
 
-    return node;
-  }
+  return node;
+}
 
   function renderAgenda() {
     const root = $('agendaSections');
@@ -1116,10 +1116,13 @@
             .filter(item =>
               (item.title || '').toLowerCase() === heading.toLowerCase()
             )
-            .forEach(item => body.append(agendaItemNode(item)));
-        });
+            .forEach((item, index) =>
+  body.append(agendaItemNode(item, String.fromCharCode(97 + index)))
+);
       } else if (items.length) {
-        items.forEach(item => body.append(agendaItemNode(item)));
+        items.forEach((item, index) =>
+  body.append(agendaItemNode(item, String.fromCharCode(97 + index)))
+);
       } else {
         const empty = document.createElement('p');
         empty.className = 'muted';
