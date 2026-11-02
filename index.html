@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -128,13 +127,13 @@
       font: inherit;
     }
 
-input[type="date"] {
-  width: 170px !important;
-  max-width: 100%;
-  min-width: 0;
-  flex: 0 1 170px;
-  box-sizing: border-box;
-}
+    input[type="date"] {
+      width: 170px !important;
+      max-width: 100%;
+      min-width: 0;
+      flex: 0 1 170px;
+      box-sizing: border-box;
+    }
 
     textarea {
       min-height: 90px;
@@ -198,43 +197,10 @@ input[type="date"] {
       gap: 12px;
       flex-wrap: wrap;
     }
-.task-details-row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    align-items: end;
-    width: 100%;
-    box-sizing: border-box;
-}
 
-.task-details-row > div {
-    min-width: 0;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.task-details-row input,
-.task-details-row select {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-}
-
-.task-details-row > * {
-    min-width: 0;
-    width: 100%;
-}
-    .task-date {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-}
     .row > * {
       flex: 1;
-      min-width: 0px;
+      min-width: 0;
     }
 
     .muted {
@@ -259,30 +225,6 @@ input[type="date"] {
       color: var(--green);
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 12px;
-    }
-
-    .metric {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 15px;
-      background: var(--white);
-    }
-
-    .metric .num {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--navy);
-    }
-
-    .metric .label {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-
     .item {
       padding: 13px 0;
       border-bottom: 1px solid var(--border);
@@ -297,24 +239,6 @@ input[type="date"] {
       gap: 7px;
       flex-wrap: wrap;
       margin-top: 8px;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 99px;
-      background: #e9eef2;
-      font-size: 0.8rem;
-    }
-
-    .pill.overdue {
-      background: #fbe7e7;
-      color: var(--red);
-    }
-
-    .pill.done {
-      background: #e1f3e8;
-      color: var(--green);
     }
 
     .agenda-section {
@@ -365,53 +289,32 @@ input[type="date"] {
     }
 
     @media (max-width: 600px) {
-    header {
+      header {
         padding: 15px;
-    }
+      }
 
-    .wrap {
+      .wrap {
         padding: 12px;
-    }
+      }
 
-    .panel {
+      .panel {
         padding: 14px;
-    }
+      }
 
-    .brand {
+      .brand {
         gap: 12px;
         flex-wrap: wrap;
-    }
+      }
 
-    .brand-logo {
+      .brand-logo {
         width: 170px;
         max-width: 70vw;
-    }
+      }
 
-    .row:not(.task-details-row) > * {
+      .row > * {
         min-width: 100%;
+      }
     }
-
-    .task-details-row {
-        grid-template-columns: minmax(0, 1fr);
-        width: 100%;
-        min-width: 0;
-    }
-
-    .task-details-row > div {
-        width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-    }
-
-    .task-details-row input,
-    .task-details-row select {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-    }
-}
 
     @media print {
       header,
@@ -457,7 +360,7 @@ input[type="date"] {
 
     <div class="brand-text">
       <h1>Styrelseportal</h1>
-      <p>Möten, protokoll och uppföljning</p>
+      <p>Möten, dagordning, protokoll och mötesdokument</p>
     </div>
   </div>
 
@@ -509,49 +412,16 @@ input[type="date"] {
   <section id="appPanel" class="hidden">
 
     <nav id="appNav" class="tabs">
-      <button class="tab active" data-tab="dashboard">Översikt</button>
-      <button class="tab" data-tab="meetings">Möten och dagordning</button>
+      <button class="tab active" data-tab="meetings">Möten och dagordning</button>
       <button class="tab" data-tab="minutes">Protokoll</button>
       <button class="tab" data-tab="documents">Mötesdokument</button>
-      <button class="tab" data-tab="tasks">Uppgifter</button>
-      <button class="tab" data-tab="contracts">Avtal</button>
-      <button class="tab" data-tab="calendar">Kalender och årshjul</button>
     </nav>
 
     <div id="appMsg" class="status hidden" role="status"></div>
 
-    <!-- ÖVERSIKT -->
-
-    <section id="tab-dashboard" class="tabcontent">
-      <div class="panel">
-        <h2>Styrelsens översikt</h2>
-        <p class="muted">
-          Samlad bild av uppgifter, avtal och kommande möten.
-        </p>
-        <div id="metrics" class="grid"></div>
-      </div>
-
-      <div class="grid">
-        <div class="panel">
-          <h2>Närmaste möten</h2>
-          <div id="upcomingMeetings"></div>
-        </div>
-
-        <div class="panel">
-          <h2>Uppgifter att följa upp</h2>
-          <div id="dashboardTasks"></div>
-        </div>
-
-        <div class="panel">
-          <h2>Avtal som behöver bevakas</h2>
-          <div id="dashboardContracts"></div>
-        </div>
-      </div>
-    </section>
-
     <!-- MÖTEN OCH DAGORDNING -->
 
-    <section id="tab-meetings" class="tabcontent hidden">
+    <section id="tab-meetings" class="tabcontent">
       <div class="panel">
         <h2>Möten</h2>
 
@@ -679,227 +549,15 @@ input[type="date"] {
         <div id="documentsList"></div>
       </div>
     </section>
-
-    <!-- STYRELSEUPPGIFTER -->
-
-    <section id="tab-tasks" class="tabcontent hidden">
-      <div class="panel">
-        <h2>Styrelsens uppgifter</h2>
-
-        <form id="taskForm">
-          <input type="hidden" id="taskId">
-
-          <div class="row">
-            <div>
-              <label for="taskTitle">Uppgift</label>
-              <input id="taskTitle" required>
-            </div>
-
-            <div>
-              <label for="taskAssigned">Ansvarig</label>
-              <input id="taskAssigned">
-            </div>
-          </div>
-
-          <div class="row task-details-row">
-            <div>
-              <label for="taskDue">Sista datum</label>
-              <input id="taskDue" type="date" class="task-date">
-            </div>
-
-            <div>
-              <label for="taskPriority">Prioritet</label>
-              <select id="taskPriority">
-                <option>Normal</option>
-                <option>Hög</option>
-                <option>Låg</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="taskStatus">Status</label>
-              <select id="taskStatus">
-                <option>Öppen</option>
-                <option>Pågår</option>
-                <option>Klar</option>
-              </select>
-            </div>
-          </div>
-
-          <label for="taskDescription">Beskrivning</label>
-          <textarea id="taskDescription"></textarea>
-
-          <label for="taskMeeting">Koppla till möte (valfritt)</label>
-          <select id="taskMeeting">
-            <option value="">Inget möte valt</option>
-          </select>
-
-          <div class="toolbar">
-            <button class="primary" type="submit">Spara uppgift</button>
-            <button id="cancelTaskEdit" type="button">Rensa</button>
-          </div>
-        </form>
-
-        <hr>
-        <div id="tasksList"></div>
-      </div>
-    </section>
-
-    <!-- AVTALSBEVAKNING -->
-
-    <section id="tab-contracts" class="tabcontent hidden">
-      <div class="panel">
-        <h2>Avtalsbevakning</h2>
-
-        <form id="contractForm">
-          <input type="hidden" id="contractId">
-
-          <div class="row">
-            <div>
-              <label for="contractTitle">Avtal</label>
-              <input id="contractTitle" required>
-            </div>
-
-            <div>
-              <label for="contractSupplier">Leverantör</label>
-              <input id="contractSupplier">
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label for="contractCost">Kostnad (kr/år)</label>
-              <input id="contractCost" type="number" min="0" step="0.01">
-            </div>
-
-            <div>
-              <label for="contractResponsible">Ansvarig</label>
-              <input id="contractResponsible">
-            </div>
-
-            <div>
-              <label for="contractStatus">Status</label>
-              <select id="contractStatus">
-                <option>Aktivt</option>
-                <option>Under uppsägning</option>
-                <option>Avslutat</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label for="contractStart">Startdatum</label>
-              <input id="contractStart" type="date">
-            </div>
-
-            <div>
-              <label for="contractEnd">Slutdatum</label>
-              <input id="contractEnd" type="date">
-            </div>
-
-            <div>
-              <label for="contractNotice">Sista uppsägningsdag</label>
-              <input id="contractNotice" type="date">
-            </div>
-          </div>
-
-          <label for="contractNotes">Anteckningar</label>
-          <textarea id="contractNotes"></textarea>
-
-          <div class="toolbar">
-            <button class="primary" type="submit">Spara avtal</button>
-            <button id="cancelContractEdit" type="button">Rensa</button>
-          </div>
-        </form>
-
-        <hr>
-        <div id="contractsList"></div>
-      </div>
-    </section>
-    <!-- KALENDER OCH ÅRSHJUL -->
-
-    <section id="tab-calendar" class="tabcontent hidden">
-      <div class="panel">
-        <h2>Kalender och årshjul</h2>
-        <p class="muted">
-          Styrelsens möten och återkommande aktiviteter.
-        </p>
-
-        <h3>Kommande möten</h3>
-        <div id="calendarMeetings"></div>
-
-        <hr>
-
-        <h3>Årshjul – aktiviteter</h3>
-
-        <form id="annualEventForm">
-          <label for="annualEventTitle">Aktivitet</label>
-          <input id="annualEventTitle" required
-            placeholder="Exempel: Vårstädning">
-
-          <div class="row">
-            <div>
-              <label for="annualEventDate">Datum</label>
-              <input id="annualEventDate" type="date" required>
-            </div>
-            <div>
-              <label for="annualEventMonth">Återkommande månad</label>
-              <select id="annualEventMonth">
-                <option value="">Ingen upprepning</option>
-                <option value="1">Januari</option>
-                <option value="2">Februari</option>
-                <option value="3">Mars</option>
-                <option value="4">April</option>
-                <option value="5">Maj</option>
-                <option value="6">Juni</option>
-                <option value="7">Juli</option>
-                <option value="8">Augusti</option>
-                <option value="9">September</option>
-                <option value="10">Oktober</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
-              </select>
-            </div>
-          </div>
-
-          <label for="annualEventNotes">Anteckningar</label>
-          <textarea id="annualEventNotes"></textarea>
-
-          <button class="primary" type="submit">
-            Lägg till aktivitet
-          </button>
-        </form>
-
-        <div id="annualEventsList"></div>
-      </div>
-    </section>
   </section>
 
   <div class="footer">BRF Umeälven · Styrelseportal</div>
 
 </main>
-
-<script>
-window.onerror = function(message, source, lineno) {
-  var box = document.getElementById('loginMsg');
-  if (box) {
-    box.textContent = 'JavaScript-fel: ' + message +
-      ' (rad ' + lineno + ')';
-    box.className = 'status error';
-  }
-};
-</script>
 <script>
 (() => {
   'use strict';
-window.addEventListener('error', event => {
-  const box = document.getElementById('loginMsg');
-  if (!box) return;
-  box.textContent = 'JavaScript-fel: ' + (event.message || 'Okänt fel') +
-    (event.lineno ? ' (rad ' + event.lineno + ')' : '');
-  box.className = 'status error';
-});
+
   // ===== SUPABASE =====
 
   const SUPABASE_URL =
@@ -922,21 +580,19 @@ window.addEventListener('error', event => {
   let selectedMeetingId = null;
   let agendaItems = [];
   let currentMinutes = {};
-  let tasks = [];
-  let contracts = [];
   let loading = false;
 
   // ===== DAGORDNINGENS PARAGRAFER =====
 
   const sections = [
     ['1', 'Mötets öppnande'],
-    ['2', 'Val av mötesordförande'],
-    ['3', 'Val av sekreterare'],
-    ['4', 'Val av justerare'],
-    ['5', 'Godkännande av dagordning'],
-    ['6', 'Rapporter'],
-    ['7', 'Föregående protokoll'],
-    ['8', 'Ekonomi'],
+    ['2', 'Närvaroförteckning'],
+    ['3', 'Dagordning'],
+    ['4', 'Justerare'],
+    ['5', 'Föregående protokoll'],
+    ['6', 'Aktuella rapporter'],
+    ['7', 'Ekonomiska frågor'],
+    ['8', 'Medlemsärenden'],
     ['9', 'Övriga frågor'],
     ['10', 'Nästa möte'],
     ['11', 'Mötets avslutande']
@@ -982,18 +638,8 @@ window.addEventListener('error', event => {
     });
   }
 
-  function today() {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-  }
-
   function message(text, type = '') {
     const node = $('appMsg');
-
     node.textContent = text;
     node.className = 'status' + (type ? ' ' + type : '');
     node.classList.remove('hidden');
@@ -1001,15 +647,9 @@ window.addEventListener('error', event => {
 
   function loginMessage(text, type = '') {
     const node = $('loginMsg');
-
     node.textContent = text;
     node.className = 'status' + (type ? ' ' + type : '');
     node.classList.remove('hidden');
-  }
-
-  function clearLoginMessage() {
-    $('loginMsg').textContent = '';
-    $('loginMsg').className = 'status hidden';
   }
 
   function downloadBlob(content, filename, type) {
@@ -1047,6 +687,7 @@ window.addEventListener('error', event => {
   }
 
   // Visa JavaScript-fel i stället för att misslyckas tyst.
+
   window.addEventListener('error', event => {
     const text = event.message || 'Okänt JavaScript-fel';
 
@@ -1102,13 +743,6 @@ window.addEventListener('error', event => {
 
     try {
       await loadMeetings();
-
-      await Promise.all([
-        loadTasks(),
-        loadContracts()
-      ]);
-
-      renderDashboard();
     } finally {
       loading = false;
     }
@@ -1131,21 +765,14 @@ window.addEventListener('error', event => {
 
     renderMeetings();
     populateMeetingSelects();
-    renderDashboard();
   }
 
   function populateMeetingSelects() {
-    [
-      'minutesMeetingSelect',
-      'documentsMeetingSelect',
-      'taskMeeting'
-    ].forEach(id => {
+    ['minutesMeetingSelect', 'documentsMeetingSelect'].forEach(id => {
       const select = $(id);
       const oldValue = select.value;
 
-      select.innerHTML = id === 'taskMeeting'
-        ? '<option value="">Inget möte valt</option>'
-        : '<option value="">Välj möte</option>';
+      select.innerHTML = '<option value="">Välj möte</option>';
 
       meetings.forEach(meeting => {
         const option = document.createElement('option');
@@ -1195,7 +822,7 @@ window.addEventListener('error', event => {
         <p>${esc(dateText(meetingDate(meeting)))}
           · ${esc(meeting.location || 'Ingen plats angiven')}</p>
         <p class="muted">${esc(meeting.notes || '')}</p>
-       
+
         <div>
           <p data-my-response>Ditt svar: Inte besvarat</p>
           <div class="item-actions">
@@ -1213,20 +840,23 @@ window.addEventListener('error', event => {
             Hämtar svar …
           </p>
         </div>
- <div class="item-actions">
+
+        <div class="item-actions">
           <button class="small primary" data-action="select"
             data-id="${esc(meeting.id)}">Öppna dagordning</button>
           <button class="small" data-action="edit"
             data-id="${esc(meeting.id)}">Redigera</button>
           <button class="small danger" data-action="delete"
             data-id="${esc(meeting.id)}">Ta bort</button>
-   <button class="small"
-  data-calendar-meeting="${esc(meeting.id)}">
-  Lägg till i min kalender
-</button>
-</div>`;
+          <button class="small"
+            data-calendar-meeting="${esc(meeting.id)}">
+            Lägg till i min kalender
+          </button>
+        </div>`;
 
       root.append(node);
+
+      loadMeetingResponses(meeting.id);
     });
   }
 
@@ -1260,7 +890,6 @@ window.addEventListener('error', event => {
       .eq('meeting_id', meetingId);
 
     if (error) {
-      message('Kunde inte läsa svar: ' + error.message, 'error');
       return;
     }
 
@@ -1297,6 +926,7 @@ window.addEventListener('error', event => {
       button.dataset.meetingResponse
     );
   });
+
   $('meetingsList').addEventListener('click', event => {
     const button = event.target.closest('[data-calendar-meeting]');
     if (!button) return;
@@ -1312,6 +942,7 @@ window.addEventListener('error', event => {
 
     downloadMeetingCalendar(meeting);
   });
+
   function resetMeetingForm() {
     $('meetingForm').reset();
     $('meetingId').value = '';
@@ -1549,8 +1180,7 @@ window.addEventListener('error', event => {
   });
 
   $('printAgenda').addEventListener('click', () => window.print());
-
-  // ===== PROTOKOLL =====
+    // ===== PROTOKOLL =====
 
   function minutesTemplate() {
     const result = {};
@@ -1730,8 +1360,7 @@ window.addEventListener('error', event => {
       'text/plain;charset=utf-8'
     );
   });
-
- // ===== MÖTESDOKUMENT =====
+    // ===== MÖTESDOKUMENT =====
 
   $('documentsMeetingSelect').addEventListener('change', loadDocuments);
 
@@ -1886,422 +1515,6 @@ window.addEventListener('error', event => {
     message('Dokumentet har laddats upp.', 'ok');
   });
 
-
-  // ===== STYRELSEUPPGIFTER =====
-
-  function taskTitle(task) {
-    return task.title || task.task || task.name || 'Uppgift utan rubrik';
-  }
-
-  async function loadTasks() {
-    const { data, error } = await db
-      .from('board_tasks')
-      .select('*')
-      .order('due_date', { ascending: true, nullsFirst: false });
-
-    if (error) {
-      $('tasksList').innerHTML =
-        `<p class="status error">Kunde inte läsa uppgifter: ${esc(error.message)}</p>`;
-      tasks = [];
-      return;
-    }
-
-    tasks = data || [];
-    renderTasks();
-  }
-
-  function renderTasks() {
-    const root = $('tasksList');
-    root.innerHTML = '';
-
-    if (!tasks.length) {
-      root.textContent = 'Inga uppgifter registrerade.';
-      return;
-    }
-
-    tasks.forEach(task => {
-      const overdue =
-        task.due_date &&
-        task.due_date < today() &&
-        !['klar', 'completed', 'done'].includes(
-          String(task.status || '').toLowerCase()
-        );
-
-      const node = document.createElement('div');
-      node.className = 'item';
-
-      node.innerHTML = `
-        <h3>
-          ${esc(taskTitle(task))}
-          ${overdue ? '<span class="pill overdue">Försenad</span>' : ''}
-        </h3>
-        <p>${esc(task.description || '')}</p>
-        <p class="muted">
-          Ansvarig: ${esc(task.assigned_to || 'Ej tilldelad')}
-          · Slutdatum: ${esc(dateText(task.due_date))}
-          · Prioritet: ${esc(task.priority || 'Normal')}
-          · Status: ${esc(task.status || 'Öppen')}
-        </p>
-        <div class="item-actions">
-          <button class="small" data-edit-task="${esc(task.id)}">Redigera</button>
-          <button class="small danger" data-delete-task="${esc(task.id)}">Ta bort</button>
-        </div>`;
-
-      root.append(node);
-    });
-  }
-
-  function taskPayload() {
-    return {
-      title: $('taskTitle').value.trim(),
-      description: $('taskDescription').value.trim(),
-      status: $('taskStatus').value,
-      priority: $('taskPriority').value,
-      due_date: $('taskDue').value || null,
-      assigned_to: $('taskAssigned').value.trim() || null,
-      meeting_id: $('taskMeeting').value || null,
-      updated_at: new Date().toISOString()
-    };
-  }
-
-  function resetTaskForm() {
-    $('taskForm').reset();
-    $('taskId').value = '';
-  }
-
-  $('cancelTaskEdit').addEventListener('click', resetTaskForm);
-
-  $('taskForm').addEventListener('submit', async event => {
-    event.preventDefault();
-
-    const id = $('taskId').value;
-    const payload = taskPayload();
-
-    if (!id) payload.created_by = currentUser.id;
-
-    const result = id
-      ? await db.from('board_tasks').update(payload).eq('id', id)
-      : await db.from('board_tasks').insert(payload);
-
-    if (result.error) {
-      message('Kunde inte spara uppgiften: ' + result.error.message, 'error');
-      return;
-    }
-
-    resetTaskForm();
-    await loadTasks();
-    renderDashboard();
-    message('Uppgiften har sparats.', 'ok');
-  });
-
-  $('tasksList').addEventListener('click', async event => {
-    const editButton = event.target.closest('[data-edit-task]');
-    const deleteButton = event.target.closest('[data-delete-task]');
-
-    if (editButton) {
-      const task = tasks.find(
-        item => String(item.id) === editButton.dataset.editTask
-      );
-
-      if (!task) return;
-
-      $('taskId').value = task.id;
-      $('taskTitle').value = taskTitle(task);
-      $('taskDescription').value = task.description || '';
-      $('taskStatus').value = task.status || 'Öppen';
-      $('taskPriority').value = task.priority || 'Normal';
-      $('taskDue').value = task.due_date || '';
-      $('taskAssigned').value = task.assigned_to || '';
-      $('taskMeeting').value = task.meeting_id || '';
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    if (deleteButton && confirm('Ta bort uppgiften?')) {
-      const { error } = await db
-        .from('board_tasks')
-        .delete()
-        .eq('id', deleteButton.dataset.deleteTask);
-
-      if (error) {
-        message('Kunde inte ta bort uppgiften: ' + error.message, 'error');
-      } else {
-        await loadTasks();
-        renderDashboard();
-      }
-    }
-  });
-
-
-  // ===== AVTALSBEVAKNING =====
-
-  function contractTitle(contract) {
-    return contract.title ||
-      contract.contract_name ||
-      contract.name ||
-      'Avtal utan rubrik';
-  }
-
-  function contractCost(contract) {
-    return contract.annual_cost ??
-      contract.cost ??
-      contract.yearly_cost ??
-      null;
-  }
-
-  async function loadContracts() {
-    const { data, error } = await db
-      .from('board_contracts')
-      .select('*')
-      .order('end_date', { ascending: true, nullsFirst: false });
-
-    if (error) {
-      $('contractsList').innerHTML =
-        `<p class="status error">Kunde inte läsa avtal: ${esc(error.message)}</p>`;
-      contracts = [];
-      return;
-    }
-
-    contracts = data || [];
-    renderContracts();
-  }
-
-  function renderContracts() {
-    const root = $('contractsList');
-    root.innerHTML = '';
-
-    if (!contracts.length) {
-      root.textContent = 'Inga avtal registrerade.';
-      return;
-    }
-
-    contracts.forEach(contract => {
-      const date = contract.notice_date || contract.end_date;
-      const deadline = new Date();
-      deadline.setDate(deadline.getDate() + 60);
-
-      const active = !['avslutat', 'avslutad', 'terminated'].includes(
-        String(contract.status || '').toLowerCase()
-      );
-
-      const soon = active && date &&
-        date >= today() &&
-        date < deadline.toISOString().slice(0, 10);
-
-      const overdue = active && date && date < today();
-
-      const node = document.createElement('div');
-      node.className = 'item';
-
-      node.innerHTML = `
-        <h3>
-          ${esc(contractTitle(contract))}
-          ${soon ? '<span class="pill overdue">Datum närmar sig</span>' : ''}
-          ${overdue ? '<span class="pill overdue">Datum passerat</span>' : ''}
-        </h3>
-        <p>
-          Leverantör: ${esc(contract.supplier || '—')}
-          · Kostnad/år:
-          ${contractCost(contract) == null
-            ? '—'
-            : esc(Number(contractCost(contract)).toLocaleString('sv-SE') + ' kr')}
-        </p>
-        <p class="muted">
-          Start: ${esc(dateText(contract.start_date))}
-          · Slut: ${esc(dateText(contract.end_date))}
-          · Sista uppsägningsdag: ${esc(dateText(contract.notice_date))}
-          · Ansvarig: ${esc(contract.responsible || '—')}
-        </p>
-        <p>${esc(contract.notes || '')}</p>
-        <p>Status: ${esc(contract.status || 'Aktivt')}</p>
-        <div class="item-actions">
-          <button class="small" data-edit-contract="${esc(contract.id)}">Redigera</button>
-          <button class="small danger" data-delete-contract="${esc(contract.id)}">Ta bort</button>
-        </div>`;
-
-      root.append(node);
-    });
-  }
-
-  function contractPayload() {
-    return {
-      title: $('contractTitle').value.trim(),
-      supplier: $('contractSupplier').value.trim() || null,
-      annual_cost: $('contractCost').value === ''
-        ? null
-        : Number($('contractCost').value),
-      responsible: $('contractResponsible').value.trim() || null,
-      status: $('contractStatus').value,
-      start_date: $('contractStart').value || null,
-      end_date: $('contractEnd').value || null,
-      notice_date: $('contractNotice').value || null,
-      notes: $('contractNotes').value.trim() || null,
-      updated_at: new Date().toISOString()
-    };
-  }
-
-  function resetContractForm() {
-    $('contractForm').reset();
-    $('contractId').value = '';
-  }
-
-  $('cancelContractEdit').addEventListener('click', resetContractForm);
-
-  $('contractForm').addEventListener('submit', async event => {
-    event.preventDefault();
-
-    const id = $('contractId').value;
-    const payload = contractPayload();
-
-    if (!id) payload.created_by = currentUser.id;
-
-    const result = id
-      ? await db.from('board_contracts').update(payload).eq('id', id)
-      : await db.from('board_contracts').insert(payload);
-
-    if (result.error) {
-      message('Kunde inte spara avtalet: ' + result.error.message, 'error');
-      return;
-    }
-
-    resetContractForm();
-    await loadContracts();
-    renderDashboard();
-    message('Avtalet har sparats.', 'ok');
-  });
-
-  $('contractsList').addEventListener('click', async event => {
-    const editButton = event.target.closest('[data-edit-contract]');
-    const deleteButton = event.target.closest('[data-delete-contract]');
-
-    if (editButton) {
-      const contract = contracts.find(
-        item => String(item.id) === editButton.dataset.editContract
-      );
-
-      if (!contract) return;
-
-      $('contractId').value = contract.id;
-      $('contractTitle').value = contractTitle(contract);
-      $('contractSupplier').value = contract.supplier || '';
-      $('contractCost').value = contractCost(contract) ?? '';
-      $('contractResponsible').value = contract.responsible || '';
-      $('contractStatus').value = contract.status || 'Aktivt';
-      $('contractStart').value = contract.start_date || '';
-      $('contractEnd').value = contract.end_date || '';
-      $('contractNotice').value = contract.notice_date || '';
-      $('contractNotes').value = contract.notes || '';
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    if (deleteButton && confirm('Ta bort avtalet?')) {
-      const { error } = await db
-        .from('board_contracts')
-        .delete()
-        .eq('id', deleteButton.dataset.deleteContract);
-
-      if (error) {
-        message('Kunde inte ta bort avtalet: ' + error.message, 'error');
-      } else {
-        await loadContracts();
-        renderDashboard();
-      }
-    }
-  });
-
-
-  // ===== ÖVERSIKT =====
-
-  function renderDashboard() {
-    const openTasks = tasks.filter(task =>
-      !['klar', 'completed', 'done'].includes(
-        String(task.status || '').toLowerCase()
-      )
-    );
-
-    const overdueTasks = openTasks.filter(task =>
-      task.due_date && task.due_date < today()
-    );
-
-    const activeContracts = contracts.filter(contract =>
-      !['avslutat', 'avslutad', 'terminated'].includes(
-        String(contract.status || '').toLowerCase()
-      )
-    );
-
-    const deadline = new Date();
-    deadline.setDate(deadline.getDate() + 60);
-    const deadlineString = deadline.toISOString().slice(0, 10);
-
-    const soonContracts = activeContracts.filter(contract => {
-      const date = contract.notice_date || contract.end_date;
-      return date && date >= today() && date < deadlineString;
-    });
-
-    $('metrics').innerHTML = '';
-
-    [
-      ['Öppna uppgifter', openTasks.length],
-      ['Försenade uppgifter', overdueTasks.length],
-      ['Aktiva avtal', activeContracts.length],
-      ['Avtalsdatum inom 60 dagar', soonContracts.length]
-    ].forEach(([label, number]) => {
-      const card = document.createElement('div');
-      card.className = 'metric';
-      card.innerHTML = `
-        <div class="num">${number}</div>
-        <div class="label">${label}</div>`;
-      $('metrics').append(card);
-    });
-
-    const upcoming = meetings
-      .filter(meeting =>
-        meetingDate(meeting) &&
-        meetingDate(meeting) >= new Date().toISOString()
-      )
-      .sort((a, b) =>
-        meetingDate(a).localeCompare(meetingDate(b))
-      )
-      .slice(0, 5);
-
-    $('upcomingMeetings').innerHTML = upcoming.length
-      ? upcoming.map(meeting => `
-          <div class="item">
-            <strong>${esc(meetingTitle(meeting))}</strong>
-            <p class="muted">${esc(dateText(meetingDate(meeting)))}</p>
-          </div>`).join('')
-      : '<p class="muted">Inga kommande möten registrerade.</p>';
-
-    $('dashboardTasks').innerHTML = openTasks
-      .sort((a, b) =>
-        (a.due_date || '9999').localeCompare(b.due_date || '9999')
-      )
-      .slice(0, 5)
-      .map(task => `
-        <div class="item">
-          <strong>${esc(taskTitle(task))}</strong>
-          <p class="muted">
-            ${esc(task.assigned_to || 'Ej tilldelad')}
-            · ${esc(dateText(task.due_date))}
-          </p>
-        </div>`).join('') ||
-      '<p class="muted">Inga öppna uppgifter.</p>';
-
-    $('dashboardContracts').innerHTML = soonContracts
-      .slice(0, 5)
-      .map(contract => `
-        <div class="item">
-          <strong>${esc(contractTitle(contract))}</strong>
-          <p class="muted">
-            Bevakningsdatum:
-            ${esc(dateText(contract.notice_date || contract.end_date))}
-          </p>
-        </div>`).join('') ||
-      '<p class="muted">Inga avtalsdatum inom 60 dagar.</p>';
-  }
-
-
   // ===== NAVIGERING =====
 
   document.querySelectorAll('.tab').forEach(button => {
@@ -2319,55 +1532,52 @@ window.addEventListener('error', event => {
     });
   });
 
-
   // ===== INLOGGNING OCH UTLOGGNING =====
 
-  
-$('loginForm').addEventListener('submit', async event => {
-  event.preventDefault();
+  $('loginForm').addEventListener('submit', async event => {
+    event.preventDefault();
 
-  const button = $('loginForm').querySelector(
-    'button[type="submit"]'
-  );
+    const button = $('loginForm').querySelector(
+      'button[type="submit"]'
+    );
 
-  button.disabled = true;
-  button.textContent = 'Loggar in…';
-  loginMessage('Kontrollerar inloggningen…');
+    button.disabled = true;
+    button.textContent = 'Loggar in…';
+    loginMessage('Kontrollerar inloggningen…');
 
-  try {
-    const { data, error } = await db.auth.signInWithPassword({
-      email: $('email').value.trim(),
-      password: $('password').value
-    });
+    try {
+      const { data, error } = await db.auth.signInWithPassword({
+        email: $('email').value.trim(),
+        password: $('password').value
+      });
 
-    if (error) {
+      if (error) {
+        loginMessage(
+          'Inloggningen misslyckades: ' + error.message,
+          'error'
+        );
+        return;
+      }
+
+      if (!data.user) {
+        loginMessage('Ingen användare returnerades.', 'error');
+        return;
+      }
+
+      loginMessage('Inloggningen lyckades.', 'ok');
+      showApp(data.user);
+
+    } catch (error) {
       loginMessage(
-        'Inloggningen misslyckades: ' + error.message,
+        'Tekniskt fel vid inloggning: ' +
+        (error.message || 'Kontrollera internetanslutningen.'),
         'error'
       );
-      return;
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Logga in';
     }
-
-    if (!data.user) {
-      loginMessage('Ingen användare returnerades.', 'error');
-      return;
-    }
-
-    loginMessage('Inloggningen lyckades.', 'ok');
-    showApp(data.user);
-
-  } catch (error) {
-    loginMessage(
-      'Tekniskt fel vid inloggning: ' +
-      (error.message || 'Kontrollera internetanslutningen.'),
-      'error'
-    );
-  } finally {
-    button.disabled = false;
-    button.textContent = 'Logga in';
-  }
-});
-
+  });
 
   $('forgotBtn').addEventListener('click', async () => {
     const email = $('email').value.trim();
@@ -2394,145 +1604,21 @@ $('loginForm').addEventListener('submit', async event => {
   });
 
   db.auth.onAuthStateChange((_event, session) => {
-  setTimeout(() => {
-    if (session?.user) {
-      if (!currentUser) showApp(session.user);
-    } else {
-      showLogin();
-    }
-  }, 0);
-});
+    setTimeout(() => {
+      if (session?.user) {
+        if (!currentUser) showApp(session.user);
+      } else {
+        showLogin();
+      }
+    }, 0);
+  });
 
   db.auth.getSession().then(({ data }) => {
     if (data.session?.user && !currentUser) {
       showApp(data.session.user);
     }
   });
-  // ===== KALENDER OCH ÅRSHJUL =====
 
-  async function renderCalendarMeetings() {
-    const root = $('calendarMeetings');
-    if (!root) return;
-
-    const upcoming = meetings
-      .filter(meeting => meetingDate(meeting))
-      .sort((a, b) =>
-        meetingDate(a).localeCompare(meetingDate(b))
-      );
-
-    root.innerHTML = '';
-
-    if (!upcoming.length) {
-      root.textContent = 'Inga möten registrerade.';
-      return;
-    }
-
-    upcoming.forEach(meeting => {
-      const item = document.createElement('div');
-      item.className = 'item';
-      item.innerHTML = `
-        <strong>${esc(meetingTitle(meeting))}</strong>
-        <p>${esc(dateText(meetingDate(meeting)))}</p>
-        <p class="muted">${esc(meeting.location || 'Ingen plats angiven')}</p>
-      `;
-      root.append(item);
-    });
-  }
-
-  async function loadAnnualEvents() {
-    const root = $('annualEventsList');
-    if (!root) return;
-
-    const { data, error } = await db
-      .from('annual_events')
-      .select('*')
-      .order('event_date', { ascending: true });
-
-    if (error) {
-      root.textContent =
-        'Kunde inte läsa årshjulet. Databastabellen behöver skapas i Supabase.';
-      return;
-    }
-
-    root.innerHTML = '';
-
-    if (!data || !data.length) {
-      root.textContent = 'Inga aktiviteter registrerade.';
-      return;
-    }
-
-    data.forEach(item => {
-      const node = document.createElement('div');
-      node.className = 'item';
-
-      node.innerHTML = `
-        <strong>${esc(item.title)}</strong>
-        <p>${esc(dateText(item.event_date))}</p>
-        <p class="muted">${esc(item.notes || '')}</p>
-        <div class="item-actions">
-          <button class="small danger"
-            data-delete-annual-event="${esc(item.id)}">
-            Ta bort
-          </button>
-        </div>
-      `;
-
-      root.append(node);
-    });
-  }
-
-  $('annualEventForm').addEventListener('submit', async event => {
-    event.preventDefault();
-
-    const payload = {
-      title: $('annualEventTitle').value.trim(),
-      event_date: $('annualEventDate').value,
-      recurring_month: $('annualEventMonth').value
-        ? Number($('annualEventMonth').value)
-        : null,
-      notes: $('annualEventNotes').value.trim() || null,
-      created_by: currentUser.id
-    };
-
-    const { error } = await db
-      .from('annual_events')
-      .insert(payload);
-
-    if (error) {
-      message('Kunde inte spara aktiviteten: ' + error.message, 'error');
-      return;
-    }
-
-    event.target.reset();
-    await loadAnnualEvents();
-    message('Aktiviteten har sparats.', 'ok');
-  });
-
-  $('annualEventsList').addEventListener('click', async event => {
-    const button = event.target.closest('[data-delete-annual-event]');
-    if (!button || !confirm('Ta bort aktiviteten?')) return;
-
-    const { error } = await db
-      .from('annual_events')
-      .delete()
-      .eq('id', button.dataset.deleteAnnualEvent);
-
-    if (error) {
-      message('Kunde inte ta bort aktiviteten: ' + error.message, 'error');
-      return;
-    }
-
-    await loadAnnualEvents();
-    message('Aktiviteten har tagits bort.', 'ok');
-  });
-
-  const originalLoadAll = loadAll;
-
-  loadAll = async function () {
-    await originalLoadAll();
-    await renderCalendarMeetings();
-    await loadAnnualEvents();
-};  
   // ===== LÄGG TILL MÖTE I KALENDER =====
 
   function downloadMeetingCalendar(meeting) {
@@ -2560,7 +1646,6 @@ $('loginForm').addEventListener('submit', async event => {
         .replace(/;/g, '\\;');
     }
 
-    
     const content = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -2581,20 +1666,23 @@ $('loginForm').addEventListener('submit', async event => {
     const blob = new Blob([content], {
       type: 'text/calendar;charset=utf-8'
     });
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
 
     link.href = url;
     link.download = `${safeFile(meetingTitle(meeting))}.ics`;
+
     document.body.appendChild(link);
     link.click();
     link.remove();
+
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-        message('Kalenderfilen har skapats.', 'ok');
+    message('Kalenderfilen har skapats.', 'ok');
   }
+
 })();
 </script>
 </body>
 </html>
-
