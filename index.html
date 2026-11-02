@@ -824,7 +824,7 @@
         <p class="muted">${esc(meeting.notes || '')}</p>
 
         <div>
-          <p data-my-response>Ditt svar: Inte besvarat</p>
+          <p data-my-response="${esc(meeting.id)}">Ditt svar: Inte besvarat</p>
           <div class="item-actions">
             <button class="small"
               data-meeting-id="${esc(meeting.id)}"
@@ -884,38 +884,54 @@
   }
 
   async function loadMeetingResponses(meetingId) {
-    const { data, error } = await db
-      .from('meeting_responses')
-      .select('user_id, response')
-      .eq('meeting_id', meetingId);
+  const { data, error } = await db
+    .from('meeting_responses')
+    .select('user_id, response')
+    .eq('meeting_id', meetingId);
 
-    if (error) {
-      return;
+  const root = document.querySelector(
+    `[data-response-summary="${meetingId}"]`
+  );
+
+  if (error) {
+    if (root) {
+      root.textContent = 'Kunde inte hämta svar.';
     }
-
-    const root = document.querySelector(
-      `[data-response-summary="${meetingId}"]`
-    );
-
-    if (!root) return;
-
-    const counts = {
-      'Kommer': 0,
-      'Kommer inte': 0,
-      'Inte bestämt': 0
-    };
-
-    (data || []).forEach(item => {
-      if (counts[item.response] !== undefined) {
-        counts[item.response]++;
-      }
-    });
-
-    root.textContent =
-      `Kommer: ${counts['Kommer']} · ` +
-      `Kommer inte: ${counts['Kommer inte']} · ` +
-      `Inte bestämt: ${counts['Inte bestämt']}`;
+    return;
   }
+
+  const ownResponseNode = document.querySelector(
+    `[data-my-response="${meetingId}"]`
+  );
+
+  const ownResponse = (data || []).find(
+    item => item.user_id === currentUser.id
+  );
+
+  if (ownResponseNode) {
+    ownResponseNode.textContent =
+      `Ditt svar: ${ownResponse ? ownResponse.response : 'Inte besvarat'}`;
+  }
+
+  if (!root) return;
+
+  const counts = {
+    'Kommer': 0,
+    'Kommer inte': 0,
+    'Inte bestämt': 0
+  };
+
+  (data || []).forEach(item => {
+    if (counts[item.response] !== undefined) {
+      counts[item.response]++;
+    }
+  });
+
+  root.textContent =
+    `Kommer: ${counts['Kommer']} · ` +
+    `Kommer inte: ${counts['Kommer inte']} · ` +
+    `Inte bestämt: ${counts['Inte bestämt']}`;
+}
 
   $('meetingsList').addEventListener('click', async event => {
     const button = event.target.closest('[data-meeting-response]');
