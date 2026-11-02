@@ -1252,14 +1252,12 @@ async function loadMinutes(meetingId) {
     }
   }
 
-  // Hämta tillagda dagordningspunkter för valt möte
+    // Hämta tillagda dagordningspunkter för valt möte
   const { data: minuteAgendaData, error: agendaError } = await db
     .from('agenda_items')
-    .select('id, title, section_number, position')
+    .select('id, title, section_number')
     .eq('meeting_id', meetingId)
-    .gte('section_number', 7)
-    .lte('section_number', 11)
-    .order('position', { ascending: true });
+    .order('created_at', { ascending: true });
 
   if (agendaError) {
     message(
@@ -1268,9 +1266,11 @@ async function loadMinutes(meetingId) {
     );
     minuteAgendaItems = [];
   } else {
-    minuteAgendaItems = minuteAgendaData || [];
+    minuteAgendaItems = (minuteAgendaData || []).filter(item =>
+      Number(item.section_number) >= 7 &&
+      Number(item.section_number) <= 11
+    );
   }
-
   // Bevara äldre protokollanteckningar
   ['7', '8', '9', '10', '11'].forEach(number => {
     if (typeof currentMinutes[number] === 'string') {
