@@ -1436,9 +1436,29 @@ let minuteAgendaItems = [];
             `${heading}:\n` +
             `${currentMinutes[number]?.[heading] || ''}\n\n`;
         });
-      } else {
-        output += `${currentMinutes[number] || ''}\n\n`;
-      }
+      } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
+
+  const sectionData = currentMinutes[number] || {};
+
+  if (sectionData.__sectionText) {
+    output += `${sectionData.__sectionText}\n\n`;
+  }
+
+  const addedItems = minuteAgendaItems.filter(
+    item => String(item.section_number) === String(number)
+  );
+
+  addedItems.forEach((item, index) => {
+    const letter = String.fromCharCode(97 + index);
+    const key = `item_${item.id}`;
+
+    output += `${letter}) ${item.title || 'Dagordningspunkt'}\n`;
+    output += `${sectionData[key] || ''}\n\n`;
+  });
+
+} else {
+  output += `${currentMinutes[number] || ''}\n\n`;
+}
     });
 
     downloadBlob(
