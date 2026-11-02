@@ -1220,32 +1220,39 @@
   return result;
 }
 
-  async function loadMinutes(meetingId) {
-    $('minutesEditor').classList.toggle('hidden', !meetingId);
+  
+async function loadMinutes(meetingId) {
+  $('minutesEditor').classList.toggle('hidden', !meetingId);
 
-    if (!meetingId) return;
+  if (!meetingId) return;
 
-    currentMinutes = minutesTemplate();
+  currentMinutes = minutesTemplate();
 
-    const { data, error } = await db
-      .from('meeting_minutes')
-      .select('*')
-      .eq('meeting_id', meetingId)
-      .maybeSingle();
+  const { data, error } = await db
+    .from('meeting_minutes')
+    .select('*')
+    .eq('meeting_id', meetingId)
+    .maybeSingle();
 
-    if (error) {
-      message('Kunde inte läsa protokollet: ' + error.message, 'error');
-      return;
+  if (error) {
+    message('Kunde inte läsa protokollet: ' + error.message, 'error');
+    return;
+  }
+
+  if (data?.content) {
+    try {
+      const saved = typeof data.content === 'string'
+        ? JSON.parse(data.content)
+        : data.content;
+
+      currentMinutes = { ...currentMinutes, ...saved };
+
+    } catch {
+      currentMinutes.migratedText = String(data.content);
     }
+  }
 
-    if (data?.content) {
-      try {
-        const saved = typeof data.content === 'string'
-          ? JSON.parse(data.content)
-          : data.content;
-
-        currentMinutes = { ...currentMinutes, ...saved };
-          // Hämta tillagda dagordningspunkter för valt möte
+  // Hämta tillagda dagordningspunkter för valt möte
   const { data: minuteAgendaData, error: agendaError } = await db
     .from('agenda_items')
     .select('id, title, section_number, position')
@@ -1255,7 +1262,10 @@
     .order('position', { ascending: true });
 
   if (agendaError) {
-    message('Kunde inte läsa dagordningspunkter: ' + agendaError.message, 'error');
+    message(
+      'Kunde inte läsa dagordningspunkter: ' + agendaError.message,
+      'error'
+    );
     minuteAgendaItems = [];
   } else {
     minuteAgendaItems = minuteAgendaData || [];
@@ -1274,13 +1284,10 @@
       currentMinutes[number] = { __sectionText: '' };
     }
   });
-      } catch {
-        currentMinutes.migratedText = String(data.content);
-      }
-    }
 
-    renderMinutesFields();
-  }
+  renderMinutesFields();
+}
+
 let minuteAgendaItems = [];
   function renderMinutesFields() {
     const root = $('minutesFields');
