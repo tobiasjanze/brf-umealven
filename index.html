@@ -1203,18 +1203,22 @@
     // ===== PROTOKOLL =====
 
   function minutesTemplate() {
-    const result = {};
+  const result = {};
 
-    sections.forEach(([number]) => {
-      result[number] = number === '6'
-        ? Object.fromEntries(
-            reportHeadings.map(heading => [heading, ''])
-          )
-        : '';
-    });
+  sections.forEach(([number]) => {
+    if (number === '6') {
+      result[number] = Object.fromEntries(
+        reportHeadings.map(heading => [heading, ''])
+      );
+    } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
+      result[number] = { __sectionText: '' };
+    } else {
+      result[number] = '';
+    }
+  });
 
-    return result;
-  }
+  return result;
+}
 
   async function loadMinutes(meetingId) {
     $('minutesEditor').classList.toggle('hidden', !meetingId);
@@ -1241,6 +1245,35 @@
           : data.content;
 
         currentMinutes = { ...currentMinutes, ...saved };
+          // Hämta tillagda dagordningspunkter för valt möte
+  const { data: minuteAgendaData, error: agendaError } = await db
+    .from('agenda_items')
+    .select('id, title, section_number, position')
+    .eq('meeting_id', meetingId)
+    .gte('section_number', 7)
+    .lte('section_number', 11)
+    .order('position', { ascending: true });
+
+  if (agendaError) {
+    message('Kunde inte läsa dagordningspunkter: ' + agendaError.message, 'error');
+    minuteAgendaItems = [];
+  } else {
+    minuteAgendaItems = minuteAgendaData || [];
+  }
+
+  // Bevara äldre protokollanteckningar
+  ['7', '8', '9', '10', '11'].forEach(number => {
+    if (typeof currentMinutes[number] === 'string') {
+      currentMinutes[number] = {
+        __sectionText: currentMinutes[number]
+      };
+    } else if (
+      !currentMinutes[number] ||
+      typeof currentMinutes[number] !== 'object'
+    ) {
+      currentMinutes[number] = { __sectionText: '' };
+    }
+  });
       } catch {
         currentMinutes.migratedText = String(data.content);
       }
@@ -1248,7 +1281,7 @@
 
     renderMinutesFields();
   }
-
+let minuteAgendaItems = [];
   function renderMinutesFields() {
     const root = $('minutesFields');
     root.innerHTML = '';
@@ -1277,14 +1310,48 @@
 
           body.append(label, textarea);
         });
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.dataset.minuteSection = number;
-        textarea.placeholder = `Protokolltext för §${number}`;
-        textarea.value = currentMinutes[number] || '';
+     } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
 
-        body.append(textarea);
-      }
+  const sectionData = currentMinutes[number] || {
+    __sectionText: ''
+  };
+
+  const mainTextarea = document.createElement('textarea');
+  mainTextarea.dataset.minuteSection = number;
+  mainTextarea.dataset.minuteSub = '__sectionText';
+  mainTextarea.placeholder = `Protokolltext för §${number}`;
+  mainTextarea.value = sectionData.__sectionText || '';
+
+  body.append(mainTextarea);
+
+  const addedItems = minuteAgendaItems.filter(
+    item => String(item.section_number) === String(number)
+  );
+
+  addedItems.forEach((item, index) => {
+    const letter = String.fromCharCode(97 + index);
+    const key = `item_${item.id}`;
+
+    const label = document.createElement('label');
+    label.textContent = `${letter}) ${item.title || 'Dagordningspunkt'}`;
+
+    const textarea = document.createElement('textarea');
+    textarea.dataset.minuteSection = number;
+    textarea.dataset.minuteSub = key;
+    textarea.placeholder = `Protokollanteckningar: ${item.title || 'Dagordningspunkt'}`;
+    textarea.value = sectionData[key] || '';
+
+    body.append(label, textarea);
+  });
+
+} else {
+  const textarea = document.createElement('textarea');
+  textarea.dataset.minuteSection = number;
+  textarea.placeholder = `Protokolltext för §${number}`;
+  textarea.value = currentMinutes[number] || '';
+
+  body.append(textarea);
+}
 
       details.append(summary, body);
       root.append(details);
