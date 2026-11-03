@@ -1294,14 +1294,15 @@ async function renderHome() {
     }
 
     if (button.dataset.action === 'edit') {
-      $('meetingId').value = meeting.id;
-      $('meetingTitle').value = meetingTitle(meeting);
-      $('meetingDate').value = meetingDate(meeting).slice(0, 16);
-      $('meetingLocation').value = meeting.location || '';
-      $('meetingNotes').value = meeting.notes || '';
+  $('meetingId').value = meeting.id;
+  $('meetingTitle').value = meetingTitle(meeting);
+  $('meetingDate').value = meetingDate(meeting).slice(0, 10);
+  $('meetingTime').value = meeting.meeting_time || '';
+  $('meetingLocation').value = meeting.location || '';
+  $('meetingNotes').value = meeting.notes || '';
 
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
     if (
       button.dataset.action === 'delete' &&
