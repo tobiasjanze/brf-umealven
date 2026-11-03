@@ -765,21 +765,24 @@ header #userBar {
 
 /* HUS OCH VÅGOR SOM VATTENMÄRKE */
 
+
 .next-meeting::after {
   content: "";
   position: absolute;
-  z-index: -1;
+  z-index: 0;
   right: 12px;
-  bottom: 8px;
-  width: 260px;
-  height: 210px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 180'%3E%3Cg fill='none' stroke='%237eb5df' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M105 88 L155 38 L205 88 M125 70 V125 H185 V70 M150 125 V95 H170 V125'/%3E%3Cpath d='M20 130 Q65 105 110 125 T220 120 M10 150 Q60 128 110 145 T230 140 M30 168 Q85 145 130 160 T220 158'/%3E%3C/g%3E%3C/svg%3E");
+  top: 50%;
+  transform: translateY(-50%);
+  width: 310px;
+  height: 220px;
+  opacity: 0.17;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 230' fill='none'%3E%3Cpath d='M112 112 L180 48 L248 112' stroke='%23245b83' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M135 100 V145 Q180 164 225 145 V100' stroke='%23245b83' stroke-width='9' stroke-linejoin='round'/%3E%3Cpath d='M164 145 V113 Q180 96 196 113 V145' stroke='%23245b83' stroke-width='8' stroke-linejoin='round'/%3E%3Cpath d='M28 158 C85 124 121 137 166 153 S253 175 312 145' stroke='%23245b83' stroke-width='13' stroke-linecap='round'/%3E%3Cpath d='M22 183 C83 150 123 162 170 178 S257 198 318 170' stroke='%23245b83' stroke-width='11' stroke-linecap='round'/%3E%3Cpath d='M38 207 C93 181 130 190 174 202 S253 218 302 194' stroke='%23245b83' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  background-size: contain;
-  opacity: 0.32;
-  pointer-events: none;
 }
+
 
 .next-meeting h3 {
   position: relative;
