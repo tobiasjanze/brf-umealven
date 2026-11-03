@@ -1800,20 +1800,51 @@ let minuteAgendaItems = [];
 
   // ===== NAVIGERING =====
 
-  document.querySelectorAll('.tab').forEach(button => {
-    button.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.toggle('active', tab === button);
-      });
+function showHome() {
+  $('homeView').classList.remove('hidden');
+  $('appNav').classList.add('hidden');
 
-      document.querySelectorAll('.tabcontent').forEach(section => {
-        section.classList.toggle(
-          'hidden',
-          section.id !== 'tab-' + button.dataset.tab
-        );
-      });
-    });
+  document.querySelectorAll('.tabcontent').forEach(section => {
+    section.classList.add('hidden');
   });
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+}
+
+function showTab(tabName) {
+  $('homeView').classList.add('hidden');
+  $('appNav').classList.remove('hidden');
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.classList.toggle(
+      'active',
+      tab.dataset.tab === tabName
+    );
+  });
+
+  document.querySelectorAll('.tabcontent').forEach(section => {
+    section.classList.toggle(
+      'hidden',
+      section.id !== 'tab-' + tabName
+    );
+  });
+}
+
+document.querySelectorAll('.tab[data-tab]').forEach(button => {
+  button.addEventListener('click', () => {
+    showTab(button.dataset.tab);
+  });
+});
+
+document.querySelectorAll('[data-open-tab]').forEach(button => {
+  button.addEventListener('click', () => {
+    showTab(button.dataset.openTab);
+  });
+});
+
+$('homeBtn').addEventListener('click', showHome);
 
   // ===== INLOGGNING OCH UTLOGGNING =====
 
