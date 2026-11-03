@@ -1029,7 +1029,14 @@ async function renderHome() {
   Starttid: ${esc(meeting.meeting_time || 'Ej angiven')}
 </div>
 
-    <p>${esc(meeting.location || 'Ingen plats angiven')}</p>
+    <p style="
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 10px 0;
+">
+  ${esc(meeting.location || 'Ingen plats angiven')}
+</p>
 
     <p id="homeMeetingResponse"
        style="font-size: 1.2rem; font-weight: 700; color: #27734b;">
