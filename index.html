@@ -1009,11 +1009,18 @@ async function renderHome() {
   const meeting = upcoming[0];
 
   root.innerHTML = `
-    <h3>${esc(meetingTitle(meeting))}</h3>
-    <div class="next-meeting-date">
-  ${esc(dateText(meetingDate(meeting)))}
-</div>
-<div class="muted">
+  <h3>${esc(meetingTitle(meeting))}</h3>
+  <div class="next-meeting-date">
+    ${esc(dateText(meetingDate(meeting)))}
+  </div>
+  <div style="font-size: 1.6rem; font-weight: 700; color: #24486a; margin: 10px 0;">
+    Starttid: ${esc((meeting.meeting_time || '').replace(':', '.').replace(',', '.'))}
+  </div>
+  <p>${esc(meeting.location || 'Ingen plats angiven')}</p>
+  <p id="homeMeetingResponse" class="muted">
+    Hämtar ditt svar ...
+  </p>
+`;
   <strong>Starttid:</strong>
   ${esc(new Date(meetingDate(meeting)).toLocaleTimeString('sv-SE', {
     hour: '2-digit',
