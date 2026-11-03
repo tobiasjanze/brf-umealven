@@ -985,7 +985,7 @@ renderHome();
         select.append(option);
       });
   }
-function renderHome() {
+async function renderHome() {
   const root = $('nextMeeting');
 
   const now = new Date();
@@ -1014,8 +1014,31 @@ function renderHome() {
       ${esc(dateText(meetingDate(meeting)))}
     </div>
     <p>${esc(meeting.location || 'Ingen plats angiven')}</p>
+    <p id="homeMeetingResponse" class="muted">
+      Hämtar ditt svar ...
+    </p>
   `;
+
+  const { data, error } = await db
+    .from('meeting_responses')
+    .select('response')
+    .eq('meeting_id', meeting.id)
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  const responseNode = $('homeMeetingResponse');
+
+  if (!responseNode) return;
+
+  if (error) {
+    responseNode.textContent = 'Kunde inte hämta ditt svar.';
+    return;
+  }
+
+  responseNode.textContent =
+    'Ditt svar: ' + (data ? data.response : 'Inte besvarat');
 }
+
   function renderMeetings() {
     const root = $('meetingsList');
     root.innerHTML = '';
