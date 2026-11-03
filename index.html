@@ -647,6 +647,317 @@ header .brand {
   }
 }
 
+
+/* =========================================
+   BRF UMEÄLVEN – GRAFISK DESIGN
+   Återskapar den godkända designskissen
+   ========================================= */
+
+/* SIDHUVUD MED BLÅ VÅGOR */
+
+header {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 30px;
+}
+
+header::after {
+  content: "";
+  position: absolute;
+  left: -2%;
+  bottom: 0;
+  width: 104%;
+  height: 27px;
+  background: linear-gradient(
+    90deg,
+    #d8edfc,
+    #a9d4f2,
+    #dceffc,
+    #a8d2ef
+  );
+  clip-path: polygon(
+    0 20%, 10% 55%, 22% 85%, 34% 75%,
+    46% 35%, 58% 58%, 72% 70%,
+    84% 20%, 100% 45%, 100% 100%, 0 100%
+  );
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+header .brand,
+header #userBar {
+  position: relative;
+  z-index: 2;
+}
+
+/* HUVUDKORTET */
+
+#homeView > .panel {
+  border: 1px solid #d3e1eb;
+  border-radius: 18px;
+  border-top: 4px solid #2587c5;
+  padding: 26px;
+  box-shadow: 0 8px 24px rgba(30, 76, 112, 0.09);
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    #fafdff 100%
+  );
+}
+
+/* VÄLKOMSTTEXT */
+
+.home-welcome {
+  border-left: 7px solid #269bdc;
+  padding: 0 0 8px 18px;
+  margin-bottom: 26px;
+}
+
+.home-welcome h2 {
+  font-size: 1.8rem;
+  color: #17324d;
+  margin-bottom: 6px;
+}
+
+.home-welcome p {
+  font-size: 1.05rem;
+}
+
+/* RUBRIKER MED BLÅ LINJE */
+
+#homeView > .panel > h2 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #17324d;
+  margin: 24px 0 16px;
+}
+
+#homeView > .panel > h2::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    #9bc9e8,
+    #e7f2fa
+  );
+}
+
+/* NÄSTA MÖTE */
+
+.next-meeting {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(
+    110deg,
+    #eef7ff 0%,
+    #e4f1fc 65%,
+    #d6eafb 100%
+  );
+  border: 1px solid #b8d5eb;
+  border-left: 8px solid #168bd0;
+  border-radius: 16px;
+  padding: 22px 26px;
+  box-shadow: 0 5px 14px rgba(28, 86, 130, 0.08);
+}
+
+/* HUS OCH VÅGOR SOM VATTENMÄRKE */
+
+.next-meeting::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: 12px;
+  bottom: 8px;
+  width: 260px;
+  height: 210px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 180'%3E%3Cg fill='none' stroke='%237eb5df' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M105 88 L155 38 L205 88 M125 70 V125 H185 V70 M150 125 V95 H170 V125'/%3E%3Cpath d='M20 130 Q65 105 110 125 T220 120 M10 150 Q60 128 110 145 T230 140 M30 168 Q85 145 130 160 T220 158'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.next-meeting h3 {
+  position: relative;
+  z-index: 1;
+  color: #17324d;
+  font-size: 1.5rem;
+  margin: 0 0 12px;
+}
+
+.next-meeting-date {
+  position: relative;
+  z-index: 1;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #17324d;
+  margin-bottom: 5px;
+}
+
+.next-meeting > div[style] {
+  position: relative;
+  z-index: 1;
+  font-size: 1.5rem !important;
+  color: #24486a !important;
+  margin: 5px 0 !important;
+}
+
+.next-meeting > p {
+  position: relative;
+  z-index: 1;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+#homeMeetingResponse {
+  display: inline-block;
+  padding: 7px 13px;
+  border-radius: 9px;
+  background: #dff3e3;
+  margin-top: 8px;
+}
+
+/* TRE FUNKTIONSKORT PÅ SAMMA RAD */
+
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.home-card {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) 18px;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 125px;
+  padding: 18px;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #cbdce9;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(23, 50, 77, 0.07);
+}
+
+.home-card svg {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  box-sizing: content-box;
+  width: 40px;
+  height: 40px;
+  padding: 12px;
+  margin: 0;
+  border-radius: 15px;
+  background: #e6f2fc;
+  color: #17669f;
+}
+
+.home-card strong {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 1.05rem;
+  color: #17324d;
+  margin: 0;
+}
+
+.home-card span {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 0.95rem;
+  align-self: start;
+}
+
+.home-card::after {
+  content: "›";
+  grid-column: 3;
+  grid-row: 1 / 3;
+  font-size: 2rem;
+  color: #17324d;
+  justify-self: center;
+}
+
+.home-card:hover {
+  background: #f1f8fd;
+  border-color: #8dbbdc;
+  transform: translateY(-2px);
+  box-shadow: 0 7px 16px rgba(23, 50, 77, 0.12);
+}
+
+/* SIDFOT MED DEKORATIVA LINJER */
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  color: #174c78;
+  font-weight: 600;
+}
+
+.footer::before,
+.footer::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #83b9df,
+    #2c80ba
+  );
+}
+
+/* MOBILANPASSNING */
+
+@media (max-width: 850px) {
+  .home-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .next-meeting::after {
+    width: 170px;
+    height: 150px;
+    opacity: 0.2;
+  }
+}
+
+@media (max-width: 600px) {
+  #homeView > .panel {
+    padding: 16px;
+  }
+
+  .home-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .home-welcome h2 {
+    font-size: 1.45rem;
+  }
+
+  .next-meeting {
+    padding: 18px;
+  }
+
+  .next-meeting::after {
+    width: 115px;
+    height: 110px;
+    opacity: 0.13;
+  }
+
+  .home-card {
+    min-height: 105px;
+  }
+
+  .footer {
+    gap: 10px;
+  }
+}
+
   </style>
 </head>
 
