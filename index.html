@@ -941,7 +941,37 @@
         select.append(option);
       });
   }
+function renderHome() {
+  const root = $('nextMeeting');
 
+  const now = new Date();
+
+  const upcoming = meetings
+    .filter(meeting => {
+      const date = new Date(meetingDate(meeting));
+      return !Number.isNaN(date.getTime()) && date >= now;
+    })
+    .sort((a, b) =>
+      new Date(meetingDate(a)) - new Date(meetingDate(b))
+    );
+
+  if (!upcoming.length) {
+    root.innerHTML = `
+      <p>Inget kommande styrelsemöte är registrerat.</p>
+    `;
+    return;
+  }
+
+  const meeting = upcoming[0];
+
+  root.innerHTML = `
+    <h3>${esc(meetingTitle(meeting))}</h3>
+    <div class="next-meeting-date">
+      ${esc(dateText(meetingDate(meeting)))}
+    </div>
+    <p>${esc(meeting.location || 'Ingen plats angiven')}</p>
+  `;
+}
   function renderMeetings() {
     const root = $('meetingsList');
     root.innerHTML = '';
