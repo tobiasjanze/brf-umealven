@@ -395,34 +395,77 @@
     }
 
     @media print {
-      header,
-      .tabs,
-      .toolbar,
-      button,
-      #loginPanel,
-      #appNav {
-        display: none !important;
-      }
 
-      body {
-        background: white;
-      }
+  body {
+    background: white !important;
+    color: black !important;
+  }
 
-      .wrap {
-        max-width: none;
-        padding: 0;
-      }
+  body * {
+    visibility: hidden !important;
+  }
 
-      .panel,
-      .agenda-section {
-        box-shadow: none;
-        break-inside: avoid;
-      }
+  #selectedMeetingPanel,
+  #selectedMeetingPanel * {
+    visibility: visible !important;
+  }
 
-      .agenda-section summary {
-        background: white;
-      }
-    }
+  #selectedMeetingPanel {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #selectedMeetingPanel > .toolbar,
+  #selectedMeetingPanel .panel,
+  #selectedMeetingPanel .item-actions,
+  #selectedMeetingPanel button,
+  #agendaForm {
+    display: none !important;
+  }
+
+  #agendaSections {
+    display: block !important;
+  }
+
+  .agenda-section {
+    border: none !important;
+    margin: 10px 0 !important;
+    overflow: visible !important;
+    break-inside: avoid;
+  }
+
+  .agenda-section summary {
+    background: white !important;
+    padding: 5px 0 !important;
+    color: black !important;
+  }
+
+  .agenda-body {
+    padding: 5px 12px !important;
+  }
+
+  .item {
+    border: none !important;
+    padding: 4px 0 !important;
+  }
+
+  .subhead {
+    margin-top: 12px !important;
+  }
+
+  .footer,
+  header,
+  nav,
+  button {
+    display: none !important;
+  }
+}
   </style>
 </head>
 
