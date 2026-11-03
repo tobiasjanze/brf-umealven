@@ -468,6 +468,185 @@
     display: none !important;
   }
 }
+
+/* ===== NY PROFESSIONELL DESIGN – BRF UMEÄLVEN ===== */
+
+/* Header */
+header {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(110deg, #f7fbff, #e4f0fa);
+  border-bottom: 1px solid #cbddeb;
+  padding: 20px 28px;
+}
+
+header .brand {
+  position: relative;
+  z-index: 1;
+  gap: 28px;
+}
+
+.brand-logo {
+  width: 260px;
+}
+
+.brand-text {
+  border-left: 2px solid #8db9dc;
+  padding-left: 28px;
+}
+
+#userBar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Välkomsttext */
+.home-welcome {
+  border-left: 6px solid #1595df;
+  padding-left: 18px;
+  margin-bottom: 28px;
+}
+
+.home-welcome h2 {
+  font-size: 1.8rem;
+  color: var(--navy);
+}
+
+/* Rubriker och avdelare */
+#homeView .panel > h2 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--navy);
+  margin: 24px 0 16px;
+}
+
+#homeView .panel > h2::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(to right, #9bc8e8, transparent);
+}
+
+/* Nästa möte */
+.next-meeting {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, #f2f8fd, #dcecf9);
+  border: 1px solid #b9d6ec;
+  border-left: 9px solid #168bd1;
+  border-radius: 14px;
+  padding: 24px 28px;
+  box-shadow: 0 5px 14px rgba(23, 50, 77, 0.08);
+}
+
+.next-meeting h3 {
+  color: var(--navy);
+  font-size: 1.5rem;
+  margin: 0 0 12px;
+}
+
+.next-meeting-date {
+  font-size: 1.5rem;
+  color: var(--navy);
+}
+
+.next-meeting p {
+  position: relative;
+  z-index: 1;
+}
+
+/* Funktionskort */
+.home-cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.home-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 16px;
+  min-height: 130px;
+  padding: 18px;
+  padding-right: 38px;
+  border: 1px solid #cbdbea;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(23, 50, 77, 0.07);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.home-card svg {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  width: 58px;
+  height: 58px;
+  padding: 10px;
+  margin: 0;
+  color: #17649b;
+  background: #e6f2fc;
+  border-radius: 13px;
+}
+
+.home-card strong {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 1.05rem;
+  color: var(--navy);
+}
+
+.home-card span {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.home-card::after {
+  content: "›";
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--navy);
+  font-size: 2rem;
+}
+
+.home-card:hover {
+  background: #f1f8fe;
+  transform: translateY(-3px);
+  box-shadow: 0 7px 16px rgba(23, 50, 77, 0.12);
+}
+
+/* Sidfot */
+.footer {
+  border-top: 2px solid #c5dced;
+  margin-top: 24px;
+  color: var(--navy);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Mobilanpassning */
+@media (max-width: 800px) {
+  .home-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-text {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .brand-logo {
+    width: 190px;
+  }
+}
+
   </style>
 </head>
 
