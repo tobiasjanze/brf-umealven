@@ -1226,45 +1226,51 @@ async function renderHome() {
   $('cancelMeetingEdit').addEventListener('click', resetMeetingForm);
 
   $('meetingForm').addEventListener('submit', async event => {
-    event.preventDefault();
+  event.preventDefault();
 
-    const id = $('meetingId').value;
+  const id = $('meetingId').value;
+  const dateValue = $('meetingDate').value;
+  const timeValue = $('meetingTime').value;
 
-    let meetingDateValue;
+  if (!dateValue || !timeValue) {
+    message('Ange både datum och starttid.', 'error');
+    return;
+  }
 
-    try {
-      meetingDateValue = new Date(
-        $('meetingDate').value
-      ).toISOString();
-    } catch {
-      message('Kontrollera mötets datum och tid.', 'error');
-      return;
-    }
+  let meetingDateValue;
 
-    const payload = {
-      title: $('meetingTitle').value.trim(),
-      meeting_date: meetingDateValue,
-      location: $('meetingLocation').value.trim(),
-      notes: $('meetingNotes').value.trim()
-    };
+  try {
+    meetingDateValue = new Date(dateValue).toISOString();
+  } catch {
+    message('Kontrollera mötets datum.', 'error');
+    return;
+  }
 
-    const result = id
-      ? await db.from('meetings').update(payload).eq('id', id)
-      : await db.from('meetings').insert({
-          ...payload,
-          created_by: currentUser.id
-        });
+  const payload = {
+    title: $('meetingTitle').value.trim(),
+    meeting_date: meetingDateValue,
+    meeting_time: timeValue,
+    location: $('meetingLocation').value.trim(),
+    notes: $('meetingNotes').value.trim()
+  };
 
-    if (result.error) {
-      message('Kunde inte spara mötet: ' + result.error.message, 'error');
-      return;
-    }
+  const result = id
+    ? await db.from('meetings').update(payload).eq('id', id)
+    : await db.from('meetings').insert({
+        ...payload,
+        created_by: currentUser.id
+      });
 
-    resetMeetingForm();
-    await loadMeetings();
+  if (result.error) {
+    message('Kunde inte spara mötet: ' + result.error.message, 'error');
+    return;
+  }
 
-    message('Mötet har sparats.', 'ok');
-  });
+  resetMeetingForm();
+  await loadMeetings();
+
+  message('Mötet har sparats.', 'ok');
+});
 
   $('meetingsList').addEventListener('click', async event => {
     const button = event.target.closest('button[data-action]');
