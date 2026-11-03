@@ -1012,26 +1012,25 @@ async function renderHome() {
   const meeting = upcoming[0];
 
   root.innerHTML = `
-  <h3>${esc(meetingTitle(meeting))}</h3>
-  <div class="next-meeting-date">
-    ${esc(dateText(meetingDate(meeting)))}
-  </div>
-  <div style="font-size: 1.6rem; font-weight: 700; color: #24486a; margin: 10px 0;">
-    Starttid: ${esc((meeting.meeting_time || '').replace(':', '.').replace(',', '.'))}
-  </div>
-  <p>${esc(meeting.location || 'Ingen plats angiven')}</p>
-  <p id="homeMeetingResponse" class="muted">
-    Hämtar ditt svar ...
-  </p>
-`;
-  <strong>Starttid:</strong>
-  ${esc(new Date(meetingDate(meeting)).toLocaleTimeString('sv-SE', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }))}
-</div>
+    <h3>${esc(meetingTitle(meeting))}</h3>
+
+    <div class="next-meeting-date">
+      ${esc(dateText(meetingDate(meeting)))}
+    </div>
+
+    <div style="
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #24486a;
+      margin: 10px 0;
+    ">
+      Starttid: ${esc(meeting.meeting_time || 'Ej angiven')}
+    </div>
+
     <p>${esc(meeting.location || 'Ingen plats angiven')}</p>
-    <p id="homeMeetingResponse" class="muted">
+
+    <p id="homeMeetingResponse"
+       style="font-size: 1.2rem; font-weight: 700; color: #27734b;">
       Hämtar ditt svar ...
     </p>
   `;
@@ -1049,11 +1048,19 @@ async function renderHome() {
 
   if (error) {
     responseNode.textContent = 'Kunde inte hämta ditt svar.';
+    responseNode.style.color = '#a73535';
     return;
   }
 
-  responseNode.textContent =
-    'Ditt svar: ' + (data ? data.response : 'Inte besvarat');
+  const response = data ? data.response : 'Inte besvarat';
+
+  responseNode.textContent = 'Ditt svar: ' + response;
+
+  if (response === 'Kommer') {
+    responseNode.style.color = '#27734b';
+  } else {
+    responseNode.style.color = '#687783';
+  }
 }
 
   function renderMeetings() {
