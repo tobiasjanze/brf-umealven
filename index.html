@@ -287,7 +287,85 @@
       font-size: 0.85rem;
       padding: 20px;
     }
+/* ===== NY STARTSIDA ===== */
 
+.home-welcome {
+  margin-bottom: 22px;
+}
+
+.home-welcome h2 {
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+}
+
+.next-meeting {
+  background: #eaf1f5;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 18px 0 24px;
+}
+
+.next-meeting h3 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+
+.next-meeting-date {
+  color: var(--navy);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.home-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  text-align: left;
+  min-height: 145px;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.home-card:hover {
+  background: #edf4f8;
+  transform: translateY(-2px);
+}
+
+.home-card svg {
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 12px;
+  color: var(--blue);
+}
+
+.home-card strong {
+  display: block;
+  font-size: 1.15rem;
+  margin-bottom: 4px;
+}
+
+.home-card span {
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.home-back {
+  margin-left: auto;
+}
+
+@media (max-width: 600px) {
+  .home-cards {
+    grid-template-columns: 1fr;
+  }
+}
     @media (max-width: 600px) {
       header {
         padding: 15px;
