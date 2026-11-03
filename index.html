@@ -2040,15 +2040,24 @@ $('homeBtn').addEventListener('click', showHome);
   // ===== LÄGG TILL MÖTE I KALENDER =====
 
   function downloadMeetingCalendar(meeting) {
-    const start = new Date(meetingDate(meeting));
 
-    if (Number.isNaN(start.getTime())) {
-      message('Mötet saknar ett giltigt datum.', 'error');
-      return;
-    }
+  const date = meetingDate(meeting).slice(0, 10);
 
-    // Standardlängd: 1 timme
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const time = meeting.meeting_time || '00:00';
+
+  const start = new Date(`${date}T${time}:00`);
+
+  if (Number.isNaN(start.getTime())) {
+
+    message('Mötet saknar ett giltigt datum eller en giltig starttid.', 'error');
+
+    return;
+
+  }
+
+  // Standardlängd: 1 timme
+
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
 
     function toICSDate(date) {
       return date.toISOString()
