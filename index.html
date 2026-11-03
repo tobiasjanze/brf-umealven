@@ -767,6 +767,9 @@ header #userBar {
 
 
 
+
+/* ===== BRF-UMEÄLVEN – HUS OCH VÅGOR ===== */
+
 .next-meeting::after {
   content: "";
   position: absolute;
@@ -774,15 +777,23 @@ header #userBar {
   right: 5px;
   top: 50%;
   transform: translateY(-50%);
-  width: 340px;
-  height: 240px;
-  opacity: 0.19;
+  width: 350px;
+  height: 230px;
+  opacity: 0.20;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 240' fill='none'%3E%3Cpath d='M35 177 C85 145 120 145 165 153 C205 160 245 145 315 135 L185 55 Z' fill='%238bbfe5' fill-opacity='.65'/%3E%3Cpath d='M220 85 L270 38 L315 83' stroke='%23245b83' stroke-width='11' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M238 77 V119 H298 V77' stroke='%23245b83' stroke-width='9' stroke-linejoin='round'/%3E%3Cpath d='M260 119 V94 H278 V119' stroke='%23245b83' stroke-width='7'/%3E%3Cpath d='M20 183 C85 155 120 170 165 181 C220 195 270 165 340 155' stroke='%23245b83' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M18 202 C80 175 120 190 165 199 C220 212 275 187 342 176' stroke='%23245b83' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M45 220 C100 198 130 207 175 215 C230 225 275 205 325 196' stroke='%23245b83' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E");
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 230' fill='none'%3E%3Cpath d='M18 178 C55 145 95 105 145 76 C180 56 205 65 235 83 C270 105 305 112 345 110 C300 111 264 105 230 111 C185 119 146 145 110 166 C75 186 43 190 18 178Z' fill='%2385bce5' fill-opacity='.75'/%3E%3Cpath d='M245 73 L287 28 L330 73' stroke='%23245b83' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M258 65 V105 H316 V65' stroke='%23245b83' stroke-width='8' stroke-linejoin='round'/%3E%3Cpath d='M278 105 V81 H296 V105' stroke='%23245b83' stroke-width='7' stroke-linejoin='round'/%3E%3Cpath d='M15 174 C75 145 115 151 160 162 C215 177 270 153 345 133' stroke='%23245b83' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M20 195 C80 167 120 173 165 184 C220 198 275 175 340 155' stroke='%23245b83' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M38 216 C90 191 130 194 175 205 C225 217 270 197 320 179' stroke='%23245b83' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E");
+
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
 }
+
+.next-meeting > * {
+  position: relative;
+  z-index: 1;
+}
+
 
 
 
