@@ -1411,7 +1411,14 @@ function renderHome() {
     message('Dagordningspunkten har lagts till.', 'ok');
   });
 
-  $('printAgenda').addEventListener('click', () => window.print());
+  $('printAgenda').addEventListener('click', () => {
+  if (!selectedMeetingId) {
+    message('Välj ett möte först.', 'error');
+    return;
+  }
+
+  window.print();
+});
     // ===== PROTOKOLL =====
 
   function minutesTemplate() {
