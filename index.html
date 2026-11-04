@@ -1006,7 +1006,104 @@ header #userBar {
   background: #edf6fc;
   box-shadow: 0 3px 9px rgba(23, 50, 77, 0.14);
 }
+/* ===== EXPANDERBART NÄSTA STYRELSEMÖTE ===== */
 
+.next-meeting-details {
+  position: relative;
+  z-index: 1;
+}
+
+.next-meeting-summary {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  list-style: none;
+  padding: 0 45px 0 0;
+  min-height: 48px;
+}
+
+.next-meeting-summary::-webkit-details-marker {
+  display: none;
+}
+
+.next-meeting-title {
+  display: block;
+  color: #17324d;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.next-meeting-hint {
+  display: block;
+  margin-top: 5px;
+  color: #526779;
+  font-size: 1.05rem;
+}
+
+.next-meeting-chevron {
+  position: absolute;
+  right: 8px;
+  top: 12px;
+  width: 15px;
+  height: 15px;
+  border-right: 3px solid #17324d;
+  border-bottom: 3px solid #17324d;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.next-meeting-details[open] .next-meeting-chevron {
+  transform: rotate(225deg);
+  top: 18px;
+}
+
+.next-meeting-info {
+  position: relative;
+  z-index: 1;
+  padding-top: 14px;
+}
+
+.next-meeting-time {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #24486a;
+  margin: 5px 0;
+}
+
+.next-meeting-location {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #17324d;
+  margin: 10px 0;
+}
+
+.next-meeting-info #homeMeetingResponse {
+  display: inline-block;
+  padding: 7px 13px;
+  border-radius: 9px;
+  background: #dff3e3;
+  margin-top: 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Mobilanpassning */
+
+@media (max-width: 600px) {
+  .next-meeting-title {
+    font-size: 1.2rem;
+  }
+
+  .next-meeting-hint {
+    font-size: 0.9rem;
+  }
+
+  .next-meeting-time,
+  .next-meeting-location {
+    font-size: 1.2rem;
+  }
+}
   </style>
 </head>
 
