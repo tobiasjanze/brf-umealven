@@ -1557,34 +1557,43 @@ async function renderHome() {
   const meeting = upcoming[0];
 
   root.innerHTML = `
-    <h3>${esc(meetingTitle(meeting))}</h3>
+    <details class="next-meeting-details">
 
-    <div class="next-meeting-date">
-      ${esc(dateText(meetingDate(meeting)))}
-    </div>
+      <summary class="next-meeting-summary">
 
-    <div style="
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--navy);
-  margin: 10px 0;
-">
-  Starttid: ${esc(meeting.meeting_time || 'Ej angiven')}
-</div>
+        <span class="next-meeting-title">
+          ${esc(meetingTitle(meeting))}
+        </span>
 
-    <p style="
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--navy);
-  margin: 10px 0;
-">
-  ${esc(meeting.location || 'Ingen plats angiven')}
-</p>
+        <span class="next-meeting-hint">
+          Klicka för att visa mötesinformation
+        </span>
 
-    <p id="homeMeetingResponse"
-       style="font-size: 1.2rem; font-weight: 700; color: #27734b;">
-      Hämtar ditt svar ...
-    </p>
+        <span class="next-meeting-chevron"></span>
+
+      </summary>
+
+      <div class="next-meeting-info">
+
+        <div class="next-meeting-date">
+          ${esc(dateText(meetingDate(meeting)))}
+        </div>
+
+        <div class="next-meeting-time">
+          Starttid: ${esc(meeting.meeting_time || 'Ej angiven')}
+        </div>
+
+        <p class="next-meeting-location">
+          ${esc(meeting.location || 'Ingen plats angiven')}
+        </p>
+
+        <p id="homeMeetingResponse">
+          Hämtar ditt svar ...
+        </p>
+
+      </div>
+
+    </details>
   `;
 
   const { data, error } = await db
