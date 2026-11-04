@@ -1414,14 +1414,18 @@ header #userBar {
   // Visa JavaScript-fel i stället för att misslyckas tyst.
 
   window.addEventListener('error', event => {
-    const text = event.message || 'Okänt JavaScript-fel';
+  const text = event.message || 'Okänt JavaScript-fel';
 
-    if (currentUser && $('appMsg')) {
-      message('Tekniskt fel: ' + text, 'error');
-    } else if ($('loginMsg')) {
-      loginMessage('Tekniskt fel: ' + text, 'error');
-    }
-  });
+  if (text === 'Script error.' && !event.filename) {
+    return;
+  }
+
+  if (currentUser && $('appMsg')) {
+    message('Tekniskt fel: ' + text, 'error');
+  } else if ($('loginMsg')) {
+    loginMessage('Tekniskt fel: ' + text, 'error');
+  }
+});
 
   window.addEventListener('unhandledrejection', event => {
     const reason = event.reason;
