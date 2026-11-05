@@ -1631,9 +1631,9 @@ renderHome();
       });
   }
 
+
 async function renderHome() {
   const root = $('nextMeeting');
-
   const now = new Date();
 
   const upcoming = meetings
@@ -1653,10 +1653,15 @@ async function renderHome() {
     return;
   }
 
-  root.innerHTML = upcoming.map((meeting, index) => `
+  root.innerHTML = upcoming.map(meeting => `
     <details class="home-meeting-entry">
       <summary>
-        ${esc(meetingTitle(meeting))}
+        <span class="home-meeting-title">
+          ${esc(meetingTitle(meeting))}
+        </span>
+        <span class="home-meeting-hint">
+          Klicka för att visa mötesinformation
+        </span>
       </summary>
 
       <div class="home-meeting-details">
@@ -1664,26 +1669,16 @@ async function renderHome() {
           ${esc(dateText(meetingDate(meeting)))}
         </div>
 
-        <div style="
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--navy);
-          margin: 10px 0;
-        ">
+        <div class="home-meeting-time">
           Starttid: ${esc(meeting.meeting_time || 'Ej angiven')}
         </div>
 
-        <p style="
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--navy);
-          margin: 10px 0;
-        ">
+        <p class="home-meeting-location">
           ${esc(meeting.location || 'Ingen plats angiven')}
         </p>
 
         <p id="homeMeetingResponse-${esc(meeting.id)}"
-           style="font-size: 1.2rem; font-weight: 700; color: #27734b;">
+           class="home-meeting-response">
           Hämtar ditt svar ...
         </p>
       </div>
@@ -1717,6 +1712,7 @@ async function renderHome() {
       response === 'Kommer' ? '#27734b' : '#687783';
   }));
 }
+
 
   function renderMeetings() {
     const root = $('meetingsList');
