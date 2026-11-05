@@ -1630,6 +1630,7 @@ renderHome();
         select.append(option);
       });
   }
+
 async function renderHome() {
   const root = $('nextMeeting');
 
@@ -1642,7 +1643,8 @@ async function renderHome() {
     })
     .sort((a, b) =>
       new Date(meetingDate(a)) - new Date(meetingDate(b))
-    );
+    )
+    .slice(0, 4);
 
   if (!upcoming.length) {
     root.innerHTML = `
@@ -1651,74 +1653,69 @@ async function renderHome() {
     return;
   }
 
-  const meeting = upcoming[0];
-
-  root.innerHTML = `
-    <details class="next-meeting-details">
-
-      <summary class="next-meeting-summary">
-
-        <span class="next-meeting-title">
-          ${esc(meetingTitle(meeting))}
-        </span>
-
-        <span class="next-meeting-hint">
-          Klicka för att visa mötesinformation
-        </span>
-
-        <span class="next-meeting-chevron"></span>
-
+  root.innerHTML = upcoming.map((meeting, index) => `
+    <details class="home-meeting-entry">
+      <summary>
+        ${esc(meetingTitle(meeting))}
       </summary>
 
-      <div class="next-meeting-info">
-
+      <div class="home-meeting-details">
         <div class="next-meeting-date">
           ${esc(dateText(meetingDate(meeting)))}
         </div>
 
-        <div class="next-meeting-time">
+        <div style="
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--navy);
+          margin: 10px 0;
+        ">
           Starttid: ${esc(meeting.meeting_time || 'Ej angiven')}
         </div>
 
-        <p class="next-meeting-location">
+        <p style="
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--navy);
+          margin: 10px 0;
+        ">
           ${esc(meeting.location || 'Ingen plats angiven')}
         </p>
 
-        <p id="homeMeetingResponse">
+        <p id="homeMeetingResponse-${esc(meeting.id)}"
+           style="font-size: 1.2rem; font-weight: 700; color: #27734b;">
           Hämtar ditt svar ...
         </p>
-
       </div>
-
     </details>
-  `;
+  `).join('');
 
-  const { data, error } = await db
-    .from('meeting_responses')
-    .select('response')
-    .eq('meeting_id', meeting.id)
-    .eq('user_id', currentUser.id)
-    .maybeSingle();
+  await Promise.all(upcoming.map(async meeting => {
+    const { data, error } = await db
+      .from('meeting_responses')
+      .select('response')
+      .eq('meeting_id', meeting.id)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
 
-  const responseNode = $('homeMeetingResponse');
+    const responseNode =
+      $('homeMeetingResponse-' + meeting.id);
 
-  if (!responseNode) return;
+    if (!responseNode) return;
 
-  if (error) {
-    responseNode.textContent = 'Kunde inte hämta ditt svar.';
-    responseNode.style.color = '#a73535';
-    return;
-  }
+    if (error) {
+      responseNode.textContent = 'Kunde inte hämta ditt svar.';
+      responseNode.style.color = '#a73535';
+      return;
+    }
 
-  const response = data ? data.response : 'Inte besvarat';
+    const response = data ? data.response : 'Inte besvarat';
 
-  responseNode.textContent = 'Ditt svar: ' + response;
+    responseNode.textContent = 'Ditt svar: ' + response;
 
-  if (response === 'Kommer') {
-    responseNode.style.color = '#27734b';
-  } else {
-    responseNode.style.color = '#687783';
-  }
+    responseNode.style.color =
+      response === 'Kommer' ? '#27734b' : '#687783';
+  }));
 }
 
   function renderMeetings() {
