@@ -1104,6 +1104,160 @@ header #userBar {
     font-size: 1.2rem;
   }
 }
+    
+/* ===== SEPARATA EXPANDERBARA MÖTESKORT ===== */
+
+.next-meeting {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  margin: 18px 0 24px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Ta bort den gamla gemensamma vattenstämpeln */
+.next-meeting::after {
+  content: none;
+}
+
+/* Varje möte får ett eget kort */
+.home-meeting-entry {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(
+    110deg,
+    #eef7ff 0%,
+    #e4f1fc 65%,
+    #d6eafb 100%
+  );
+  border: 1px solid #b8d5eb;
+  border-left: 8px solid #168bd0;
+  border-radius: 16px;
+  padding: 12px 26px;
+  box-shadow: 0 5px 14px rgba(28, 86, 130, 0.08);
+}
+
+/* Egen BRF-symbol i varje kort */
+.home-meeting-entry::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 190px;
+  height: 145px;
+  opacity: 0.20;
+  pointer-events: none;
+  background-image: url("brf-umealven-symbol.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Klickbar mötesrubrik */
+.home-meeting-entry summary {
+  position: relative;
+  z-index: 1;
+  display: block;
+  cursor: pointer;
+  list-style: none;
+  padding: 8px 42px 8px 0;
+  color: #17324d;
+}
+
+.home-meeting-entry summary::-webkit-details-marker {
+  display: none;
+}
+
+.home-meeting-title {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #17324d;
+}
+
+.home-meeting-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.95rem;
+  color: #526779;
+}
+
+/* Nedåtpil och uppåtpil */
+.home-meeting-entry summary::after {
+  content: "⌄";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #17324d;
+  font-size: 2rem;
+}
+
+.home-meeting-entry[open] summary::after {
+  content: "⌃";
+}
+
+/* Information som visas när kortet öppnas */
+.home-meeting-details {
+  position: relative;
+  z-index: 1;
+  padding: 12px 0 8px;
+  border-top: 1px solid #b9d6ec;
+}
+
+.home-meeting-time {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #17324d;
+  margin: 10px 0;
+}
+
+.home-meeting-location {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #17324d;
+  margin: 10px 0;
+}
+
+.home-meeting-response {
+  display: inline-block;
+  padding: 7px 13px;
+  border-radius: 9px;
+  background: #dff3e3;
+  margin-top: 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Mobilanpassning */
+@media (max-width: 600px) {
+  .home-meeting-entry {
+    padding: 12px 18px;
+  }
+
+  .home-meeting-entry::after {
+    width: 115px;
+    height: 110px;
+    opacity: 0.13;
+  }
+
+  .home-meeting-title {
+    font-size: 1.1rem;
+  }
+
+  .home-meeting-time,
+  .home-meeting-location {
+    font-size: 1.2rem;
+  }
+}
+
   </style>
 </head>
 
