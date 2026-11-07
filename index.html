@@ -2759,55 +2759,98 @@ let minuteAgendaItems = [];
     }
   });
 
-  $('downloadMinutes').addEventListener('click', () => {
-    const meeting = meetings.find(
-      item => String(item.id) === $('minutesMeetingSelect').value
-    );
+  
+$('downloadMinutes').addEventListener('click', () => {
+  const meetingId = $('minutesMeetingSelect').value;
 
-    let output =
-      `${meeting ? meetingTitle(meeting) : 'Protokoll'}\n` +
-      `${meeting ? dateText(meetingDate(meeting)) : ''}\n\n`;
-
-    sections.forEach(([number, title]) => {
-      output += `§${number} ${title}\n`;
-
-      if (number === '6') {
-        reportHeadings.forEach(heading => {
-          output +=
-            `${heading}:\n` +
-            `${currentMinutes[number]?.[heading] || ''}\n\n`;
-        });
-      } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
-
-  const sectionData = currentMinutes[number] || {};
-
-  if (sectionData.__sectionText) {
-    output += `${sectionData.__sectionText}\n\n`;
+  if (!meetingId) {
+    message('Välj ett möte innan du laddar ner protokollet.', 'error');
+    return;
   }
 
-  const addedItems = minuteAgendaItems.filter(
-    item => String(item.section_number) === String(number)
+  const meeting = meetings.find(
+    item => String(item.id) === String(meetingId)
   );
 
-  addedItems.forEach((item, index) => {
-    const letter = String.fromCharCode(97 + index);
-    const key = `item_${item.id}`;
+  if (!meeting) {
+    message('Kunde inte hitta det valda mötet.', 'error');
+    return;
+  }
 
-    output += `${letter}) ${item.title || 'Dagordningspunkt'}\n`;
-    output += `${sectionData[key] || ''}\n\n`;
+  // Läs in allt aktuellt innehåll direkt från formuläret
+  const downloadContent = minutesTemplate();
+
+  document.querySelectorAll('[data-minute-section]').forEach(textarea => {
+    const number = textarea.dataset.minuteSection;
+
+    if (textarea.dataset.minuteSub) {
+      downloadContent[number][textarea.dataset.minuteSub] =
+        textarea.value;
+    } else {
+      downloadContent[number] = textarea.value;
+    }
   });
 
-} else {
-  output += `${currentMinutes[number] || ''}\n\n`;
-}
-    });
+  const oldText = $('migratedMinutes');
 
-    downloadBlob(
-      output,
-      `${safeFile(meeting ? meetingTitle(meeting) : 'protokoll')}.txt`,
-      'text/plain;charset=utf-8'
-    );
+  if (oldText) {
+    downloadContent.migratedText = oldText.value;
+  }
+
+  let output =
+    `${meetingTitle(meeting)}\n` +
+    `${dateText(meetingDate(meeting))}\n\n`;
+
+  sections.forEach(([number, title]) => {
+    output += `§${number} ${title}\n`;
+
+    if (number === '6') {
+      reportHeadings.forEach(heading => {
+        output +=
+          `${heading}:\n` +
+          `${downloadContent[number]?.[heading] || ''}\n\n`;
+      });
+
+    } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
+
+      const sectionData = downloadContent[number] || {};
+
+      if (sectionData.__sectionText) {
+        output += `${sectionData.__sectionText}\n\n`;
+      }
+
+      const addedItems = minuteAgendaItems.filter(
+        item => String(item.section_number) === String(number)
+      );
+
+      addedItems.forEach((item, index) => {
+        const letter = String.fromCharCode(97 + index);
+        const key = `item_${item.id}`;
+
+        output += `${letter}) ${item.title || 'Dagordningspunkt'}\n`;
+        output += `${sectionData[key] || ''}\n\n`;
+      });
+
+    } else {
+      output += `${downloadContent[number] || ''}\n\n`;
+    }
   });
+
+  if (downloadContent.migratedText) {
+    output +=
+      `Äldre protokolltext\n` +
+      `${downloadContent.migratedText}\n\n`;
+  }
+
+  downloadBlob(
+    output,
+    `${safeFile(meetingTitle(meeting))}.txt`,
+    'text/plain;charset=utf-8'
+  );
+
+  message('Protokollet har laddats ner.', 'ok');
+});
+
     // ===== MÖTESDOKUMENT =====
 
   $('documentsMeetingSelect').addEventListener('change', loadDocuments);
