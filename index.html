@@ -1258,6 +1258,214 @@ header #userBar {
   }
 }
 
+/* =========================================
+   BRF UMEÄLVEN – NY KNAPPDESIGN UNDERSIDOR
+   Samma grafiska formspråk som startsidan
+   ========================================= */
+
+/* Grunddesign för knappar */
+
+button:not(.home-card):not(#logoutBtn) {
+  border: 1px solid #cbdce9;
+  border-radius: 11px;
+  padding: 10px 16px;
+  background: linear-gradient(145deg, #ffffff, #edf5fb);
+  color: #17324d;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(23, 50, 77, 0.07);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* Hover och tryck */
+
+button:not(.home-card):not(#logoutBtn):hover {
+  background: #eaf4fc;
+  border-color: #8dbbdc;
+  box-shadow: 0 5px 12px rgba(23, 50, 77, 0.12);
+  transform: translateY(-1px);
+}
+
+button:not(.home-card):not(#logoutBtn):active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(23, 50, 77, 0.08);
+}
+
+/* Huvudknappar – blå design */
+
+button.primary:not(.home-card) {
+  background: linear-gradient(135deg, #286b98, #174d75);
+  border: 1px solid #245b83;
+  color: #ffffff;
+  box-shadow: 0 4px 9px rgba(23, 80, 120, 0.17);
+}
+
+button.primary:not(.home-card):hover {
+  background: linear-gradient(135deg, #347eae, #205e89);
+  border-color: #347eae;
+}
+
+/* Ta bort-knappar */
+
+button.danger {
+  background: linear-gradient(135deg, #fff8f8, #f9e8e8);
+  border: 1px solid #e8c4c4;
+  color: #a73535;
+}
+
+button.danger:hover {
+  background: #f8dddd;
+  border-color: #d99b9b;
+}
+
+/* Mindre knappar */
+
+button.small {
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 0.9rem;
+}
+
+/* Ikoner före knapptexterna */
+
+button::before {
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+  margin-right: 7px;
+  display: inline-block;
+}
+
+/* Spara möte */
+
+#meetingForm button[type="submit"]::before {
+  content: "✓";
+}
+
+/* Rensa formulär */
+
+#cancelMeetingEdit::before {
+  content: "↺";
+}
+
+/* Logga in */
+
+#loginForm button[type="submit"]::before {
+  content: "↪";
+}
+
+/* Lägg till dagordningspunkt */
+
+#agendaForm button[type="submit"]::before {
+  content: "+";
+}
+
+/* Dagordning */
+
+#printAgenda::before {
+  content: "▤";
+}
+
+/* Mötesåtgärder */
+
+button[data-action="select"]::before {
+  content: "☷";
+}
+
+button[data-action="edit"]::before {
+  content: "✎";
+}
+
+button[data-action="delete"]::before {
+  content: "×";
+}
+
+/* Mötesanmälningar */
+
+button[data-meeting-response="Kommer"]::before {
+  content: "✓";
+}
+
+button[data-meeting-response="Kommer inte"]::before {
+  content: "×";
+}
+
+button[data-meeting-response="Inte bestämt"]::before {
+  content: "…";
+}
+
+/* Kalender */
+
+button[data-calendar-meeting]::before {
+  content: "▣";
+}
+
+/* Protokoll */
+
+#saveMinutes::before {
+  content: "✓";
+}
+
+#downloadMinutes::before {
+  content: "↓";
+}
+
+/* Dokument */
+
+#uploadForm button[type="submit"]::before {
+  content: "↑";
+}
+
+#documentsList .right button:first-child::before {
+  content: "↗";
+}
+
+#documentsList .right button:last-child::before {
+  content: "×";
+}
+
+/* Navigeringsknappar */
+
+.tab {
+  border: 1px solid #cbdce9;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #ffffff, #eaf2f8);
+  box-shadow: 0 2px 6px rgba(23, 50, 77, 0.06);
+  font-weight: 600;
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #286b98, #174d75);
+  border-color: #245b83;
+  color: #ffffff;
+  box-shadow: 0 4px 9px rgba(23, 80, 120, 0.17);
+}
+
+/* Fokusmarkering */
+
+button:not(.home-card):focus-visible {
+  outline: 3px solid #8fc4e8;
+  outline-offset: 3px;
+}
+
+/* Mobilanpassning */
+
+@media (max-width: 600px) {
+  button:not(.home-card):not(#logoutBtn) {
+    padding: 10px 12px;
+  }
+
+  button.small {
+    padding: 8px 10px;
+  }
+
+  .toolbar {
+    gap: 9px;
+  }
+}
+
   </style>
 </head>
 
