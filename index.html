@@ -2009,18 +2009,50 @@ renderHome();
   }
 
 
+
 async function renderHome() {
   const root = $('nextMeeting');
-  const now = new Date();
 
+  // Dagens datum i lokal tid
+  const now = new Date();
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  // Hämta kommande möten, inklusive dagens möten
   const upcoming = meetings
     .filter(meeting => {
-      const date = new Date(meetingDate(meeting));
-      return !Number.isNaN(date.getTime()) && date >= now;
+      const value = meetingDate(meeting);
+
+      if (!value) return false;
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) return false;
+
+      const meetingDay = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+      );
+
+      return meetingDay >= today;
     })
-    .sort((a, b) =>
-      new Date(meetingDate(a)) - new Date(meetingDate(b))
-    )
+    .sort((a, b) => {
+      const dateA = meetingDate(a).slice(0, 10);
+      const dateB = meetingDate(b).slice(0, 10);
+
+      const timeA = a.meeting_time || '00:00';
+      const timeB = b.meeting_time || '00:00';
+
+      return (
+        `${dateA}T${timeA}`.localeCompare(
+          `${dateB}T${timeB}`
+        )
+      );
+    })
     .slice(0, 4);
 
   if (!upcoming.length) {
@@ -2089,6 +2121,7 @@ async function renderHome() {
       response === 'Kommer' ? '#27734b' : '#687783';
   }));
 }
+
 
 
   function renderMeetings() {
