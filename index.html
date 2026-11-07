@@ -1465,7 +1465,22 @@ button:not(.home-card):focus-visible {
     gap: 9px;
   }
 }
+/* RÖD DESIGN FÖR TA BORT-KNAPPAR */
 
+button.danger,
+button.small.danger,
+#documentsList button.danger {
+  background: linear-gradient(135deg, #fff0f0, #f8dddd) !important;
+  color: #a73535 !important;
+  border: 1px solid #e3aaaa !important;
+  box-shadow: 0 3px 8px rgba(167, 53, 53, 0.12);
+}
+
+button.danger:hover,
+button.small.danger:hover {
+  background: linear-gradient(135deg, #f9dddd, #f2caca) !important;
+  border-color: #d58b8b !important;
+}
   </style>
 </head>
 
