@@ -1894,6 +1894,81 @@ button.small.danger:hover {
         <div id="documentsList"></div>
       </div>
     </section>
+      <!-- BEVAKA AVTAL -->
+
+    <section id="tab-contracts" class="tabcontent hidden">
+      <div class="panel">
+
+        <h2>Bevaka avtal</h2>
+
+        <p class="muted">
+          Här samlas föreningens avtal, ansvariga och kommande förnyelser.
+        </p>
+
+        <div id="contractsOverview"></div>
+
+        <div class="panel" id="contractAdminPanel">
+          <h3>Lägg till eller ändra avtal</h3>
+
+          <form id="contractForm">
+
+            <input type="hidden" id="contractId">
+
+            <label for="contractName">Avtalets namn</label>
+            <input id="contractName" required>
+
+            <label for="contractSupplier">Leverantör</label>
+            <input id="contractSupplier">
+
+            <label for="contractDescription">Beskrivning</label>
+            <textarea id="contractDescription"></textarea>
+
+            <div class="row">
+              <div>
+                <label for="contractStartDate">Startdatum</label>
+                <input id="contractStartDate" type="date">
+              </div>
+
+              <div>
+                <label for="contractEndDate">Slutdatum</label>
+                <input id="contractEndDate" type="date">
+              </div>
+            </div>
+
+            <label for="contractNoticeDate">Sista uppsägningsdatum</label>
+            <input id="contractNoticeDate" type="date">
+
+            <label for="contractResponsible">Ansvarig</label>
+            <input id="contractResponsible">
+
+            <label for="contractAnnualCost">Årskostnad (kr)</label>
+            <input id="contractAnnualCost" type="number" min="0" step="0.01">
+
+            <label for="contractStatus">Status</label>
+            <select id="contractStatus">
+              <option value="Aktivt">Aktivt</option>
+              <option value="Uppsagt">Uppsagt</option>
+              <option value="Avslutat">Avslutat</option>
+            </select>
+
+            <label for="contractNotes">Anteckningar</label>
+            <textarea id="contractNotes"></textarea>
+
+            <div class="toolbar">
+              <button class="primary" type="submit">
+                Spara avtal
+              </button>
+
+              <button id="cancelContractEdit" type="button">
+                Rensa
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </section>
   </section>
 
   <div class="footer">BRF Umeälven · Styrelseportal</div>
