@@ -2349,8 +2349,13 @@ async function renderHome() {
       selectedMeetingId = meeting.id;
 
       $('selectedMeetingPanel').classList.remove('hidden');
-      $('selectedMeetingHeading').textContent =
-        `Dagordning – ${meetingTitle(meeting)}`;
+      $('selectedMeetingHeading').innerHTML =
+  `Dagordning – ${esc(meetingTitle(meeting))}<br>
+  <span style="font-size:0.65em;font-weight:400;">
+    ${esc(dateText(meetingDate(meeting)))}
+    · Starttid: ${esc(meeting.meeting_time || 'Ej angiven')}
+    · ${esc(meeting.location || 'Ingen plats angiven')}
+  </span>`;
 
       await loadAgenda();
     }
