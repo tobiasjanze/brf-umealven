@@ -2195,16 +2195,17 @@ function showLogin() {
 }
 
   async function loadAll() {
-    if (loading) return;
+  if (loading) return;
 
-    loading = true;
+  loading = true;
 
-    try {
-      await loadMeetings();
-    } finally {
-      loading = false;
-    }
+  try {
+    await loadMeetings();
+    await loadContracts();
+  } finally {
+    loading = false;
   }
+}
 
   // ===== MÖTEN =====
 
