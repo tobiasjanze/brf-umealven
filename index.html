@@ -2154,29 +2154,45 @@ button.small.danger:hover {
   // ===== INLOGGNINGENS VISNING =====
 
   function showApp(user) {
-    currentUser = user;
+  currentUser = user;
 
-    $('loginPanel').classList.add('hidden');
-    $('appPanel').classList.remove('hidden');
-    $('userBar').classList.remove('hidden');
-    $('userEmail').textContent = user.email || '';
+  $('loginPanel').classList.add('hidden');
+  $('appPanel').classList.remove('hidden');
+  $('userBar').classList.remove('hidden');
+  $('userEmail').textContent = user.email || '';
 
-    loadAll().catch(error => {
-      message(
-        'Inloggningen lyckades, men portalen kunde inte läsa alla uppgifter: ' +
-        (error.message || error),
-        'error'
-      );
-    });
-  }
+  // Börja alltid på startsidan efter inloggning
+  showHome();
 
-  function showLogin() {
-    currentUser = null;
+  loadAll().catch(error => {
+    message(
+      'Inloggningen lyckades, men portalen kunde inte läsa alla uppgifter: ' +
+      (error.message || error),
+      'error'
+    );
+  });
+}
 
-    $('appPanel').classList.add('hidden');
-    $('userBar').classList.add('hidden');
-    $('loginPanel').classList.remove('hidden');
-  }
+function showLogin() {
+  currentUser = null;
+
+  // Dölj hela portalens innehåll
+  $('appPanel').classList.add('hidden');
+  $('userBar').classList.add('hidden');
+  $('loginPanel').classList.remove('hidden');
+
+  // Navigering och undersidor ligger utanför appPanel
+  $('appNav').classList.add('hidden');
+  $('appMsg').classList.add('hidden');
+
+  document.querySelectorAll('.tabcontent').forEach(section => {
+    section.classList.add('hidden');
+  });
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+}
 
   async function loadAll() {
     if (loading) return;
