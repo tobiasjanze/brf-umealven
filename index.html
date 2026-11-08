@@ -3218,7 +3218,158 @@ $('homeBtn').addEventListener('click', showHome);
 
     message('Kalenderfilen har skapats.', 'ok');
   }
+  // =========================================
+  // BRF UMEÄLVEN – ROLLBASERADE BEHÖRIGHETER
+  // Behörighet hämtas från Supabase
+  // =========================================
 
+  let isAdminUser = false;
+  let roleCheckComplete = false;
+
+  function applyRolePermissions() {
+    const admin = isAdminUser;
+
+    // Funktioner som endast administratören får använda
+    $('meetingForm').classList.toggle('hidden', !admin);
+    $('cancelMeetingEdit').classList.toggle('hidden', !admin);
+
+    const agendaForm = $('agendaForm');
+    if (agendaForm) {
+      agendaForm.closest('.panel').classList.toggle('hidden', !admin);
+    }
+
+    $('saveMinutes').classList.toggle('hidden', !admin);
+    $('uploadForm').classList.toggle('hidden', !admin);
+
+    // Dölj redigera- och ta bort-knappar
+    document.querySelectorAll(
+      '[data-action="edit"], [data-action="delete"], [data-delete-agenda]'
+    ).forEach(button => {
+      button.classList.toggle('hidden', !admin);
+    });
+
+    // Dölj ta bort-knappen för dokument
+    document.querySelectorAll('.file-row .right button:last-child')
+      .forEach(button => {
+        button.classList.toggle('hidden', !admin);
+      });
+
+    // Medlemmar får läsa protokoll men inte ändra texten
+    document.querySelectorAll('#minutesFields textarea, #migratedMinutes')
+      .forEach(field => {
+        field.readOnly = !admin;
+      });
+
+    // Visa vilken roll användaren har
+    const roleLabel = $('userRoleLabel');
+    if (roleLabel) {
+      roleLabel.textContent = admin
+        ? 'Administratör'
+        : 'Styrelsemedlem';
+    }
+  }
+
+  async function loadUserRole(user) {
+    isAdminUser = false;
+    roleCheckComplete = false;
+    applyRolePermissions();
+
+    if (!user) return;
+
+    const { data, error } = await db.rpc(
+      'current_user_is_admin'
+    );
+
+    if (error) {
+      message(
+        'Kunde inte kontrollera behörigheten. Administrationsfunktionerna är låsta: ' +
+        error.message,
+        'error'
+      );
+      roleCheckComplete = true;
+      applyRolePermissions();
+      return;
+    }
+
+    isAdminUser = data === true;
+    roleCheckComplete = true;
+
+    applyRolePermissions();
+
+    message(
+      isAdminUser
+        ? 'Inloggad med administratörsbehörighet.'
+        : 'Inloggad med medlemsbehörighet.',
+      'ok'
+    );
+  }
+
+  // Uppdatera behörigheterna när innehåll skapas eller ändras
+  const permissionObserver = new MutationObserver(() => {
+    applyRolePermissions();
+  });
+
+  permissionObserver.observe($('appPanel'), {
+    childList: true,
+    subtree: true
+  });
+
+  // Skydda formulär även om någon försöker skicka dem
+  document.addEventListener('submit', event => {
+    if (isAdminUser) return;
+
+    const restrictedForms = [
+      'meetingForm',
+      'agendaForm',
+      'uploadForm'
+    ];
+
+    if (restrictedForms.includes(event.target.id)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      message('Du har inte behörighet till den funktionen.', 'error');
+    }
+  }, true);
+
+  // Skydda administrationsknappar
+  document.addEventListener('click', event => {
+    if (isAdminUser) return;
+
+    const button = event.target.closest('button');
+    if (!button) return;
+
+    const restricted =
+      button.matches(
+        '[data-action="edit"], [data-action="delete"], [data-delete-agenda]'
+      ) ||
+      button.id === 'saveMinutes' ||
+      button.id === 'cancelMeetingEdit' ||
+      (
+        button.closest('.file-row') &&
+        button.textContent.trim() === 'Ta bort'
+      );
+
+    if (restricted) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      message('Du har inte behörighet till den funktionen.', 'error');
+    }
+  }, true);
+
+  // Kontrollera rollen efter inloggning
+  const originalShowApp = showApp;
+
+  showApp = function(user) {
+    originalShowApp(user);
+    loadUserRole(user);
+  };
+
+  // Kontrollera även en redan aktiv session
+  db.auth.getSession().then(({ data }) => {
+    if (data.session?.user) {
+      loadUserRole(data.session.user);
+    }
+  });
 })();
 </script>
 </body>
