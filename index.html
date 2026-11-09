@@ -5319,37 +5319,36 @@ $('homeBtn').addEventListener('click', showHome);
     }
   }
 
-  async function loadUserRole(user) {
-    // Utgångsläget är alltid medlemsbehörighet
+  
+async function loadUserRole(user) {
+  isAdminUser = false;
+  applyRolePermissions();
+
+  if (!user) return;
+
+  const { data, error } = await db.rpc('current_user_is_admin');
+
+  if (error) {
     isAdminUser = false;
     applyRolePermissions();
-
-    if (!user) return;
-
-    
-
-    const { data, error } = await db.rpc(
-      'current_user_is_admin'
+    message(
+      'Kunde inte kontrollera behörigheten. Administrationsfunktionerna är låsta.',
+      'error'
     );
+    return;
+  }
 
-    if (error || data !== true) {
-      isAdminUser = false;
-      applyRolePermissions();
-
-      message(
-        'Administratörsbehörigheten kunde inte verifieras. ' +
-        'Administrationsfunktionerna är låsta.',
-        'error'
-      );
-
-      return;
-    }
-
+  if (data === true) {
     isAdminUser = true;
     applyRolePermissions();
-
     message('Inloggad med administratörsbehörighet.', 'ok');
+  } else {
+    isAdminUser = false;
+    applyRolePermissions();
+    // Vanlig medlem – inget felmeddelande ska visas.
   }
+}
+
 
   // Uppdatera behörigheterna när listor och formulär byggs om
   const permissionObserver = new MutationObserver(() => {
