@@ -2995,10 +2995,10 @@ renderHome();
 
 
 
+
 async function renderHome() {
   const root = $('nextMeeting');
 
-  // Dagens datum i lokal tid
   const now = new Date();
   const today = new Date(
     now.getFullYear(),
@@ -3006,15 +3006,13 @@ async function renderHome() {
     now.getDate()
   );
 
-  // Hämta kommande möten, inklusive dagens möten
+  // Hämta kommande möten
   const upcoming = meetings
     .filter(meeting => {
       const value = meetingDate(meeting);
-
       if (!value) return false;
 
       const date = new Date(value);
-
       if (Number.isNaN(date.getTime())) return false;
 
       const meetingDay = new Date(
@@ -3032,53 +3030,71 @@ async function renderHome() {
       const timeA = a.meeting_time || '00:00';
       const timeB = b.meeting_time || '00:00';
 
-      return (
-        `${dateA}T${timeA}`.localeCompare(
-          `${dateB}T${timeB}`
-        )
+      return `${dateA}T${timeA}`.localeCompare(
+        `${dateB}T${timeB}`
       );
     })
     .slice(0, 4);
 
+  // Om inga möten finns
   if (!upcoming.length) {
     root.innerHTML = `
-      <p>Inget kommande styrelsemöte är registrerat.</p>
+      <div class="home-meeting-empty">
+        <strong>Inga kommande styrelsemöten</strong>
+        <p>Det finns för närvarande inga registrerade möten.</p>
+      </div>
     `;
     return;
   }
 
+  // Bygg möteskorten
   root.innerHTML = upcoming.map(meeting => `
     <details class="home-meeting-entry">
+
       <summary>
         <span class="home-meeting-title">
           ${esc(meetingTitle(meeting))}
         </span>
+
         <span class="home-meeting-hint">
-          Klicka för att visa mötesinformation
+          ${esc(dateText(meetingDate(meeting)))}
+          · Klicka för mötesinformation
         </span>
       </summary>
 
       <div class="home-meeting-details">
-        <div class="next-meeting-date">
-          ${esc(dateText(meetingDate(meeting)))}
+
+        <div class="home-meeting-info-grid">
+
+          <div class="home-meeting-info-item">
+            <small>DATUM</small>
+            <strong>${esc(dateText(meetingDate(meeting)))}</strong>
+          </div>
+
+          <div class="home-meeting-info-item">
+            <small>STARTTID</small>
+            <strong>${esc(meeting.meeting_time || 'Ej angiven')}</strong>
+          </div>
+
+          <div class="home-meeting-info-item">
+            <small>PLATS</small>
+            <strong>${esc(meeting.location || 'Ingen plats angiven')}</strong>
+          </div>
+
         </div>
 
-        <div class="home-meeting-time">
-          Starttid: ${esc(meeting.meeting_time || 'Ej angiven')}
+        <div class="home-meeting-response-box">
+          <small>DIN MÖTESANMÄLAN</small>
+          <p id="homeMeetingResponse-${esc(meeting.id)}">
+            Hämtar ditt svar ...
+          </p>
         </div>
 
-        <p class="home-meeting-location">
-          ${esc(meeting.location || 'Ingen plats angiven')}
-        </p>
-
-        <p id="homeMeetingResponse-${esc(meeting.id)}"
-           class="home-meeting-response">
-          Hämtar ditt svar ...
-        </p>
       </div>
     </details>
   `).join('');
 
+  // Hämta varje medlems eget svar
   await Promise.all(upcoming.map(async meeting => {
     const { data, error } = await db
       .from('meeting_responses')
@@ -3087,8 +3103,7 @@ async function renderHome() {
       .eq('user_id', currentUser.id)
       .maybeSingle();
 
-    const responseNode =
-      $('homeMeetingResponse-' + meeting.id);
+    const responseNode = $('homeMeetingResponse-' + meeting.id);
 
     if (!responseNode) return;
 
@@ -3098,14 +3113,21 @@ async function renderHome() {
       return;
     }
 
-    const response = data ? data.response : 'Inte besvarat';
+    const response = data
+      ? data.response
+      : 'Inte besvarat';
 
-    responseNode.textContent = 'Ditt svar: ' + response;
+    responseNode.textContent = response;
 
     responseNode.style.color =
-      response === 'Kommer' ? '#27734b' : '#687783';
+      response === 'Kommer'
+        ? '#27734b'
+        : response === 'Kommer inte'
+          ? '#a73535'
+          : '#687783';
   }));
 }
+
 
 
 
