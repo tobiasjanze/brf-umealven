@@ -3541,13 +3541,16 @@ $('downloadMinutes').addEventListener('click', () => {
     };
 
     const result = id
-      ? await db
-          .from('board_contracts')
-          .update(payload)
-          .eq('id', id)
-      : await db
-          .from('board_contracts')
-          .insert(payload);
+  ? await db
+      .from('board_contracts')
+      .update(payload)
+      .eq('id', id)
+  : await db
+      .from('board_contracts')
+      .insert({
+        ...payload,
+        created_by: currentUser.id
+      });
 
     if (result.error) {
       message('Kunde inte spara avtalet: ' + result.error.message, 'error');
