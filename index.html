@@ -4744,15 +4744,7 @@ $('homeBtn').addEventListener('click', showHome);
 
     if (!user) return;
 
-    // Kontrollera både inloggad e-postadress och databasens behörighet
-    const isTobias =
-      String(user.email || '').toLowerCase() === ADMIN_EMAIL;
-
-    if (!isTobias) {
-      applyRolePermissions();
-      message('Inloggad med medlemsbehörighet.', 'ok');
-      return;
-    }
+    
 
     const { data, error } = await db.rpc(
       'current_user_is_admin'
