@@ -3340,16 +3340,16 @@ $('downloadMinutes').addEventListener('click', () => {
   }
 
   function contractStatusClass(contract) {
-    if (contract.status === 'Avslutat') return 'terminated';
-    if (contract.status === 'Uppsagt') return 'terminated';
+  if (contract.status === 'terminated') return 'terminated';
+  if (contract.status === 'ending') return 'terminated';
 
-    const days = contractDaysLeft(contract.end_date);
+  const days = contractDaysLeft(contract.end_date);
 
-    if (days !== null && days < 0) return 'overdue';
-    if (days !== null && days <= 90) return 'ending';
+  if (days !== null && days < 0) return 'overdue';
+  if (days !== null && days <= 90) return 'ending';
 
-    return '';
-  }
+  return '';
+}
 
   function contractStatusLabel(contract) {
     if (contract.status === 'Avslutat') return 'Avslutat';
