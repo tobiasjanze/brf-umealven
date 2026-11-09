@@ -2141,6 +2141,11 @@ async function loadContractResponsibleOptions() {
         return;
     }
 
+  boardMemberNames = {};
+
+(data || []).forEach(member => {
+  boardMemberNames[member.user_id] = member.display_name;
+});
     select.innerHTML = '<option value="">Välj ansvarig...</option>';
 
     (data || []).forEach(member => {
