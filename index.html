@@ -2313,6 +2313,81 @@ button.small.danger:hover {
     flex: 1 1 auto;
   }
 }
+    
+/* ===== FÖRBÄTTRAD INFORMATION I MÖTESKORTEN ===== */
+
+.home-meeting-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+
+.home-meeting-info-item {
+  min-width: 0;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #d3e3ef;
+  border-radius: 10px;
+}
+
+.home-meeting-info-item small,
+.home-meeting-response-box small {
+  display: block;
+  color: #62788a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  margin-bottom: 5px;
+}
+
+.home-meeting-info-item strong {
+  display: block;
+  color: #17324d;
+  overflow-wrap: anywhere;
+}
+
+.home-meeting-response-box {
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #d3e3ef;
+  border-radius: 10px;
+}
+
+.home-meeting-response-box p {
+  margin: 4px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.home-meeting-empty {
+  padding: 22px;
+  background: #f2f7fb;
+  border: 1px solid #d3e1eb;
+  border-radius: 14px;
+  text-align: center;
+}
+
+.home-meeting-empty strong {
+  color: #17324d;
+  font-size: 1.1rem;
+}
+
+.home-meeting-empty p {
+  color: #687783;
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .home-meeting-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .home-meeting-info-item:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
   </style>
 </head>
 
