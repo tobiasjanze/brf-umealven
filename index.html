@@ -3464,8 +3464,8 @@ $('downloadMinutes').addEventListener('click', () => {
 
     if (home) {
       const active = contracts.filter(c =>
-        c.status === 'Aktivt'
-      ).length;
+  c.status === 'active'
+).length;
 
       const ending = contracts.filter(c => {
         const days = contractDaysLeft(c.end_date);
