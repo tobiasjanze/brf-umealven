@@ -3469,7 +3469,7 @@ $('downloadMinutes').addEventListener('click', () => {
 
       const ending = contracts.filter(c => {
         const days = contractDaysLeft(c.end_date);
-        return c.status === 'Aktivt' &&
+        return c.status === 'active' &&
           days !== null && days >= 0 && days <= 90;
       }).length;
 
