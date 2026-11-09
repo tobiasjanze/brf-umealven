@@ -2241,6 +2241,7 @@ function showLogin() {
 
   try {
     await loadMeetings();
+    await loadContractResponsibleOptions();
     await loadContracts();
   } finally {
     loading = false;
