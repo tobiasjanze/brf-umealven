@@ -3827,8 +3827,9 @@ $('homeBtn').addEventListener('click', showHome);
 
     // Dölj redigera- och ta bort-knappar
     document.querySelectorAll(
-      '[data-action="edit"], [data-action="delete"], [data-delete-agenda]'
-    ).forEach(button => {
+  '[data-action="edit"], [data-action="delete"], ' +
+  '[data-delete-agenda], [data-contract-edit], [data-contract-delete]'
+).forEach(button => {
       button.classList.toggle('hidden', !admin);
     });
 
