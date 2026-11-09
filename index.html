@@ -4515,52 +4515,72 @@ $('homeBtn').addEventListener('click', showHome);
 
     message('Kalenderfilen har skapats.', 'ok');
   }
-  // =========================================
-  // BRF UMEÄLVEN – ROLLBASERADE BEHÖRIGHETER
-  // Behörighet hämtas från Supabase
+    // =========================================
+  // BRF UMEÄLVEN – SÄKRA ROLLBASERADE BEHÖRIGHETER
+  // Tobias är enda administratören.
+  // Övriga användare har läsbehörighet.
   // =========================================
 
+  const ADMIN_EMAIL = 'tobias.janze@gmail.com';
+
   let isAdminUser = false;
-  let roleCheckComplete = false;
 
   function applyRolePermissions() {
     const admin = isAdminUser;
 
-    // Funktioner som endast administratören får använda
+    // Möten – endast administratören får skapa och ändra
     $('meetingForm').classList.toggle('hidden', !admin);
     $('cancelMeetingEdit').classList.toggle('hidden', !admin);
 
+    // Dagordning – endast administratören får lägga till och ta bort
     const agendaForm = $('agendaForm');
+
     if (agendaForm) {
       agendaForm.closest('.panel').classList.toggle('hidden', !admin);
     }
 
+    // Protokoll – medlemmar får läsa men inte skriva
     $('saveMinutes').classList.toggle('hidden', !admin);
+
+    document.querySelectorAll(
+      '#minutesFields textarea, #migratedMinutes'
+    ).forEach(field => {
+      field.readOnly = !admin;
+      field.setAttribute('aria-readonly', String(!admin));
+    });
+
+    // Mötesdokument – endast administratören får ladda upp
     $('uploadForm').classList.toggle('hidden', !admin);
+
+    // Avtal – endast administratören får hantera
     $('contractAdminPanel').classList.toggle('hidden', !admin);
 
     // Dölj redigera- och ta bort-knappar
     document.querySelectorAll(
-  '[data-action="edit"], [data-action="delete"], ' +
-  '[data-delete-agenda], [data-contract-edit], [data-contract-delete]'
-).forEach(button => {
+      '[data-action="edit"],' +
+      '[data-action="delete"],' +
+      '[data-delete-agenda],' +
+      '[data-contract-edit],' +
+      '[data-contract-delete]'
+    ).forEach(button => {
       button.classList.toggle('hidden', !admin);
     });
 
-    // Dölj ta bort-knappen för dokument
-    document.querySelectorAll('.file-row .right button:last-child')
-      .forEach(button => {
+    // Dölj dokumentens Ta bort-knappar för medlemmar
+    document.querySelectorAll(
+      '#documentsList .file-row .right button'
+    ).forEach(button => {
+      const isDeleteButton =
+        button.textContent.trim() === 'Ta bort';
+
+      if (isDeleteButton) {
         button.classList.toggle('hidden', !admin);
-      });
+      }
+    });
 
-    // Medlemmar får läsa protokoll men inte ändra texten
-    document.querySelectorAll('#minutesFields textarea, #migratedMinutes')
-      .forEach(field => {
-        field.readOnly = !admin;
-      });
-
-    // Visa vilken roll användaren har
+    // Visa aktuell behörighet i användargränssnittet
     const roleLabel = $('userRoleLabel');
+
     if (roleLabel) {
       roleLabel.textContent = admin
         ? 'Administratör'
@@ -4569,41 +4589,46 @@ $('homeBtn').addEventListener('click', showHome);
   }
 
   async function loadUserRole(user) {
+    // Utgångsläget är alltid medlemsbehörighet
     isAdminUser = false;
-    roleCheckComplete = false;
     applyRolePermissions();
 
     if (!user) return;
+
+    // Kontrollera både inloggad e-postadress och databasens behörighet
+    const isTobias =
+      String(user.email || '').toLowerCase() === ADMIN_EMAIL;
+
+    if (!isTobias) {
+      applyRolePermissions();
+      message('Inloggad med medlemsbehörighet.', 'ok');
+      return;
+    }
 
     const { data, error } = await db.rpc(
       'current_user_is_admin'
     );
 
-    if (error) {
+    if (error || data !== true) {
+      isAdminUser = false;
+      applyRolePermissions();
+
       message(
-        'Kunde inte kontrollera behörigheten. Administrationsfunktionerna är låsta: ' +
-        error.message,
+        'Administratörsbehörigheten kunde inte verifieras. ' +
+        'Administrationsfunktionerna är låsta.',
         'error'
       );
-      roleCheckComplete = true;
-      applyRolePermissions();
+
       return;
     }
 
-    isAdminUser = data === true;
-    roleCheckComplete = true;
-
+    isAdminUser = true;
     applyRolePermissions();
 
-    message(
-      isAdminUser
-        ? 'Inloggad med administratörsbehörighet.'
-        : 'Inloggad med medlemsbehörighet.',
-      'ok'
-    );
+    message('Inloggad med administratörsbehörighet.', 'ok');
   }
 
-  // Uppdatera behörigheterna när innehåll skapas eller ändras
+  // Uppdatera behörigheterna när listor och formulär byggs om
   const permissionObserver = new MutationObserver(() => {
     applyRolePermissions();
   });
@@ -4613,33 +4638,43 @@ $('homeBtn').addEventListener('click', showHome);
     subtree: true
   });
 
-  // Skydda formulär även om någon försöker skicka dem
+  // Skydda formulär från obehörig användning
   document.addEventListener('submit', event => {
     if (isAdminUser) return;
 
     const restrictedForms = [
       'meetingForm',
       'agendaForm',
-      'uploadForm'
+      'uploadForm',
+      'contractForm'
     ];
 
     if (restrictedForms.includes(event.target.id)) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      message('Du har inte behörighet till den funktionen.', 'error');
+
+      message(
+        'Du har inte behörighet att använda den funktionen.',
+        'error'
+      );
     }
   }, true);
 
-  // Skydda administrationsknappar
+  // Skydda även sparknappen för protokollet
   document.addEventListener('click', event => {
     if (isAdminUser) return;
 
     const button = event.target.closest('button');
+
     if (!button) return;
 
     const restricted =
       button.matches(
-        '[data-action="edit"], [data-action="delete"], [data-delete-agenda]'
+        '[data-action="edit"],' +
+        '[data-action="delete"],' +
+        '[data-delete-agenda],' +
+        '[data-contract-edit],' +
+        '[data-contract-delete]'
       ) ||
       button.id === 'saveMinutes' ||
       button.id === 'cancelMeetingEdit' ||
@@ -4651,19 +4686,26 @@ $('homeBtn').addEventListener('click', showHome);
     if (restricted) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      message('Du har inte behörighet till den funktionen.', 'error');
+
+      message(
+        'Du har inte behörighet att använda den funktionen.',
+        'error'
+      );
     }
   }, true);
 
-  // Kontrollera rollen efter inloggning
+  // Kontrollera behörigheten efter inloggning
   const originalShowApp = showApp;
 
   showApp = function(user) {
+    isAdminUser = false;
+    applyRolePermissions();
+
     originalShowApp(user);
     loadUserRole(user);
   };
 
-  // Kontrollera även en redan aktiv session
+  // Kontrollera även en redan aktiv inloggning
   db.auth.getSession().then(({ data }) => {
     if (data.session?.user) {
       loadUserRole(data.session.user);
