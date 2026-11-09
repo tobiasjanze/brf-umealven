@@ -3622,130 +3622,253 @@ let boardMemberNames = {};
   return 'Aktivt';
 }
 
-  function renderContracts() {
-    const root = $('contractsOverview');
-    const home = $('homeContractsSummary');
+  
+function renderContracts() {
+  const root = $('contractsOverview');
+  const home = $('homeContractsSummary');
 
-    if (!root) return;
+  if (!root) return;
 
-    if (!contracts.length) {
-      root.innerHTML = '<p class="muted">Inga avtal är registrerade ännu.</p>';
+  const total = contracts.length;
 
-      if (home) {
-        home.textContent = 'Inga avtal är registrerade ännu.';
-      }
+  const active = contracts.filter(c =>
+    c.status === 'active'
+  ).length;
 
-      applyRolePermissions();
-      return;
+  const ending = contracts.filter(c => {
+    const days = contractDaysLeft(c.end_date);
+    return c.status === 'active' &&
+      days !== null && days >= 0 && days <= 90;
+  }).length;
+
+  const overdue = contracts.filter(c => {
+    const days = contractDaysLeft(c.end_date);
+    return c.status === 'active' &&
+      days !== null && days < 0;
+  }).length;
+
+  function responsibleName(contract) {
+    const id = contract.responsible_user;
+
+    if (!id) return 'Ej angiven';
+
+    if (
+      typeof boardMemberNames !== 'undefined' &&
+      boardMemberNames[id]
+    ) {
+      return boardMemberNames[id];
     }
 
-    root.innerHTML = contracts.map(contract => {
-      const statusClass = contractStatusClass(contract);
-      const statusLabel = contractStatusLabel(contract);
-
-      const cost = contract.annual_cost === null ||
-        contract.annual_cost === undefined ||
-        contract.annual_cost === ''
-          ? 'Ej angiven'
-          : Number(contract.annual_cost).toLocaleString('sv-SE') + ' kr';
-
-      return `
-        <article class="contract-card ${statusClass}">
-          <div class="contract-top">
-            <div>
-              <h3>${esc(contract.name || 'Avtal utan namn')}</h3>
-              <p class="muted">${esc(contract.supplier || 'Ingen leverantör angiven')}</p>
-            </div>
-
-            <span class="contract-status ${
-              statusClass === 'overdue' ? 'danger' :
-              statusClass === 'ending' ? 'warning' :
-              statusClass === 'terminated' ? 'neutral' : ''
-            }">
-              ${esc(statusLabel)}
-            </span>
-          </div>
-
-          ${contract.description ? `
-            <p>${esc(contract.description)}</p>
-          ` : ''}
-
-          <div class="contract-details">
-            <div>
-              <small>Startdatum</small>
-              <strong>${esc(contractDate(contract.start_date))}</strong>
-            </div>
-
-            <div>
-              <small>Slutdatum</small>
-              <strong>${esc(contractDate(contract.end_date))}</strong>
-            </div>
-
-            <div>
-              <small>Sista uppsägningsdatum</small>
-              <strong>${esc(contractDate(contract.notice_date))}</strong>
-            </div>
-
-            <div>
-              <small>Ansvarig</small>
-              <strong>${esc(
-  boardMemberNames[contract.responsible_user] ||
-  contract.responsible_user ||
-  'Ej angiven'
-)}</strong>
-            </div>
-
-            <div>
-              <small>Årskostnad</small>
-              <strong>${esc(cost)}</strong>
-            </div>
-
-            <div>
-              <small>Status</small>
-              <strong>${esc(contract.status || 'Ej angiven')}</strong>
-            </div>
-          </div>
-
-          ${contract.notes ? `
-            <p class="muted"><strong>Anteckningar:</strong> ${esc(contract.notes)}</p>
-          ` : ''}
-
-          <div class="contract-actions">
-            <button type="button" class="small"
-              data-contract-edit="${esc(contract.id)}">
-              Ändra avtal
-            </button>
-
-            <button type="button" class="small danger"
-              data-contract-delete="${esc(contract.id)}">
-              Ta bort avtal
-            </button>
-          </div>
-        </article>
-      `;
-    }).join('');
-
-    if (home) {
-      const active = contracts.filter(c =>
-  c.status === 'active'
-).length;
-
-      const ending = contracts.filter(c => {
-        const days = contractDaysLeft(c.end_date);
-        return c.status === 'active' &&
-          days !== null && days >= 0 && days <= 90;
-      }).length;
-
-      home.innerHTML = `
-        <strong>Avtalsöversikt</strong>
-        <p>Registrerade avtal: ${contracts.length}</p>
-        <p>Aktiva avtal: ${active}</p>
-        <p>Avtal som närmar sig slutdatum inom 90 dagar: ${ending}</p>
-      `;
-    }
-
-    applyRolePermissions();
+    return id;
   }
+
+  function statusPill(contract) {
+    const label = contractStatusLabel(contract);
+
+    let css = '';
+
+    if (contract.status === 'terminated') {
+      css = 'neutral';
+    } else if (
+      contract.status === 'ending' ||
+      contractDaysLeft(contract.end_date) <= 90 &&
+      contractDaysLeft(contract.end_date) >= 0
+    ) {
+      css = 'warning';
+    } else if (
+      contractDaysLeft(contract.end_date) < 0
+    ) {
+      css = 'danger';
+    }
+
+    return `<span class="contract-pill ${css}">
+      ${esc(label)}
+    </span>`;
+  }
+
+  let tableContent = '';
+
+  if (!contracts.length) {
+    tableContent = `
+      <div class="contract-empty">
+        Inga avtal är registrerade ännu.
+      </div>
+    `;
+  } else {
+    tableContent = `
+      <div class="contract-table-wrap">
+        <table class="contract-table">
+          <thead>
+            <tr>
+              <th>Avtal / Leverantör</th>
+              <th>Omfattning</th>
+              <th>Startdatum</th>
+              <th>Slutdatum</th>
+              <th>Status</th>
+              <th>Ansvarig</th>
+              <th>Åtgärd</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${contracts.map(contract => `
+              <tr>
+                <td>
+                  <span class="contract-name">
+                    ${esc(contract.name || 'Avtal utan namn')}
+                  </span>
+                  <span class="contract-supplier">
+                    ${esc(contract.supplier || 'Ingen leverantör')}
+                  </span>
+                </td>
+
+                <td>
+                  ${esc(contract.description || '—')}
+                </td>
+
+                <td>
+                  ${esc(contractDate(contract.start_date))}
+                </td>
+
+                <td>
+                  ${esc(contractDate(contract.end_date))}
+                </td>
+
+                <td>
+                  ${statusPill(contract)}
+                </td>
+
+                <td>
+                  <span class="contract-responsible">
+                    ${esc(responsibleName(contract))}
+                  </span>
+                </td>
+
+                <td>
+                  <div class="contract-actions">
+                    <button type="button"
+                      class="small"
+                      data-contract-edit="${esc(contract.id)}">
+                      Ändra
+                    </button>
+
+                    <button type="button"
+                      class="small danger"
+                      data-contract-delete="${esc(contract.id)}">
+                      Ta bort
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  const upcoming = contracts
+    .filter(contract => {
+      if (contract.status !== 'active') return false;
+
+      const days = contractDaysLeft(contract.end_date);
+
+      return days !== null && days <= 90;
+    })
+    .sort((a, b) =>
+      String(a.end_date || '').localeCompare(
+        String(b.end_date || '')
+      )
+    );
+
+  const upcomingContent = upcoming.length
+    ? upcoming.map(contract => {
+        const days = contractDaysLeft(contract.end_date);
+        const isOverdue = days < 0;
+
+        return `
+          <div class="contract-upcoming-item">
+            <span class="contract-upcoming-dot ${
+              isOverdue ? 'danger' : ''
+            }"></span>
+
+            <div>
+              <strong>${esc(contract.name)}</strong>
+              <span class="muted">
+                – ${
+                  isOverdue
+                    ? 'Slutdatum har passerat'
+                    : 'Slutdatum om ' + days + ' dagar'
+                }
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('')
+    : `
+      <div class="contract-empty">
+        Inga kommande avtalsåtgärder.
+      </div>
+    `;
+
+  root.innerHTML = `
+    <div class="contract-dashboard">
+
+      <div class="contract-stats">
+
+        <div class="contract-stat">
+          <small>TOTALT ANTAL AVTAL</small>
+          <strong>${total}</strong>
+        </div>
+
+        <div class="contract-stat active">
+          <small>AKTIVA AVTAL</small>
+          <strong>${active}</strong>
+        </div>
+
+        <div class="contract-stat ending">
+          <small>FÖRNYAS INOM 90 DAGAR</small>
+          <strong>${ending}</strong>
+        </div>
+
+        <div class="contract-stat overdue">
+          <small>KRÄVER ÅTGÄRD</small>
+          <strong>${overdue}</strong>
+        </div>
+
+      </div>
+
+      <section>
+        <div class="contract-table-heading">
+          Avtalsöversikt
+        </div>
+
+        ${tableContent}
+      </section>
+
+      <section class="contract-upcoming">
+        <div class="contract-upcoming-heading">
+          Kommande avtalsåtgärder
+        </div>
+
+        ${upcomingContent}
+      </section>
+
+    </div>
+  `;
+
+  if (home) {
+    home.innerHTML = `
+      <strong>Avtalsöversikt</strong>
+      <p>Registrerade avtal: ${total}</p>
+      <p>Aktiva avtal: ${active}</p>
+      <p>Avtal som närmar sig slutdatum inom 90 dagar: ${ending}</p>
+    `;
+  }
+
+  applyRolePermissions();
+}
+
 
   async function loadContracts() {
     const { data, error } = await db
