@@ -2125,7 +2125,40 @@ button.small.danger:hover {
       meeting.name ||
       'Möte utan titel';
   }
+// ===== ANSVVARIGA FÖR AVTAL =====
 
+async function loadContractResponsibleOptions() {
+    const select = $('contractResponsible');
+    if (!select) return;
+
+    const previousValue = select.value;
+
+    const { data, error } = await db.rpc('get_active_board_members');
+
+    if (error) {
+        console.error('Kunde inte hämta ansvariga:', error);
+        message('Kunde inte hämta styrelsemedlemmar.', 'error');
+        return;
+    }
+
+    select.innerHTML = '<option value="">Välj ansvarig...</option>';
+
+    (data || []).forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.user_id;
+        option.textContent = member.display_name;
+        select.appendChild(option);
+    });
+
+    if (previousValue) {
+        select.value = previousValue;
+    }
+}
+
+$('contractResponsible')?.addEventListener(
+    'focus',
+    loadContractResponsibleOptions
+);
   // Visa JavaScript-fel i stället för att misslyckas tyst.
 
   window.addEventListener('error', event => {
