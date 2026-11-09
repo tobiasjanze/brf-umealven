@@ -3352,16 +3352,16 @@ $('downloadMinutes').addEventListener('click', () => {
 }
 
   function contractStatusLabel(contract) {
-    if (contract.status === 'Avslutat') return 'Avslutat';
-    if (contract.status === 'Uppsagt') return 'Uppsagt';
+  if (contract.status === 'terminated') return 'Avslutat';
+  if (contract.status === 'ending') return 'Uppsagt';
 
-    const days = contractDaysLeft(contract.end_date);
+  const days = contractDaysLeft(contract.end_date);
 
-    if (days !== null && days < 0) return 'Slutdatum passerat';
-    if (days !== null && days <= 90) return 'Förnyelse närmar sig';
+  if (days !== null && days < 0) return 'Slutdatum passerat';
+  if (days !== null && days <= 90) return 'Förnyelse närmar sig';
 
-    return contract.status || 'Aktivt';
-  }
+  return 'Aktivt';
+}
 
   function renderContracts() {
     const root = $('contractsOverview');
