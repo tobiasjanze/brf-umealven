@@ -3268,6 +3268,333 @@ $('downloadMinutes').addEventListener('click', () => {
     message('Dokumentet har laddats upp.', 'ok');
   });
 
+  // =========================================
+  // BRF UMEÄLVEN – BEVAKA AVTAL
+  // Medlemmar: läsa avtal
+  // Administratör: läsa, skapa, ändra och ta bort
+  // =========================================
+
+  let contracts = [];
+
+  function contractDate(value) {
+    if (!value) return 'Ej angivet';
+
+    const parts = String(value).slice(0, 10).split('-');
+
+    if (parts.length !== 3) return String(value);
+
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+
+  function contractDaysLeft(value) {
+    if (!value) return null;
+
+    const parts = String(value).slice(0, 10).split('-').map(Number);
+
+    if (parts.length !== 3 || parts.some(Number.isNaN)) {
+      return null;
+    }
+
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+
+    return Math.ceil((date - today) / 86400000);
+  }
+
+  function contractStatusClass(contract) {
+    if (contract.status === 'Avslutat') return 'terminated';
+    if (contract.status === 'Uppsagt') return 'terminated';
+
+    const days = contractDaysLeft(contract.end_date);
+
+    if (days !== null && days < 0) return 'overdue';
+    if (days !== null && days <= 90) return 'ending';
+
+    return '';
+  }
+
+  function contractStatusLabel(contract) {
+    if (contract.status === 'Avslutat') return 'Avslutat';
+    if (contract.status === 'Uppsagt') return 'Uppsagt';
+
+    const days = contractDaysLeft(contract.end_date);
+
+    if (days !== null && days < 0) return 'Slutdatum passerat';
+    if (days !== null && days <= 90) return 'Förnyelse närmar sig';
+
+    return contract.status || 'Aktivt';
+  }
+
+  function renderContracts() {
+    const root = $('contractsOverview');
+    const home = $('homeContractsSummary');
+
+    if (!root) return;
+
+    if (!contracts.length) {
+      root.innerHTML = '<p class="muted">Inga avtal är registrerade ännu.</p>';
+
+      if (home) {
+        home.textContent = 'Inga avtal är registrerade ännu.';
+      }
+
+      applyRolePermissions();
+      return;
+    }
+
+    root.innerHTML = contracts.map(contract => {
+      const statusClass = contractStatusClass(contract);
+      const statusLabel = contractStatusLabel(contract);
+
+      const cost = contract.annual_cost === null ||
+        contract.annual_cost === undefined ||
+        contract.annual_cost === ''
+          ? 'Ej angiven'
+          : Number(contract.annual_cost).toLocaleString('sv-SE') + ' kr';
+
+      return `
+        <article class="contract-card ${statusClass}">
+          <div class="contract-top">
+            <div>
+              <h3>${esc(contract.name || 'Avtal utan namn')}</h3>
+              <p class="muted">${esc(contract.supplier || 'Ingen leverantör angiven')}</p>
+            </div>
+
+            <span class="contract-status ${
+              statusClass === 'overdue' ? 'danger' :
+              statusClass === 'ending' ? 'warning' :
+              statusClass === 'terminated' ? 'neutral' : ''
+            }">
+              ${esc(statusLabel)}
+            </span>
+          </div>
+
+          ${contract.description ? `
+            <p>${esc(contract.description)}</p>
+          ` : ''}
+
+          <div class="contract-details">
+            <div>
+              <small>Startdatum</small>
+              <strong>${esc(contractDate(contract.start_date))}</strong>
+            </div>
+
+            <div>
+              <small>Slutdatum</small>
+              <strong>${esc(contractDate(contract.end_date))}</strong>
+            </div>
+
+            <div>
+              <small>Sista uppsägningsdatum</small>
+              <strong>${esc(contractDate(contract.notice_date))}</strong>
+            </div>
+
+            <div>
+              <small>Ansvarig</small>
+              <strong>${esc(contract.responsible_user || 'Ej angiven')}</strong>
+            </div>
+
+            <div>
+              <small>Årskostnad</small>
+              <strong>${esc(cost)}</strong>
+            </div>
+
+            <div>
+              <small>Status</small>
+              <strong>${esc(contract.status || 'Ej angiven')}</strong>
+            </div>
+          </div>
+
+          ${contract.notes ? `
+            <p class="muted"><strong>Anteckningar:</strong> ${esc(contract.notes)}</p>
+          ` : ''}
+
+          <div class="contract-actions">
+            <button type="button" class="small"
+              data-contract-edit="${esc(contract.id)}">
+              Ändra avtal
+            </button>
+
+            <button type="button" class="small danger"
+              data-contract-delete="${esc(contract.id)}">
+              Ta bort avtal
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    if (home) {
+      const active = contracts.filter(c =>
+        c.status === 'Aktivt'
+      ).length;
+
+      const ending = contracts.filter(c => {
+        const days = contractDaysLeft(c.end_date);
+        return c.status === 'Aktivt' &&
+          days !== null && days >= 0 && days <= 90;
+      }).length;
+
+      home.innerHTML = `
+        <strong>Avtalsöversikt</strong>
+        <p>Registrerade avtal: ${contracts.length}</p>
+        <p>Aktiva avtal: ${active}</p>
+        <p>Avtal som närmar sig slutdatum inom 90 dagar: ${ending}</p>
+      `;
+    }
+
+    applyRolePermissions();
+  }
+
+  async function loadContracts() {
+    const { data, error } = await db
+      .from('board_contracts')
+      .select('*')
+      .order('end_date', {
+        ascending: true,
+        nullsFirst: false
+      });
+
+    if (error) {
+      message('Kunde inte läsa avtalen: ' + error.message, 'error');
+
+      $('contractsOverview').innerHTML =
+        '<p class="muted">Avtalen kunde inte hämtas.</p>';
+
+      return;
+    }
+
+    contracts = data || [];
+    renderContracts();
+  }
+
+  function resetContractForm() {
+    $('contractForm').reset();
+    $('contractId').value = '';
+  }
+
+  $('cancelContractEdit').addEventListener('click', () => {
+    resetContractForm();
+  });
+
+  $('contractForm').addEventListener('submit', async event => {
+    event.preventDefault();
+
+    if (!isAdminUser) {
+      message('Du har inte behörighet att ändra avtal.', 'error');
+      return;
+    }
+
+    const id = $('contractId').value;
+
+    const payload = {
+      name: $('contractName').value.trim(),
+      supplier: $('contractSupplier').value.trim(),
+      description: $('contractDescription').value.trim(),
+      start_date: $('contractStartDate').value || null,
+      end_date: $('contractEndDate').value || null,
+      notice_date: $('contractNoticeDate').value || null,
+      responsible_user: $('contractResponsible').value.trim(),
+      annual_cost: $('contractAnnualCost').value === ''
+        ? null
+        : Number($('contractAnnualCost').value),
+      status: $('contractStatus').value,
+      notes: $('contractNotes').value.trim()
+    };
+
+    const result = id
+      ? await db
+          .from('board_contracts')
+          .update(payload)
+          .eq('id', id)
+      : await db
+          .from('board_contracts')
+          .insert(payload);
+
+    if (result.error) {
+      message('Kunde inte spara avtalet: ' + result.error.message, 'error');
+      return;
+    }
+
+    resetContractForm();
+    await loadContracts();
+
+    message(
+      id ? 'Avtalet har uppdaterats.' : 'Ett nytt avtal har sparats.',
+      'ok'
+    );
+  });
+
+  $('contractsOverview').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-contract-edit]');
+    const deleteButton = event.target.closest('[data-contract-delete]');
+
+    if (editButton) {
+      if (!isAdminUser) {
+        message('Du har inte behörighet att ändra avtal.', 'error');
+        return;
+      }
+
+      const contract = contracts.find(item =>
+        String(item.id) === editButton.dataset.contractEdit
+      );
+
+      if (!contract) return;
+
+      $('contractId').value = contract.id;
+      $('contractName').value = contract.name || '';
+      $('contractSupplier').value = contract.supplier || '';
+      $('contractDescription').value = contract.description || '';
+      $('contractStartDate').value = contract.start_date || '';
+      $('contractEndDate').value = contract.end_date || '';
+      $('contractNoticeDate').value = contract.notice_date || '';
+      $('contractResponsible').value = contract.responsible_user || '';
+      $('contractAnnualCost').value = contract.annual_cost ?? '';
+      $('contractStatus').value = contract.status || 'Aktivt';
+      $('contractNotes').value = contract.notes || '';
+
+      $('contractAdminPanel').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+
+      return;
+    }
+
+    if (deleteButton) {
+      if (!isAdminUser) {
+        message('Du har inte behörighet att ta bort avtal.', 'error');
+        return;
+      }
+
+      const contract = contracts.find(item =>
+        String(item.id) === deleteButton.dataset.contractDelete
+      );
+
+      if (!contract) return;
+
+      if (!confirm(`Vill du ta bort avtalet "${contract.name}"?`)) {
+        return;
+      }
+
+      const { error } = await db
+        .from('board_contracts')
+        .delete()
+        .eq('id', contract.id);
+
+      if (error) {
+        message('Kunde inte ta bort avtalet: ' + error.message, 'error');
+        return;
+      }
+
+      await loadContracts();
+      message('Avtalet har tagits bort.', 'ok');
+    }
+  });
+
   // ===== NAVIGERING =====
 
 function showHome() {
