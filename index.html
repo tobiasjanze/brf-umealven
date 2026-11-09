@@ -3435,7 +3435,11 @@ let boardMemberNames = {};
 
             <div>
               <small>Ansvarig</small>
-              <strong>${esc(contract.responsible_user || 'Ej angiven')}</strong>
+              <strong>${esc(
+  boardMemberNames[contract.responsible_user] ||
+  contract.responsible_user ||
+  'Ej angiven'
+)}</strong>
             </div>
 
             <div>
