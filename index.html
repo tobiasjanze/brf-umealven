@@ -3071,6 +3071,7 @@ renderHome();
 
 
 
+
 async function renderHome() {
   const root = $('nextMeeting');
 
@@ -3081,7 +3082,6 @@ async function renderHome() {
     now.getDate()
   );
 
-  // Hämta kommande möten
   const upcoming = meetings
     .filter(meeting => {
       const value = meetingDate(meeting);
@@ -3090,28 +3090,25 @@ async function renderHome() {
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return false;
 
-      const meetingDay = new Date(
+      const day = new Date(
         date.getFullYear(),
         date.getMonth(),
         date.getDate()
       );
 
-      return meetingDay >= today;
+      return day >= today;
     })
     .sort((a, b) => {
-      const dateA = meetingDate(a).slice(0, 10);
-      const dateB = meetingDate(b).slice(0, 10);
+      const aDate = meetingDate(a).slice(0, 10);
+      const bDate = meetingDate(b).slice(0, 10);
 
-      const timeA = a.meeting_time || '00:00';
-      const timeB = b.meeting_time || '00:00';
-
-      return `${dateA}T${timeA}`.localeCompare(
-        `${dateB}T${timeB}`
-      );
+      return `${aDate}T${a.meeting_time || '00:00'}`
+        .localeCompare(
+          `${bDate}T${b.meeting_time || '00:00'}`
+        );
     })
     .slice(0, 4);
 
-  // Om inga möten finns
   if (!upcoming.length) {
     root.innerHTML = `
       <div class="home-meeting-empty">
@@ -3122,86 +3119,168 @@ async function renderHome() {
     return;
   }
 
-  // Bygg möteskorten
   root.innerHTML = upcoming.map(meeting => `
     <details class="home-meeting-entry">
 
-      <summary>
+      <summary class="home-meeting-summary">
         <span class="home-meeting-title">
           ${esc(meetingTitle(meeting))}
         </span>
-
         <span class="home-meeting-hint">
-          ${esc(dateText(meetingDate(meeting)))}
-          · Klicka för mötesinformation
+          Klicka för att visa mötesinformation
         </span>
       </summary>
 
       <div class="home-meeting-details">
 
-        <div class="home-meeting-info-grid">
+        <div class="home-meeting-layout">
 
-          <div class="home-meeting-info-item">
-            <small>DATUM</small>
-            <strong>${esc(dateText(meetingDate(meeting)))}</strong>
+          <div class="home-meeting-left">
+
+            <div class="home-meeting-detail">
+              <span class="home-detail-icon">▦</span>
+              <div>
+                <small>DATUM</small>
+                <strong>${esc(dateText(meetingDate(meeting)))}</strong>
+              </div>
+            </div>
+
+            <div class="home-meeting-detail">
+              <span class="home-detail-icon">◷</span>
+              <div>
+                <small>STARTTID</small>
+                <strong>${esc(meeting.meeting_time || 'Ej angiven')}</strong>
+              </div>
+            </div>
+
+            <div class="home-meeting-detail">
+              <span class="home-detail-icon">⌖</span>
+              <div>
+                <small>PLATS</small>
+                <strong>${esc(meeting.location || 'Ingen plats angiven')}</strong>
+              </div>
+            </div>
+
+            <div class="home-own-response">
+              <span id="homeMeetingResponse-${esc(meeting.id)}">
+                Hämtar ditt svar ...
+              </span>
+            </div>
+
           </div>
 
-          <div class="home-meeting-info-item">
-            <small>STARTTID</small>
-            <strong>${esc(meeting.meeting_time || 'Ej angiven')}</strong>
-          </div>
+          <div class="home-meeting-right">
+            <h4>Styrelsens mötessvar</h4>
 
-          <div class="home-meeting-info-item">
-            <small>PLATS</small>
-            <strong>${esc(meeting.location || 'Ingen plats angiven')}</strong>
+            <div class="home-response-counts"
+                 id="homeMeetingCounts-${esc(meeting.id)}">
+              <div class="home-count-box">
+                <strong>–</strong>
+                <span>Kommer</span>
+              </div>
+              <div class="home-count-box no">
+                <strong>–</strong>
+                <span>Kommer inte</span>
+              </div>
+              <div class="home-count-box undecided">
+                <strong>–</strong>
+                <span>Inte bestämt</span>
+              </div>
+            </div>
+
+            <p class="home-response-total"
+               id="homeMeetingTotal-${esc(meeting.id)}">
+              Hämtar sammanställning ...
+            </p>
           </div>
 
         </div>
-
-        <div class="home-meeting-response-box">
-          <small>DIN MÖTESANMÄLAN</small>
-          <p id="homeMeetingResponse-${esc(meeting.id)}">
-            Hämtar ditt svar ...
-          </p>
-        </div>
-
       </div>
     </details>
   `).join('');
 
-  // Hämta varje medlems eget svar
   await Promise.all(upcoming.map(async meeting => {
-    const { data, error } = await db
+
+    // Hämta användarens eget svar
+    const { data: ownData, error: ownError } = await db
       .from('meeting_responses')
       .select('response')
       .eq('meeting_id', meeting.id)
       .eq('user_id', currentUser.id)
       .maybeSingle();
 
-    const responseNode = $('homeMeetingResponse-' + meeting.id);
+    const ownNode = $('homeMeetingResponse-' + meeting.id);
 
-    if (!responseNode) return;
+    if (ownNode) {
+      if (ownError) {
+        ownNode.textContent = 'Kunde inte hämta ditt svar';
+      } else {
+        const ownResponse = ownData
+          ? ownData.response
+          : 'Inte besvarat';
 
-    if (error) {
-      responseNode.textContent = 'Kunde inte hämta ditt svar.';
-      responseNode.style.color = '#a73535';
+        ownNode.textContent = 'Ditt svar: ' + ownResponse;
+        ownNode.classList.toggle(
+          'not-coming',
+          ownResponse === 'Kommer inte'
+        );
+      }
+    }
+
+    // Hämta styrelsens sammanlagda svar
+    const { data: countsData, error: countsError } =
+      await db.rpc('get_meeting_response_counts', {
+        p_meeting_id: String(meeting.id)
+      });
+
+    const countsNode = $('homeMeetingCounts-' + meeting.id);
+    const totalNode = $('homeMeetingTotal-' + meeting.id);
+
+    if (countsError) {
+      if (totalNode) {
+        totalNode.textContent = 'Kunde inte hämta sammanställningen.';
+      }
       return;
     }
 
-    const response = data
-      ? data.response
-      : 'Inte besvarat';
+    const counts = {
+      'Kommer': 0,
+      'Kommer inte': 0,
+      'Inte bestämt': 0
+    };
 
-    responseNode.textContent = response;
+    (countsData || []).forEach(item => {
+      if (Object.prototype.hasOwnProperty.call(counts, item.response)) {
+        counts[item.response] = Number(item.total);
+      }
+    });
 
-    responseNode.style.color =
-      response === 'Kommer'
-        ? '#27734b'
-        : response === 'Kommer inte'
-          ? '#a73535'
-          : '#687783';
+    if (countsNode) {
+      countsNode.innerHTML = `
+        <div class="home-count-box">
+          <strong>${counts['Kommer']}</strong>
+          <span>Kommer</span>
+        </div>
+        <div class="home-count-box no">
+          <strong>${counts['Kommer inte']}</strong>
+          <span>Kommer inte</span>
+        </div>
+        <div class="home-count-box undecided">
+          <strong>${counts['Inte bestämt']}</strong>
+          <span>Inte bestämt</span>
+        </div>
+      `;
+    }
+
+    if (totalNode) {
+      const total = Object.values(counts)
+        .reduce((sum, value) => sum + value, 0);
+
+      totalNode.textContent = `Totalt: ${total} svar`;
+    }
   }));
 }
+
 
 
 
