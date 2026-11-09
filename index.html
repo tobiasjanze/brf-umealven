@@ -4472,14 +4472,71 @@ function renderContracts() {
     </div>
   `;
 
-  if (home) {
-    home.innerHTML = `
-      <strong>Avtalsöversikt</strong>
-      <p>Registrerade avtal: ${total}</p>
-      <p>Aktiva avtal: ${active}</p>
-      <p>Avtal som närmar sig slutdatum inom 90 dagar: ${ending}</p>
-    `;
-  }
+  
+if (home) {
+  const activeContracts = contracts.filter(c =>
+    c.status === 'active'
+  );
+
+  home.innerHTML = `
+    <h3>Aktiva avtal</h3>
+
+    ${
+      activeContracts.length
+        ? activeContracts.map(contract => `
+          <details class="home-contract-entry">
+
+            <summary>
+              <span class="home-contract-title">
+                ${esc(contract.name || 'Avtal utan namn')}
+              </span>
+              <span class="home-contract-hint">
+                Klicka för att visa avtalsinformation
+              </span>
+            </summary>
+
+            <div class="home-contract-details">
+
+              <div>
+                <small>AVTALSPERIOD</small>
+                <strong>
+                  ${esc(contractDate(contract.start_date))}
+                  – ${esc(contractDate(contract.end_date))}
+                </strong>
+              </div>
+
+              <div>
+                <small>ANSVARIG</small>
+                <strong>
+                  ${esc(
+                    contract.responsible_user
+                      ? boardMemberNames[contract.responsible_user] || 'Ej angiven'
+                      : 'Ej angiven'
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                <small>STATUS</small>
+                <strong>
+                  <span class="home-contract-status">
+                    Aktivt
+                  </span>
+                </strong>
+              </div>
+
+            </div>
+          </details>
+        `).join('')
+        : '<p class="muted">Inga aktiva avtal registrerade.</p>'
+    }
+
+    <p class="home-contract-footer">
+      Totalt ${total} registrerade avtal · ${active} aktiva
+    </p>
+  `;
+}
+
 
   applyRolePermissions();
 }
