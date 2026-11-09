@@ -3909,6 +3909,7 @@ let boardMemberNames = {};
 }
 
   
+
 function renderContracts() {
   const root = $('contractsOverview');
   const home = $('homeContractsSummary');
@@ -3938,120 +3939,120 @@ function renderContracts() {
 
     if (!id) return 'Ej angiven';
 
-    if (
-      typeof boardMemberNames !== 'undefined' &&
-      boardMemberNames[id]
-    ) {
-      return boardMemberNames[id];
-    }
+    return boardMemberNames[id] || id;
+  }
 
-    return id;
+  function cardClass(contract) {
+    if (contract.status === 'terminated') return 'terminated';
+    if (contract.status === 'ending') return 'ending';
+
+    const days = contractDaysLeft(contract.end_date);
+
+    if (days !== null && days < 0) return 'overdue';
+    if (days !== null && days <= 90) return 'ending';
+
+    return 'active';
   }
 
   function statusPill(contract) {
     const label = contractStatusLabel(contract);
+    const css = cardClass(contract);
 
-    let css = '';
-
-    if (contract.status === 'terminated') {
-      css = 'neutral';
-    } else if (
-      contract.status === 'ending' ||
-      contractDaysLeft(contract.end_date) <= 90 &&
-      contractDaysLeft(contract.end_date) >= 0
-    ) {
-      css = 'warning';
-    } else if (
-      contractDaysLeft(contract.end_date) < 0
-    ) {
-      css = 'danger';
-    }
-
-    return `<span class="contract-pill ${css}">
-      ${esc(label)}
-    </span>`;
+    return `
+      <span class="contract-pill ${
+        css === 'active' ? '' : css === 'terminated' ? 'neutral' :
+        css === 'overdue' ? 'danger' : 'warning'
+      }">
+        ${esc(label)}
+      </span>
+    `;
   }
 
-  let tableContent = '';
+  const cards = contracts.length
+    ? contracts.map(contract => `
+      <article class="contract-card ${cardClass(contract)}">
 
-  if (!contracts.length) {
-    tableContent = `
+        <div class="contract-card-header">
+          <div class="contract-card-title">
+            <h3>${esc(contract.name || 'Avtal utan namn')}</h3>
+            <span class="contract-supplier">
+              ${esc(contract.supplier || 'Ingen leverantör')}
+            </span>
+          </div>
+
+          ${statusPill(contract)}
+        </div>
+
+        <div class="contract-card-grid">
+
+          <div class="contract-field">
+            <small>Startdatum</small>
+            <strong>${esc(contractDate(contract.start_date))}</strong>
+          </div>
+
+          <div class="contract-field">
+            <small>Slutdatum</small>
+            <strong>${esc(contractDate(contract.end_date))}</strong>
+          </div>
+
+          <div class="contract-field">
+            <small>Ansvarig</small>
+            <strong>${esc(responsibleName(contract))}</strong>
+          </div>
+
+          <div class="contract-field">
+            <small>Uppsägningsdatum</small>
+            <strong>${esc(contractDate(contract.notice_date))}</strong>
+          </div>
+
+          <div class="contract-field">
+            <small>Årskostnad</small>
+            <strong>${
+              contract.annual_cost == null
+                ? 'Ej angiven'
+                : esc(Number(contract.annual_cost).toLocaleString('sv-SE')) + ' kr'
+            }</strong>
+          </div>
+
+        </div>
+
+        ${
+          contract.description
+            ? `<div class="contract-card-description">
+                ${esc(contract.description)}
+              </div>`
+            : ''
+        }
+
+        ${
+          contract.notes
+            ? `<div class="contract-card-description">
+                <strong>Anteckningar:</strong><br>
+                ${esc(contract.notes)}
+              </div>`
+            : ''
+        }
+
+        <div class="contract-card-actions">
+          <button type="button"
+            data-contract-edit="${esc(contract.id)}">
+            Ändra
+          </button>
+
+          <button type="button"
+            class="danger"
+            data-contract-delete="${esc(contract.id)}">
+            Ta bort
+          </button>
+        </div>
+
+      </article>
+    `).join('')
+    : `
       <div class="contract-empty">
         Inga avtal är registrerade ännu.
       </div>
     `;
-  } else {
-    tableContent = `
-      <div class="contract-table-wrap">
-        <table class="contract-table">
-          <thead>
-            <tr>
-              <th>Avtal / Leverantör</th>
-              <th>Omfattning</th>
-              <th>Startdatum</th>
-              <th>Slutdatum</th>
-              <th>Status</th>
-              <th>Ansvarig</th>
-              <th>Åtgärd</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            ${contracts.map(contract => `
-              <tr>
-                <td>
-                  <span class="contract-name">
-                    ${esc(contract.name || 'Avtal utan namn')}
-                  </span>
-                  <span class="contract-supplier">
-                    ${esc(contract.supplier || 'Ingen leverantör')}
-                  </span>
-                </td>
-
-                <td>
-                  ${esc(contract.description || '—')}
-                </td>
-
-                <td>
-                  ${esc(contractDate(contract.start_date))}
-                </td>
-
-                <td>
-                  ${esc(contractDate(contract.end_date))}
-                </td>
-
-                <td>
-                  ${statusPill(contract)}
-                </td>
-
-                <td>
-                  <span class="contract-responsible">
-                    ${esc(responsibleName(contract))}
-                  </span>
-                </td>
-
-                <td>
-                  <div class="contract-actions">
-                    <button type="button"
-                      class="small"
-                      data-contract-edit="${esc(contract.id)}">
-                      Ändra
-                    </button>
-
-                    <button type="button"
-                      class="small danger"
-                      data-contract-delete="${esc(contract.id)}">
-                      Ta bort
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
 
   const upcoming = contracts
     .filter(contract => {
@@ -4129,7 +4130,9 @@ function renderContracts() {
           Avtalsöversikt
         </div>
 
-        ${tableContent}
+        <div class="contract-list">
+          ${cards}
+        </div>
       </section>
 
       <section class="contract-upcoming">
@@ -4154,6 +4157,7 @@ function renderContracts() {
 
   applyRolePermissions();
 }
+
 
 
   async function loadContracts() {
