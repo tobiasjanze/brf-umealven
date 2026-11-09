@@ -2162,7 +2162,157 @@ button.small.danger:hover {
     overflow-wrap: anywhere;
   }
 }
+/* =========================================
+   BRF UMEÄLVEN – VATTENSTÄMPEL AVTALSKORT
+   SAMT FÖRBÄTTRAD MOBILANPASSNING
+   ========================================= */
 
+/* Vattenstämpel på avtalskorten */
+.contract-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.contract-card::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: 12px;
+  bottom: 5px;
+  width: 185px;
+  height: 135px;
+  opacity: 0.13;
+  pointer-events: none;
+  background-image: url("brf-umealven-symbol.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Innehållet ska ligga ovanför vattenstämpeln */
+.contract-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Se till att avtalsinformationen får plats */
+.contract-card,
+.contract-card-header,
+.contract-card-grid,
+.contract-card-description,
+.contract-card-actions {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Surfplatta */
+@media (max-width: 850px) {
+  .contract-card::after {
+    width: 145px;
+    height: 115px;
+    opacity: 0.12;
+  }
+
+  .contract-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobiltelefon */
+@media (max-width: 600px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  .contract-card {
+    padding: 15px 13px 16px 17px;
+  }
+
+  .contract-card::after {
+    width: 105px;
+    height: 95px;
+    right: 5px;
+    bottom: 5px;
+    opacity: 0.10;
+  }
+
+  .contract-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .contract-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 9px;
+  }
+
+  .contract-field {
+    border-right: 0;
+    padding-right: 4px;
+  }
+
+  .contract-field strong {
+    font-size: 0.88rem;
+  }
+
+  .contract-card-actions {
+    justify-content: stretch;
+  }
+
+  .contract-card-actions button {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .home-meeting-entry {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .home-meeting-entry summary {
+    padding-right: 32px;
+  }
+
+  .home-meeting-details {
+    overflow-wrap: anywhere;
+  }
+
+  .home-meeting-time,
+  .home-meeting-location {
+    font-size: 1.05rem;
+  }
+
+  .home-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .toolbar button {
+    max-width: 100%;
+  }
+
+  .file-row {
+    align-items: flex-start;
+  }
+
+  .file-row .right {
+    width: 100%;
+  }
+
+  .file-row .right button {
+    flex: 1 1 auto;
+  }
+}
   </style>
 </head>
 
