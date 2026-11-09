@@ -1877,6 +1877,292 @@ button.small.danger:hover {
   }
 }
 
+/* =========================================
+   BRF UMEÄLVEN – AVTALSKORT OCH MOBILVY
+   ========================================= */
+
+/* Avtalskort – dator och iPad */
+
+.contract-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.contract-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px 22px 18px 26px;
+  margin: 0;
+  border: 1px solid #d7e1e9;
+  border-left: 7px solid #2878aa;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(23, 50, 77, .06);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.contract-card.active {
+  border-left-color: #319264;
+}
+
+.contract-card.ending {
+  border-left-color: #d99a25;
+  background: linear-gradient(110deg, #fffdf8, #fff);
+}
+
+.contract-card.overdue {
+  border-left-color: #b83b3b;
+  background: linear-gradient(110deg, #fff8f8, #fff);
+}
+
+.contract-card.terminated {
+  border-left-color: #9aa5ad;
+  background: #f7f8f9;
+}
+
+.contract-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 13px;
+  border-bottom: 1px solid #dce5ec;
+}
+
+.contract-card-title {
+  min-width: 0;
+}
+
+.contract-card-title h3 {
+  margin: 0;
+  color: #17324d;
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+
+.contract-card-title .contract-supplier {
+  margin-top: 4px;
+}
+
+.contract-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px 20px;
+}
+
+.contract-field {
+  min-width: 0;
+  padding-right: 12px;
+  border-right: 1px solid #e2e9ef;
+}
+
+.contract-field:last-child {
+  border-right: 0;
+}
+
+.contract-field small {
+  display: block;
+  margin-bottom: 4px;
+  color: #687783;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+.contract-field strong {
+  display: block;
+  color: #243d54;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.contract-card-description {
+  padding: 12px 14px;
+  background: #f3f7fa;
+  border-radius: 8px;
+  color: #435768;
+  overflow-wrap: anywhere;
+}
+
+.contract-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid #dce5ec;
+}
+
+.contract-card-actions button {
+  min-width: 95px;
+}
+
+/* Status */
+
+.contract-pill {
+  flex-shrink: 0;
+}
+
+/* Statistik */
+
+.contract-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Surfplatta */
+
+@media (max-width: 850px) {
+  .contract-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contract-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contract-card {
+    padding: 18px 18px 16px 22px;
+  }
+}
+
+/* Mobil */
+
+@media (max-width: 600px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .wrap,
+  #appPanel,
+  #tab-contracts,
+  #tab-contracts > .panel,
+  #contractsOverview {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #tab-contracts > .panel {
+    padding: 13px;
+  }
+
+  .contract-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .contract-stat {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  .contract-stat small {
+    font-size: .72rem;
+    line-height: 1.35;
+  }
+
+  .contract-stat strong {
+    font-size: 1.55rem;
+  }
+
+  .contract-card {
+    padding: 15px 13px 14px 17px;
+    gap: 12px;
+  }
+
+  .contract-card-header {
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .contract-card-title h3 {
+    font-size: 1.05rem;
+  }
+
+  .contract-card-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 10px;
+  }
+
+  .contract-field {
+    padding-right: 7px;
+  }
+
+  .contract-field small {
+    font-size: .7rem;
+  }
+
+  .contract-field strong {
+    font-size: .9rem;
+  }
+
+  .contract-card-description {
+    padding: 10px;
+    font-size: .9rem;
+  }
+
+  .contract-card-actions {
+    justify-content: flex-start;
+  }
+
+  .contract-card-actions button {
+    flex: 1 1 auto;
+  }
+
+  .contract-table-wrap {
+    display: none;
+  }
+
+  /* Mobil navigering – Startsida får en egen rad */
+
+  #appNav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    width: 100%;
+  }
+
+  #appNav .tab {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 10px 7px;
+    font-size: .88rem;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  #appNav #homeBtn {
+    grid-column: 1 / -1;
+    justify-self: end;
+    width: auto;
+    min-width: 125px;
+    margin: 2px 0 0;
+  }
+
+  header {
+    min-width: 0;
+  }
+
+  #userBar {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #userEmail {
+    overflow-wrap: anywhere;
+  }
+}
+
   </style>
 </head>
 
