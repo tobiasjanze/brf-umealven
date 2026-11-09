@@ -2388,6 +2388,355 @@ button.small.danger:hover {
   }
 }
 
+/* =========================================
+   BRF UMEÄLVEN – GODKÄND STARTSIDEDESIGN
+   ========================================= */
+
+/* Möteskort */
+
+.next-meeting {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.home-meeting-entry {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid #b8d5eb;
+  border-left: 8px solid #168bd0;
+  border-radius: 16px;
+  padding: 12px 24px;
+  background: linear-gradient(110deg,#eef7ff,#dcecfb);
+  box-shadow: 0 5px 14px rgba(28,86,130,.09);
+}
+
+.home-meeting-entry::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: 8px;
+  bottom: 4px;
+  width: 190px;
+  height: 150px;
+  opacity: .19;
+  pointer-events: none;
+  background: url("brf-umealven-symbol.png") center / contain no-repeat;
+}
+
+.home-meeting-summary {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  list-style: none;
+  padding: 7px 42px 12px 0;
+  border-bottom: 1px solid #c3d9e9;
+}
+
+.home-meeting-summary::-webkit-details-marker,
+.home-contract-entry summary::-webkit-details-marker {
+  display: none;
+}
+
+.home-meeting-summary::after,
+.home-contract-entry summary::after {
+  content: "⌄";
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  color: #17324d;
+  font-size: 27px;
+}
+
+.home-meeting-entry[open] .home-meeting-summary::after,
+.home-contract-entry[open] summary::after {
+  content: "⌃";
+}
+
+.home-meeting-title {
+  display: block;
+  color: #17324d;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.home-meeting-hint {
+  display: block;
+  color: #526779;
+  font-size: .95rem;
+  margin-top: 4px;
+}
+
+.home-meeting-details {
+  padding-top: 15px;
+}
+
+.home-meeting-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 22px;
+}
+
+.home-meeting-left {
+  padding-right: 18px;
+  border-right: 1px solid #b8d5eb;
+}
+
+.home-meeting-detail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.home-detail-icon {
+  color: #176ba5;
+  font-size: 23px;
+  width: 25px;
+  flex-shrink: 0;
+}
+
+.home-meeting-detail small,
+.home-contract-details small {
+  display: block;
+  color: #526779;
+  font-size: .73rem;
+  font-weight: 700;
+  letter-spacing: .35px;
+}
+
+.home-meeting-detail strong {
+  display: block;
+  color: #17324d;
+  overflow-wrap: anywhere;
+}
+
+.home-own-response {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 13px;
+  border-radius: 9px;
+  background: #dff3e3;
+  color: #176c39;
+  font-weight: 700;
+}
+
+.home-own-response .not-coming {
+  background: #f9dddd;
+  color: #a73535;
+}
+
+.home-meeting-right h4 {
+  color: #17324d;
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
+.home-response-counts {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 9px;
+}
+
+.home-count-box {
+  text-align: center;
+  padding: 12px 5px;
+  border-radius: 11px;
+  background: #dff2e5;
+  color: #176c39;
+}
+
+.home-count-box.no {
+  background: #f9e1e1;
+  color: #a73535;
+}
+
+.home-count-box.undecided {
+  background: #edf0f3;
+  color: #405467;
+}
+
+.home-count-box strong {
+  display: block;
+  font-size: 1.7rem;
+}
+
+.home-count-box span {
+  display: block;
+  font-size: .83rem;
+  font-weight: 600;
+}
+
+.home-response-total {
+  color: #405467;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.home-meeting-empty {
+  padding: 22px;
+  border: 1px solid #d3e1eb;
+  border-radius: 14px;
+  background: #f2f7fb;
+}
+
+/* Avtalskort på startsidan */
+
+.contract-summary {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid #b8d5eb;
+  border-left: 8px solid #168bd0;
+  border-radius: 16px;
+  background: linear-gradient(110deg,#eef7ff,#dcecfb);
+  box-shadow: 0 5px 14px rgba(28,86,130,.08);
+}
+
+.contract-summary > h3 {
+  color: #17324d;
+  font-size: 1.25rem;
+  margin: 0 0 14px;
+}
+
+.home-contract-entry {
+  position: relative;
+  margin: 10px 0;
+  padding: 12px 16px;
+  border: 1px solid #b8d5eb;
+  border-left: 5px solid #319264;
+  border-radius: 12px;
+  background: rgba(255,255,255,.78);
+}
+
+.home-contract-entry summary {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  list-style: none;
+  padding: 2px 35px 2px 0;
+}
+
+.home-contract-title {
+  display: block;
+  color: #17324d;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.home-contract-hint {
+  display: block;
+  color: #526779;
+  font-size: .88rem;
+  margin-top: 3px;
+}
+
+.home-contract-details {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr .7fr;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid #cbdce9;
+}
+
+.home-contract-details strong {
+  display: block;
+  color: #17324d;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+
+.home-contract-status {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 7px;
+  background: #dff3e3;
+  color: #176c39;
+}
+
+.home-contract-footer {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #c3d9e9;
+  color: #526779;
+  font-size: .9rem;
+}
+
+/* Fyra funktionskort – två kolumner */
+
+.home-cards {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 16px;
+}
+
+.home-card {
+  min-height: 112px;
+}
+
+/* Responsiv anpassning */
+
+@media(max-width:850px) {
+  .home-meeting-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .home-meeting-left {
+    border-right: 0;
+    border-bottom: 1px solid #b8d5eb;
+    padding: 0 0 13px;
+  }
+}
+
+@media(max-width:600px) {
+  .home-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .home-meeting-entry {
+    padding: 12px 15px;
+  }
+
+  .home-meeting-title {
+    font-size: 1.08rem;
+  }
+
+  .home-meeting-entry::after {
+    width: 110px;
+    height: 100px;
+    opacity: .12;
+  }
+
+  .home-response-counts {
+    gap: 5px;
+  }
+
+  .home-count-box {
+    padding: 10px 3px;
+  }
+
+  .home-count-box strong {
+    font-size: 1.4rem;
+  }
+
+  .home-count-box span {
+    font-size: .72rem;
+  }
+
+  .home-contract-details {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .home-contract-details > div:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
   </style>
 </head>
 
