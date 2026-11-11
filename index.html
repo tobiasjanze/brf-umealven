@@ -4824,69 +4824,112 @@ function renderContracts() {
   `;
 
   
+
 if (home) {
+  // Hämta endast aktiva avtal
   const activeContracts = contracts.filter(c =>
     c.status === 'active'
   );
 
+  // Sortera efter sista uppsägningsdatum.
+  // När datum saknas hamnar avtalet sist.
+  const priorityContracts = [...activeContracts].sort((a, b) => {
+    const daysA = contractDaysLeft(a.notice_date);
+    const daysB = contractDaysLeft(b.notice_date);
+
+    return (daysA === null ? Infinity : daysA) -
+           (daysB === null ? Infinity : daysB);
+  });
+
+  // Visa de fem mest angelägna avtalen
+  const topContracts = priorityContracts.slice(0, 5);
+
   home.innerHTML = `
-    <h3>Aktiva avtal</h3>
+    <h3>Aktiva avtal – närmast uppsägningsfrist</h3>
+
+    <p class="muted">
+      De fem avtal som först behöver uppmärksammas.
+    </p>
 
     ${
-      activeContracts.length
-        ? activeContracts.map(contract => `
-          <details class="home-contract-entry ${cardClass(contract)}">
+      topContracts.length
+        ? topContracts.map(contract => {
 
-            <summary>
-              <span class="home-contract-title">
-                ${esc(contract.name || 'Avtal utan namn')}
-              </span>
-              <span class="home-contract-hint">
-                Klicka för att visa avtalsinformation
-              </span>
-            </summary>
+          const days = contractDaysLeft(contract.notice_date);
 
-            <div class="home-contract-details">
+          const urgencyClass =
+            days !== null && days < 0
+              ? 'overdue'
+              : days !== null && days <= 90
+                ? 'ending'
+                : 'active';
 
-              <div>
-                <small>AVTALSPERIOD</small>
-                <strong>
-                  ${esc(contractDate(contract.start_date))}
-                  – ${esc(contractDate(contract.end_date))}
-                </strong>
+          const urgencyText =
+            days === null
+              ? 'Uppsägningsdatum ej angivet'
+              : days < 0
+                ? 'Uppsägningsdatum har passerat'
+                : days <= 90
+                  ? 'Uppsägningsfrist inom ' + days + ' dagar'
+                  : 'Sista uppsägningsdag om ' + days + ' dagar';
+
+          return `
+            <details class="home-contract-entry ${urgencyClass}">
+
+              <summary>
+                <span class="home-contract-title">
+                  ${esc(contract.name || 'Avtal utan namn')}
+                </span>
+
+                <span class="home-contract-hint">
+                  ${esc(urgencyText)}
+                </span>
+              </summary>
+
+              <div class="home-contract-details">
+
+                <div>
+                  <small>AVTALSPERIOD</small>
+                  <strong>
+                    ${esc(contractDate(contract.start_date))}
+                    – ${esc(contractDate(contract.end_date))}
+                  </strong>
+                </div>
+
+                <div>
+                  <small>ANSVARIG</small>
+                  <strong>
+                    ${esc(responsibleName(contract))}
+                  </strong>
+                </div>
+
+                <div>
+                  <small>SISTA UPPSÄGNINGSDAG</small>
+                  <strong>
+                    ${esc(contractDate(contract.notice_date))}
+                  </strong>
+                </div>
+
               </div>
-
-              <div>
-                <small>ANSVARIG</small>
-                <strong>
-                  ${esc(
-                    contract.responsible_user
-                      ? boardMemberNames[contract.responsible_user] || 'Ej angiven'
-                      : 'Ej angiven'
-                  )}
-                </strong>
-              </div>
-
-              <div>
-                <small>STATUS</small>
-                <strong>
-                  <span class="home-contract-status">
-                    Aktivt
-                  </span>
-                </strong>
-              </div>
-
-            </div>
-          </details>
-        `).join('')
+            </details>
+          `;
+        }).join('')
         : '<p class="muted">Inga aktiva avtal registrerade.</p>'
     }
 
     <p class="home-contract-footer">
-      Totalt ${total} registrerade avtal · ${active} aktiva
+      Visar ${topContracts.length} av ${activeContracts.length} aktiva avtal.
+      ${total} avtal registrerade totalt.
     </p>
+
+    <button type="button"
+      class="secondary"
+      data-open-tab="contracts">
+      Visa alla avtal →
+    </button>
   `;
 }
+
 
 
   applyRolePermissions();
