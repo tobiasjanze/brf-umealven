@@ -5185,6 +5185,54 @@ if (home) {
     renderContracts();
   }
 
+  
+  // ===== FILTER FÖR AVTAL =====
+
+  $('contractsOverview').addEventListener('input', event => {
+    if (event.target.id !== 'contractFilterSearch') return;
+
+    const input = event.target;
+    const cursor = input.selectionStart;
+
+    contractFilters.search = input.value;
+
+    renderContracts();
+
+    const newInput = $('contractFilterSearch');
+    newInput.focus();
+    newInput.setSelectionRange(cursor, cursor);
+  });
+
+  $('contractsOverview').addEventListener('change', event => {
+    const id = event.target.id;
+
+    if (id === 'contractFilterStatus') {
+      contractFilters.status = event.target.value;
+    } else if (id === 'contractFilterResponsible') {
+      contractFilters.responsible = event.target.value;
+    } else if (id === 'contractFilterRenewal') {
+      contractFilters.renewal = event.target.value;
+    } else {
+      return;
+    }
+
+    renderContracts();
+  });
+
+  $('contractsOverview').addEventListener('click', event => {
+    if (event.target.id !== 'clearContractFilters') return;
+
+    contractFilters = {
+      search: '',
+      status: '',
+      responsible: '',
+      renewal: ''
+    };
+
+    renderContracts();
+  });
+
+
   function resetContractForm() {
     $('contractForm').reset();
     $('contractId').value = '';
