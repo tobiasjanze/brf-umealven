@@ -1618,6 +1618,66 @@ button.small.danger:hover {
   gap: 12px;
 }
 
+
+    
+/* Filtrering av avtal */
+
+.contract-filters {
+  background: #f5f8fb;
+  border: 1px solid #d7e1e9;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 4px;
+}
+
+.contract-filter-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.contract-filter-grid label {
+  display: block;
+  margin: 0 0 5px;
+  font-size: .85rem;
+  color: #526779;
+}
+
+.contract-filter-grid input,
+.contract-filter-grid select {
+  width: 100%;
+  min-width: 0;
+  background: white;
+}
+
+.contract-filter-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.contract-filter-footer button {
+  background: #e5edf5;
+  color: #173f68;
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .contract-filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 450px) {
+  .contract-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .contract-stat {
   padding: 17px;
   border-radius: 13px;
