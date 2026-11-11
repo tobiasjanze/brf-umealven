@@ -5172,7 +5172,167 @@ $('homeBtn').addEventListener('click', showHome);
       showApp(data.session.user);
     }
   });
+// ===== SKAPA KALLELSE – BRF UMEÄLVEN =====
 
+function createMeetingNotice() {
+  if (!isAdminUser) {
+    message('Du saknar behörighet.', 'error');
+    return;
+  }
+
+  const meeting = meetings.find(
+    item => String(item.id) === String(selectedMeetingId)
+  );
+
+  if (!meeting) {
+    message('Välj ett möte först.', 'error');
+    return;
+  }
+
+  const logo = new URL(
+    'brf-umealven-logotyp.png',
+    window.location.href
+  ).href;
+
+  const noticeWindow = window.open('', '_blank');
+
+  if (!noticeWindow) {
+    message('Tillåt popup-fönster för att skapa kallelsen.', 'error');
+    return;
+  }
+
+  noticeWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="sv">
+    <head>
+      <meta charset="UTF-8">
+      <title>Kallelse – ${esc(meetingTitle(meeting))}</title>
+
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          color: #24313c;
+          margin: 0;
+          padding: 35px;
+          line-height: 1.5;
+        }
+
+        .page {
+          max-width: 720px;
+          margin: auto;
+        }
+
+        .logo {
+          width: 230px;
+          height: auto;
+          margin-bottom: 35px;
+        }
+
+        h1 {
+          color: #17324d;
+          font-size: 28px;
+          border-bottom: 3px solid #245b83;
+          padding-bottom: 12px;
+        }
+
+        h2 {
+          color: #17324d;
+          margin-top: 35px;
+        }
+
+        .meeting-info {
+          background: #eef4f8;
+          border-left: 5px solid #245b83;
+          padding: 18px;
+          margin: 25px 0;
+        }
+
+        .meeting-info p {
+          margin: 7px 0;
+        }
+
+        .notes {
+          white-space: pre-wrap;
+        }
+
+        .footer {
+          margin-top: 55px;
+          border-top: 1px solid #ccd6df;
+          padding-top: 15px;
+          color: #687783;
+          font-size: 12px;
+        }
+
+        @page {
+          size: A4;
+          margin: 20mm;
+        }
+
+        @media print {
+          body {
+            padding: 0;
+          }
+
+          .page {
+            max-width: none;
+          }
+        }
+      </style>
+    </head>
+
+    <body>
+      <div class="page">
+
+        <img class="logo" src="${logo}"
+             alt="BRF Umeälven">
+
+        <h1>Kallelse till styrelsemöte</h1>
+
+        <p>
+          Härmed kallas styrelsens ledamöter
+          till följande möte.
+        </p>
+
+        <div class="meeting-info">
+          <p><strong>Möte:</strong>
+            ${esc(meetingTitle(meeting))}</p>
+
+          <p><strong>Datum:</strong>
+            ${esc(dateText(meetingDate(meeting)))}</p>
+
+          <p><strong>Tid:</strong>
+            ${esc(meeting.meeting_time || 'Ej angiven')}</p>
+
+          <p><strong>Plats:</strong>
+            ${esc(meeting.location || 'Ej angiven')}</p>
+        </div>
+
+        <h2>Information</h2>
+
+        <div class="notes">
+          ${esc(meeting.notes || 'Ingen ytterligare information angiven.')}
+        </div>
+
+        <div class="footer">
+          Bostadsrättsföreningen Umeälven<br>
+          Styrelsen
+        </div>
+
+      </div>
+
+      <script>
+        window.onload = function() {
+          window.print();
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+
+  noticeWindow.document.close();
+}
+
+// ===== SLUT SKAPA KALLELSE =====
   // ===== LÄGG TILL MÖTE I KALENDER =====
 
   function downloadMeetingCalendar(meeting) {
