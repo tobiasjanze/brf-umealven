@@ -4565,7 +4565,7 @@ function contractActionDate(contract) {
   if (contract.status === 'terminated') return 'terminated';
   if (contract.status === 'ending') return 'terminated';
 
-  const days = contractDaysLeft(contract.end_date);
+  const days = contractDaysLeft(contractActionDate(contract));
 
   if (days !== null && days < 0) return 'overdue';
   if (days !== null && days <= 90) return 'ending';
@@ -4577,7 +4577,7 @@ function contractActionDate(contract) {
   if (contract.status === 'terminated') return 'Avslutat';
   if (contract.status === 'ending') return 'Uppsagt';
 
-  const days = contractDaysLeft(contract.end_date);
+  const days = contractDaysLeft(contractActionDate(contract));
 
   if (days !== null && days < 0) return 'Slutdatum passerat';
   if (days !== null && days <= 90) return 'Förnyelse närmar sig';
@@ -4600,13 +4600,13 @@ function renderContracts() {
   ).length;
 
   const ending = contracts.filter(c => {
-    const days = contractDaysLeft(c.end_date);
+    const days = contractDaysLeft(contractActionDate(c));
     return c.status === 'active' &&
       days !== null && days >= 0 && days <= 90;
   }).length;
 
   const overdue = contracts.filter(c => {
-    const days = contractDaysLeft(c.end_date);
+    const days = contractDaysLeft(contractActionDate(c));
     return c.status === 'active' &&
       days !== null && days < 0;
   }).length;
@@ -4623,7 +4623,7 @@ function renderContracts() {
     if (contract.status === 'terminated') return 'terminated';
     if (contract.status === 'ending') return 'ending';
 
-    const days = contractDaysLeft(contract.end_date);
+    const days = contractDaysLeft(contractActionDate(contract));
 
     if (days !== null && days < 0) return 'overdue';
     if (days !== null && days <= 90) return 'ending';
@@ -4735,7 +4735,7 @@ function renderContracts() {
     .filter(contract => {
       if (contract.status !== 'active') return false;
 
-      const days = contractDaysLeft(contract.end_date);
+      const days = contractDaysLeft(contractActionDate(contract));
 
       return days !== null && days <= 90;
     })
@@ -4747,7 +4747,7 @@ function renderContracts() {
 
   const upcomingContent = upcoming.length
     ? upcoming.map(contract => {
-        const days = contractDaysLeft(contract.end_date);
+        const days = contractDaysLeft(contractActionDate(contract));
         const isOverdue = days < 0;
 
         return `
