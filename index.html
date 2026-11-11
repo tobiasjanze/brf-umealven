@@ -4761,8 +4761,8 @@ function renderContracts() {
               <span class="muted">
                 – ${
                   isOverdue
-                    ? 'Slutdatum har passerat'
-                    : 'Slutdatum om ' + days + ' dagar'
+                    ? 'Sista uppsägningsdag har passerat'
+: 'Uppsägningsfrist om ' + days + ' dagar'
                 }
               </span>
             </div>
@@ -4791,7 +4791,7 @@ function renderContracts() {
         </div>
 
         <div class="contract-stat ending">
-          <small>FÖRNYAS INOM 90 DAGAR</small>
+          <small>UPPSÄGNINGSFRIST INOM 90 DAGAR</small>
           <strong>${ending}</strong>
         </div>
 
