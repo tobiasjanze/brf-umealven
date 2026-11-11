@@ -5126,11 +5126,15 @@ document.querySelectorAll('.tab[data-tab]').forEach(button => {
   });
 });
 
-document.querySelectorAll('[data-open-tab]').forEach(button => {
-  button.addEventListener('click', () => {
-    showTab(button.dataset.openTab);
-  });
+
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-open-tab]');
+
+  if (!button) return;
+
+  showTab(button.dataset.openTab);
 });
+
 
 $('homeBtn').addEventListener('click', showHome);
 
