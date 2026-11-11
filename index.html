@@ -3971,12 +3971,12 @@ async function renderHome() {
         items.forEach((item, index) =>
   body.append(agendaItemNode(item, String.fromCharCode(97 + index)))
 );
-      } else {
-        const empty = document.createElement('p');
-        empty.className = 'muted';
-        empty.textContent = 'Ingen extra punkt tillagd.';
-        body.append(empty);
-      }
+      } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
+    const empty = document.createElement('p');
+    empty.className = 'muted';
+    empty.textContent = 'Ingen extra punkt tillagd.';
+    body.append(empty);
+}
 
       root.append(details);
     });
