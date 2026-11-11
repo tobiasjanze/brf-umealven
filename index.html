@@ -4558,7 +4558,9 @@ let boardMemberNames = {};
 
     return Math.ceil((date - today) / 86400000);
   }
-
+function contractActionDate(contract) {
+  return contract.notice_date || contract.end_date;
+}
   function contractStatusClass(contract) {
   if (contract.status === 'terminated') return 'terminated';
   if (contract.status === 'ending') return 'terminated';
