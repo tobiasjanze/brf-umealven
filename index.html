@@ -5310,11 +5310,37 @@ function createMeetingNotice() {
             ${esc(meeting.location || 'Ej angiven')}</p>
         </div>
 
-        <h2>Information</h2>
+        <h2>Övrig information inför mötet</h2>
 
-        <div class="notes">
-          ${esc(meeting.notes || 'Ingen ytterligare information angiven.')}
-        </div>
+${meeting.notes ? `
+<div class="notes">
+  ${esc(meeting.notes)}
+</div>
+` : ''}
+
+<h2>Dagordning</h2>
+
+<p>
+  Dagordningen finns tillgänglig i föreningens styrelseportal.
+  Där kan du även ta del av möteshandlingar och övriga dokument inför mötet.
+</p>
+
+<p>
+  Vi ser gärna att samtliga ledamöter tar del av underlaget i förväg
+  för att mötet ska kunna genomföras på ett så effektivt och bra sätt
+  som möjligt.
+</p>
+
+<p>
+  Vänligen registrera din närvaro i styrelseportalen genom att välja
+  Kommer, Kommer inte eller Inte bestämt.
+</p>
+
+<p style="margin-top: 28px;">
+  <strong>Välkomna!</strong><br><br>
+  Tobias Janze<br>
+  Ordförande, BRF Umeälven
+</p>
 
         <div class="footer">
           Bostadsrättsföreningen Umeälven<br>
