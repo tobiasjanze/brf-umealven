@@ -3394,7 +3394,7 @@ renderHome();
     select.innerHTML = '';
 
     sections
-      .filter(([number]) => number !== '6')
+      .filter(([number]) => ['7', '8', '9', '10', '11'].includes(String(number)))
       .forEach(([number, title]) => {
         const option = document.createElement('option');
 
@@ -4006,7 +4006,12 @@ async function renderHome() {
       message('Välj först ett möte.', 'error');
       return;
     }
+const selectedSection = String($('agendaSection').value);
 
+if (!['7', '8', '9', '10', '11'].includes(selectedSection)) {
+  message('Egna dagordningspunkter kan endast läggas till under punkt 7–11.', 'error');
+  return;
+}
     const payload = {
       meeting_id: selectedMeetingId,
       section_number: $('agendaSection').value,
