@@ -4784,8 +4784,10 @@ function renderContracts() {
     `;
   }
 
-  const cards = contracts.length
-    ? contracts.map(contract => `
+  const filteredContracts = getFilteredContracts();
+
+const cards = filteredContracts.length
+  ? filteredContracts.map(contract => `
       <article class="contract-card ${cardClass(contract)}">
 
         <div class="contract-card-header">
@@ -4866,7 +4868,7 @@ function renderContracts() {
     `).join('')
     : `
       <div class="contract-empty">
-        Inga avtal är registrerade ännu.
+        Inga avtal matchar dina filter.
       </div>
     `;
 
@@ -4939,6 +4941,82 @@ function renderContracts() {
           <strong>${overdue}</strong>
         </div>
 
+      </div>
+
+      <div class="contract-filters">
+        <h3 style="margin-top:0">Filtrera avtal</h3>
+
+        <div class="contract-filter-grid">
+
+          <div>
+            <label for="contractFilterSearch">
+              Sök avtal eller leverantör
+            </label>
+            <input
+              id="contractFilterSearch"
+              type="search"
+              placeholder="Skriv sökord..."
+              value="${esc(contractFilters.search)}"
+            >
+          </div>
+
+          <div>
+            <label for="contractFilterStatus">
+              Avtalsstatus
+            </label>
+            <select id="contractFilterStatus">
+              <option value="">Alla statusar</option>
+              <option value="active">Aktiva</option>
+              <option value="ending">Uppsagda</option>
+              <option value="terminated">Avslutade</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="contractFilterResponsible">
+              Ansvarig person
+            </label>
+            <select id="contractFilterResponsible">
+              <option value="">Alla ansvariga</option>
+              <option value="__none__">Ej tilldelad</option>
+              ${Object.entries(boardMemberNames)
+                .sort((a, b) =>
+                  a[1].localeCompare(b[1], 'sv')
+                )
+                .map(([id, name]) => `
+                  <option value="${esc(id)}">
+                    ${esc(name)}
+                  </option>
+                `).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label for="contractFilterRenewal">
+              Förnyelse / uppsägning
+            </label>
+            <select id="contractFilterRenewal">
+              <option value="">Alla datum</option>
+              <option value="within90">
+                Inom 90 dagar
+              </option>
+              <option value="overdue">
+                Uppsägningstid passerad
+              </option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="contract-filter-footer">
+          <span id="contractFilterCount" class="muted">
+            Visar ${filteredContracts.length} av ${total} avtal
+          </span>
+
+          <button type="button" id="clearContractFilters">
+            Rensa filter
+          </button>
+        </div>
       </div>
 
       <section>
