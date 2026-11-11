@@ -4588,8 +4588,87 @@ $('downloadMinutes').addEventListener('click', () => {
   // Administratör: läsa, skapa, ändra och ta bort
   // =========================================
 
-  let contracts = [];
+  
+let contracts = [];
 let boardMemberNames = {};
+
+let contractFilters = {
+  search: '',
+  status: '',
+  responsible: '',
+  renewal: ''
+};
+
+function getFilteredContracts() {
+  return contracts.filter(contract => {
+    const search = contractFilters.search
+      .trim()
+      .toLowerCase();
+
+    const searchableText = [
+      contract.name,
+      contract.supplier,
+      contract.description,
+      contract.notes
+    ].join(' ').toLowerCase();
+
+    if (search && !searchableText.includes(search)) {
+      return false;
+    }
+
+    if (
+      contractFilters.status &&
+      contract.status !== contractFilters.status
+    ) {
+      return false;
+    }
+
+    if (
+      contractFilters.responsible === '__none__' &&
+      contract.responsible_user
+    ) {
+      return false;
+    }
+
+    if (
+      contractFilters.responsible &&
+      contractFilters.responsible !== '__none__' &&
+      contract.responsible_user !== contractFilters.responsible
+    ) {
+      return false;
+    }
+
+    const days = contractDaysLeft(
+      contractActionDate(contract)
+    );
+
+    if (
+      contractFilters.renewal === 'within90' &&
+      !(
+        contract.status === 'active' &&
+        days !== null &&
+        days >= 0 &&
+        days <= 90
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      contractFilters.renewal === 'overdue' &&
+      !(
+        contract.status === 'active' &&
+        days !== null &&
+        days < 0
+      )
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
   
   function contractDate(value) {
     if (!value) return 'Ej angivet';
