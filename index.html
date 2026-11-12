@@ -4532,7 +4532,12 @@ $('downloadMinutes').addEventListener('click', () => {
       deleteButton.textContent = 'Ta bort';
       deleteButton.addEventListener('click', () => deleteDocument(doc));
 
-      actions.append(openButton, deleteButton);
+      const editButton = document.createElement('button');
+editButton.className = 'small';
+editButton.textContent = 'Redigera';
+editButton.addEventListener('click', () => editDocument(doc));
+
+actions.append(openButton, editButton, deleteButton);
       row.append(info, actions);
       root.append(row);
     });
