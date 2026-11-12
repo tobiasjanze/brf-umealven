@@ -4654,8 +4654,40 @@ $('documentAgendaSection').addEventListener(
       row.className = 'file-row';
 
       const info = document.createElement('div');
-      const sectionPrefix = doc.section_number
-  ? '§' + String(doc.section_number).replace(/^§\s*/, '') + ' - '
+      const sectionNumber = doc.section_number
+  ? String(doc.section_number).replace(/^§\s*/, '')
+  : '';
+
+let subpointLetter = '';
+
+if (doc.agenda_item_id) {
+  const linkedItem = agendaItems.find(item =>
+    String(item.id) === String(doc.agenda_item_id)
+  );
+
+  if (linkedItem) {
+    const sectionItems = agendaItems.filter(item =>
+      String(
+        item.section_number ??
+        item.section ??
+        item.paragraph ??
+        ''
+      ) === sectionNumber
+    );
+
+    const subpointIndex = sectionItems.findIndex(item =>
+      String(item.id) === String(doc.agenda_item_id)
+    );
+
+    if (subpointIndex >= 0) {
+      subpointLetter = String.fromCharCode(97 + subpointIndex);
+    }
+  }
+}
+
+const sectionPrefix = sectionNumber
+  ? '§' + sectionNumber +
+    (subpointLetter ? ' ' + subpointLetter : '') + ' - '
   : '';
 
 const displayName =
