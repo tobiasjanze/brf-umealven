@@ -4585,7 +4585,8 @@ $('downloadMinutes').addEventListener('click', () => {
 
     const meetingId = $('documentsMeetingSelect').value;
     const file = $('documentFile').files[0];
-
+const displayName = $('documentDisplayName').value.trim();
+const sectionNumber = $('documentAgendaSection').value;
     if (!meetingId || !file) {
       message('Välj möte och fil.', 'error');
       return;
