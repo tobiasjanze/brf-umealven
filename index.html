@@ -1644,6 +1644,37 @@ button.small.danger:hover {
   color: #526779;
 }
 
+    
+/* Förbättrat sökfält */
+
+.contract-search-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.contract-search-wrap::before {
+  content: "⌕";
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 25px;
+  color: #718397;
+  pointer-events: none;
+}
+
+.contract-search-wrap input {
+  padding-left: 42px !important;
+}
+
+/* Tydligare antal sökträffar */
+
+.contract-filter-footer strong {
+  color: #173f68;
+  font-weight: 700;
+}
+
+
 .contract-filter-grid input,
 .contract-filter-grid select {
   width: 100%;
