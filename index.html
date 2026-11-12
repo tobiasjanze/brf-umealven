@@ -4047,7 +4047,7 @@ async function renderHome() {
   return node;
 }
 
-  function renderAgenda() {
+  async function renderAgenda() {
     const root = $('agendaSections');
     root.innerHTML = '';
 const { data: linkedDocuments, error: linkedDocumentsError } = await db
