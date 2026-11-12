@@ -4050,7 +4050,12 @@ async function renderHome() {
   function renderAgenda() {
     const root = $('agendaSections');
     root.innerHTML = '';
+const { data: linkedDocuments, error: linkedDocumentsError } = await db
+    .from('meeting_documents')
+    .select('*')
+    .eq('meeting_id', selectedMeetingId);
 
+const agendaDocuments = linkedDocuments || [];
     sections.forEach(([number, title]) => {
       const items = agendaItems.filter(item =>
         String(
@@ -4098,7 +4103,44 @@ async function renderHome() {
     empty.textContent = 'Ingen extra punkt tillagd.';
     body.append(empty);
 }
+// ===== KOPPLADE MÖTESDOKUMENT =====
 
+const sectionDocuments = agendaDocuments.filter(doc =>
+    String(doc.section_number || '').trim() === String(number)
+);
+
+if (sectionDocuments.length > 0) {
+    const documentsBox = document.createElement('div');
+    documentsBox.className = 'agenda-linked-documents';
+
+    const heading = document.createElement('p');
+    heading.className = 'muted';
+    heading.textContent = '📎 Dokument kopplade till punkten:';
+
+    documentsBox.appendChild(heading);
+
+    sectionDocuments.forEach(doc => {
+        const documentButton = document.createElement('button');
+        documentButton.type = 'button';
+        documentButton.className = 'small';
+
+        const displayName =
+            doc.display_name ||
+            doc.file_name ||
+            doc.name ||
+            'Dokument';
+
+        documentButton.textContent = `§${number} – ${displayName}`;
+
+        documentButton.addEventListener('click', () => {
+            openDocument(doc);
+        });
+
+        documentsBox.appendChild(documentButton);
+    });
+
+    body.appendChild(documentsBox);
+}
       root.append(details);
     });
   }
