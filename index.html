@@ -4503,7 +4503,7 @@ $('downloadMinutes').addEventListener('click', () => {
 
       const info = document.createElement('div');
       info.innerHTML = `
-        <strong>${esc(doc.file_name || doc.name || 'Dokument')}</strong>
+        <strong>${esc(doc.display_name || doc.file_name || doc.name || 'Dokument')}</strong>
         <div class="muted">
           ${esc(doc.description || '')} · ${esc(dateText(doc.created_at))}
         </div>`;
