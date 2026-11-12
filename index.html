@@ -4692,126 +4692,198 @@ actions.append(openButton, editButton, deleteButton);
   }
 
 
+
 async function editDocument(doc) {
-  const currentName =
+  // Hämta mötets underpunkter
+  const { data: agendaItems, error: agendaError } = await db
+    .from('agenda_items')
+    .select('*')
+    .eq('meeting_id', doc.meeting_id)
+    .order('created_at', { ascending: true });
+
+  if (agendaError) {
+    message('Kunde inte läsa underpunkterna: ' + agendaError.message, 'error');
+    return;
+  }
+
+  const items = agendaItems || [];
+
+  // Skapa redigeringsfönster
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    z-index:99999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  `;
+
+  const panel = document.createElement('div');
+  panel.style.cssText = `
+    background:white;
+    width:100%;
+    max-width:520px;
+    padding:22px;
+    border-radius:14px;
+    max-height:90vh;
+    overflow-y:auto;
+    box-shadow:0 8px 30px rgba(0,0,0,.25);
+  `;
+
+  panel.innerHTML = `
+    <h2 style="margin-top:0">Redigera mötesdokument</h2>
+
+    <label for="editDocumentName">Visningsnamn</label>
+    <input id="editDocumentName" type="text"
+      style="width:100%;box-sizing:border-box;margin:6px 0 16px;padding:12px"
+    >
+
+    <label for="editDocumentSection">Dagordningspunkt</label>
+    <select id="editDocumentSection"
+      style="width:100%;box-sizing:border-box;margin:6px 0 16px;padding:12px">
+      <option value="">Ingen dagordningspunkt vald</option>
+      ${Array.from({length:11}, (_,i) =>
+        `<option value="${i+1}">Punkt ${i+1}</option>`
+      ).join('')}
+    </select>
+
+    <label for="editDocumentSubpoint">Underpunkt</label>
+    <select id="editDocumentSubpoint"
+      style="width:100%;box-sizing:border-box;margin:6px 0 20px;padding:12px">
+      <option value="">Ingen underpunkt vald</option>
+    </select>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button type="button" id="cancelDocumentEdit">Avbryt</button>
+      <button type="button" id="saveDocumentEdit" class="primary">
+        Spara ändringar
+      </button>
+    </div>
+  `;
+
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+
+  const nameInput = panel.querySelector('#editDocumentName');
+  const sectionSelect = panel.querySelector('#editDocumentSection');
+  const subpointSelect = panel.querySelector('#editDocumentSubpoint');
+
+  nameInput.value =
     doc.display_name || doc.file_name || doc.name || 'Dokument';
 
-  const newNameInput = prompt(
-    'Ange dokumentets visningsnamn:',
-    currentName
-  );
+  // Fyll underpunktslistan utifrån vald huvudpunkt
+  function populateSubpoints(sectionNumber, selectedId = '') {
+    subpointSelect.innerHTML =
+      '<option value="">Ingen underpunkt vald</option>';
 
-  if (newNameInput === null) return;
+    if (!sectionNumber) return;
 
-  const newName = newNameInput.trim();
-
-  if (!newName) {
-    message('Visningsnamnet får inte vara tomt.', 'error');
-    return;
-  }
-
-  const currentSection = doc.section_number
-    ? String(doc.section_number)
-    : '';
-
-  const sectionInput = prompt(
-    'Ange dagordningspunkt 1–11. Lämna tomt om ingen punkt ska kopplas:',
-    currentSection
-  );
-
-  if (sectionInput === null) return;
-
-  const sectionNumber = sectionInput.trim();
-
-  if (
-    sectionNumber &&
-    !/^(?:[1-9]|1[01])$/.test(sectionNumber)
-  ) {
-    message('Ange en dagordningspunkt mellan 1 och 11.', 'error');
-    return;
-  }
-
-  let agendaItemId = null;
-
-  if (sectionNumber) {
-    const { data: agendaItemsForSection, error: agendaItemsError } = await db
-      .from('agenda_items')
-      .select('*')
-      .eq('meeting_id', doc.meeting_id)
-      .order('created_at', { ascending: true });
-
-    if (agendaItemsError) {
-      message('Kunde inte läsa underpunkterna: ' + agendaItemsError.message, 'error');
-      return;
-    }
-
-    const subpoints = (agendaItemsForSection || []).filter(item =>
+    const subpoints = items.filter(item =>
       String(
         item.section_number ??
         item.section ??
         item.paragraph ??
         ''
-      ) === sectionNumber
+      ) === String(sectionNumber)
     );
 
-    if (subpoints.length) {
-      const choices = subpoints.map((item, index) =>
+    subpoints.forEach((item, index) => {
+      const option = document.createElement('option');
+      option.value = item.id;
+      option.textContent =
         String.fromCharCode(97 + index) + ') ' +
-        (item.title || 'Dagordningspunkt')
-      );
+        (item.title || 'Dagordningspunkt');
 
-      const currentIndex = subpoints.findIndex(item =>
-        String(item.id) === String(doc.agenda_item_id || '')
-      );
-
-      const currentChoice = currentIndex >= 0
-        ? String.fromCharCode(97 + currentIndex)
-        : '';
-
-      const subpointInput = prompt(
-        'Välj underpunkt genom att skriva bokstaven. Lämna tomt för att koppla dokumentet endast till huvudpunkten.\n\n' +
-        choices.join('\n'),
-        currentChoice
-      );
-
-      if (subpointInput === null) return;
-
-      const choice = subpointInput.trim().toLowerCase();
-
-      if (choice) {
-        const selectedIndex = choice.charCodeAt(0) - 97;
-
-        if (
-          choice.length !== 1 ||
-          selectedIndex < 0 ||
-          selectedIndex >= subpoints.length
-        ) {
-          message('Välj en av underpunkternas bokstäver i listan.', 'error');
-          return;
-        }
-
-        agendaItemId = subpoints[selectedIndex].id;
+      if (String(item.id) === String(selectedId)) {
+        option.selected = true;
       }
+
+      subpointSelect.appendChild(option);
+    });
+  }
+
+  // Försök hitta befintlig koppling
+  let currentSection = doc.section_number
+    ? String(doc.section_number)
+    : '';
+
+  if (doc.agenda_item_id) {
+    const linkedItem = items.find(item =>
+      String(item.id) === String(doc.agenda_item_id)
+    );
+
+    if (linkedItem) {
+      currentSection = String(
+        linkedItem.section_number ??
+        linkedItem.section ??
+        linkedItem.paragraph ??
+        currentSection
+      );
     }
   }
 
-  const { error } = await db
-    .from('meeting_documents')
-    .update({
-      display_name: newName,
-      section_number: sectionNumber || null,
-      agenda_item_id: agendaItemId
-    })
-    .eq('id', doc.id);
+  sectionSelect.value = currentSection;
 
-  if (error) {
-    message('Kunde inte uppdatera dokumentet: ' + error.message, 'error');
-    return;
-  }
+  populateSubpoints(
+    currentSection,
+    doc.agenda_item_id || ''
+  );
 
-  await loadDocuments();
-  message('Dokumentets uppgifter har uppdaterats.', 'ok');
+  // Byt underpunkter när huvudpunkten ändras
+  sectionSelect.addEventListener('change', () => {
+    populateSubpoints(sectionSelect.value);
+  });
+
+  // Avbryt
+  panel.querySelector('#cancelDocumentEdit').addEventListener('click', () => {
+    overlay.remove();
+  });
+
+  // Spara
+  panel.querySelector('#saveDocumentEdit').addEventListener('click', async () => {
+    const newName = nameInput.value.trim();
+    const sectionNumber = sectionSelect.value || null;
+    const agendaItemId = subpointSelect.value || null;
+
+    if (!newName) {
+      message('Visningsnamnet får inte vara tomt.', 'error');
+      return;
+    }
+
+    if (!sectionNumber && agendaItemId) {
+      message('Välj först en dagordningspunkt.', 'error');
+      return;
+    }
+
+    const saveButton = panel.querySelector('#saveDocumentEdit');
+    saveButton.disabled = true;
+    saveButton.textContent = 'Sparar...';
+
+    const { error } = await db
+      .from('meeting_documents')
+      .update({
+        display_name: newName,
+        section_number: sectionNumber,
+        agenda_item_id: agendaItemId
+      })
+      .eq('id', doc.id);
+
+    if (error) {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Spara ändringar';
+      message('Kunde inte uppdatera dokumentet: ' + error.message, 'error');
+      return;
+    }
+
+    overlay.remove();
+    await loadDocuments();
+    message('Dokumentets uppgifter har uppdaterats.', 'ok');
+  });
 }
+
 
 
   function storagePath(doc) {
