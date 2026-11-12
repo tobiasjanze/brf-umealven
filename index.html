@@ -4513,11 +4513,18 @@ $('downloadMinutes').addEventListener('click', () => {
       row.className = 'file-row';
 
       const info = document.createElement('div');
-      info.innerHTML = `
-        <strong>${esc(doc.display_name || doc.file_name || doc.name || 'Dokument')}</strong>
-        <div class="muted">
-          ${esc(doc.description || '')} · ${esc(dateText(doc.created_at))}
-        </div>`;
+      const sectionPrefix = doc.section_number
+  ? `§${String(doc.section_number).replace(/^§\s*/, '')} - `
+  : '';
+
+const displayName =
+  doc.display_name || doc.file_name || doc.name || 'Dokument';
+
+info.innerHTML = `
+  <strong>${esc(sectionPrefix + displayName)}</strong>
+  <div class="muted">
+    ${esc(doc.description || '')} · ${esc(dateText(doc.created_at))}
+  </div>`;
 
       const actions = document.createElement('div');
       actions.className = 'right';
