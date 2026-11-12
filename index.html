@@ -4126,12 +4126,24 @@ const agendaDocuments = linkedDocuments || [];
               (item.title || '').toLowerCase() === heading.toLowerCase()
             )
             .forEach((item, index) =>
-  body.append(agendaItemNode(item, String.fromCharCode(97 + index)))
+  body.append(
+  agendaItemNode(
+    item,
+    String.fromCharCode(97 + index),
+    agendaDocuments
+  )
+)
 );
           });
       } else if (items.length) {
         items.forEach((item, index) =>
-  body.append(agendaItemNode(item, String.fromCharCode(97 + index)))
+  body.append(
+  agendaItemNode(
+    item,
+    String.fromCharCode(97 + index),
+    agendaDocuments
+  )
+)
 );
       } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
     const empty = document.createElement('p');
@@ -4562,6 +4574,56 @@ $('downloadMinutes').addEventListener('click', () => {
     // ===== MÖTESDOKUMENT =====
 
   $('documentsMeetingSelect').addEventListener('change', loadDocuments);
+
+async function loadDocumentAgendaSubpoints() {
+  const meetingId = $('documentsMeetingSelect').value;
+  const sectionNumber = $('documentAgendaSection').value;
+  const select = $('documentAgendaSubpoint');
+
+  select.innerHTML = '<option value="">Ingen underpunkt vald</option>';
+
+  if (!meetingId || !sectionNumber) return;
+
+  const { data, error } = await db
+    .from('agenda_items')
+    .select('*')
+    .eq('meeting_id', meetingId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    message('Kunde inte läsa underpunkterna: ' + error.message, 'error');
+    return;
+  }
+
+  const items = (data || []).filter(item =>
+    String(
+      item.section_number ??
+      item.section ??
+      item.paragraph ??
+      ''
+    ) === String(sectionNumber)
+  );
+
+  items.forEach((item, index) => {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent =
+      String.fromCharCode(97 + index) + ') ' +
+      (item.title || 'Dagordningspunkt');
+
+    select.appendChild(option);
+  });
+}
+
+$('documentsMeetingSelect').addEventListener(
+  'change',
+  loadDocumentAgendaSubpoints
+);
+
+$('documentAgendaSection').addEventListener(
+  'change',
+  loadDocumentAgendaSubpoints
+);
 
   async function loadDocuments() {
     const meetingId = $('documentsMeetingSelect').value;
