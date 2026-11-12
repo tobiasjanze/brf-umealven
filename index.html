@@ -4726,6 +4726,7 @@ info.innerHTML = `
       const editButton = document.createElement('button');
 editButton.className = 'small';
 editButton.textContent = 'Redigera';
+editButton.classList.toggle('hidden', !isAdminUser);
 editButton.addEventListener('click', () => editDocument(doc));
 
 actions.append(openButton, editButton, deleteButton);
