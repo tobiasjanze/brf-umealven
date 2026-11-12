@@ -4154,6 +4154,7 @@ const agendaDocuments = linkedDocuments || [];
 // ===== KOPPLADE MÖTESDOKUMENT =====
 
 const sectionDocuments = agendaDocuments.filter(doc =>
+    !doc.agenda_item_id &&
     String(doc.section_number || '').trim() === String(number)
 );
 
