@@ -4543,6 +4543,62 @@ actions.append(openButton, editButton, deleteButton);
     });
   }
 
+async function editDocument(doc) {
+  const currentName =
+    doc.display_name || doc.file_name || doc.name || 'Dokument';
+
+  const newNameInput = prompt(
+    'Ange dokumentets visningsnamn:',
+    currentName
+  );
+
+  if (newNameInput === null) return;
+
+  const newName = newNameInput.trim();
+
+  if (!newName) {
+    message('Visningsnamnet får inte vara tomt.', 'error');
+    return;
+  }
+
+  const currentSection = doc.section_number
+    ? String(doc.section_number)
+    : '';
+
+  const sectionInput = prompt(
+    'Ange dagordningspunkt 1–11. Lämna tomt om ingen punkt ska kopplas:',
+    currentSection
+  );
+
+  if (sectionInput === null) return;
+
+  const sectionNumber = sectionInput.trim();
+
+  if (
+    sectionNumber &&
+    !/^(?:[1-9]|1[01])$/.test(sectionNumber)
+  ) {
+    message('Ange en dagordningspunkt mellan 1 och 11.', 'error');
+    return;
+  }
+
+  const { error } = await db
+    .from('meeting_documents')
+    .update({
+      display_name: newName,
+      section_number: sectionNumber || null
+    })
+    .eq('id', doc.id);
+
+  if (error) {
+    message('Kunde inte uppdatera dokumentet: ' + error.message, 'error');
+    return;
+  }
+
+  await loadDocuments();
+  message('Dokumentets uppgifter har uppdaterats.', 'ok');
+}
+
   function storagePath(doc) {
     return doc.storage_path || doc.file_path || doc.path || '';
   }
