@@ -4672,12 +4672,12 @@ const meetingAgendaItems = meetingAgendaItemsData || [];
 let subpointLetter = '';
 
 if (doc.agenda_item_id) {
-  const linkedItem = agendaItems.find(item =>
+  const linkedItem = meetingAgendaItems.find(item =>
     String(item.id) === String(doc.agenda_item_id)
   );
 
   if (linkedItem) {
-    const sectionItems = agendaItems.filter(item =>
+    const sectionItems = meetingAgendaItems.filter(item =>
       String(
         item.section_number ??
         item.section ??
