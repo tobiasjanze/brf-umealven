@@ -4605,12 +4605,14 @@ const sectionNumber = $('documentAgendaSection').value;
     }
 
     const { error } = await db.from('meeting_documents').insert({
-      meeting_id: meetingId,
-      file_name: file.name,
-      description: $('documentDescription').value.trim(),
-      storage_path: path,
-      uploaded_by: currentUser.id
-    });
+    meeting_id: meetingId,
+    file_name: file.name,
+    display_name: displayName || file.name,
+    section_number: sectionNumber || null,
+    description: $('documentDescription').value.trim(),
+    storage_path: path,
+    uploaded_by: currentUser.id
+});
 
     if (error) {
       message(
