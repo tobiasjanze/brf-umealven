@@ -4038,7 +4038,8 @@ async function renderHome() {
     renderAgenda();
   }
 
-  function agendaItemNode(item, letter) {
+  
+function agendaItemNode(item, letter, agendaDocuments = []) {
   const node = document.createElement('div');
   node.className = 'item';
 
@@ -4050,8 +4051,37 @@ async function renderHome() {
         data-delete-agenda="${esc(item.id)}">Ta bort punkt</button>
     </div>`;
 
+  const linked = agendaDocuments.filter(doc =>
+    String(doc.agenda_item_id || '') === String(item.id)
+  );
+
+  if (linked.length) {
+    const box = document.createElement('div');
+    box.className = 'agenda-linked-documents';
+
+    const heading = document.createElement('p');
+    heading.className = 'muted';
+    heading.textContent = '📎 Dokument till denna underpunkt:';
+    box.appendChild(heading);
+
+    linked.forEach(doc => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'small';
+
+      button.textContent =
+        doc.display_name || doc.file_name || 'Öppna dokument';
+
+      button.addEventListener('click', () => openDocument(doc));
+      box.appendChild(button);
+    });
+
+    node.appendChild(box);
+  }
+
   return node;
 }
+
 
   async function renderAgenda() {
     const root = $('agendaSections');
