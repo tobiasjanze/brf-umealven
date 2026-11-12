@@ -4979,17 +4979,22 @@ const cards = filteredContracts.length
 
         <div class="contract-filter-grid">
 
-          <div>
-            <label for="contractFilterSearch">
-              Sök avtal eller leverantör
-            </label>
-            <input
-              id="contractFilterSearch"
-              type="search"
-              placeholder="Skriv sökord..."
-              value="${esc(contractFilters.search)}"
-            >
-          </div>
+          
+<div>
+  <label for="contractFilterSearch">
+    Sök bland avtal
+  </label>
+
+  <div class="contract-search-wrap">
+    <input
+      id="contractFilterSearch"
+      type="search"
+      placeholder="Sök bland avtal..."
+      value="${esc(contractFilters.search)}"
+    >
+  </div>
+</div>
+
 
           <div>
             <label for="contractFilterStatus">
