@@ -4514,7 +4514,7 @@ $('downloadMinutes').addEventListener('click', () => {
 
       const info = document.createElement('div');
       const sectionPrefix = doc.section_number
-  ? `§${String(doc.section_number).replace(/^§\s*/, '')} - `
+  ? '§' + String(doc.section_number).replace(/^§\s*/, '') + ' - '
   : '';
 
 const displayName =
