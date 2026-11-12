@@ -6251,6 +6251,8 @@ $('createNotice').addEventListener('click', createMeetingNotice);
 
     // Mötesdokument – endast administratören får ladda upp
     $('uploadForm').classList.toggle('hidden', !admin);
+    // Kallelse – endast administratören får skapa
+$('createNotice').classList.toggle('hidden', !admin);
 
     // Avtal – endast administratören får hantera
     $('contractAdminPanel').classList.toggle('hidden', !admin);
