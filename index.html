@@ -4643,7 +4643,18 @@ $('documentAgendaSection').addEventListener(
       message('Kunde inte läsa dokument: ' + error.message, 'error');
       return;
     }
+const { data: meetingAgendaItemsData, error: agendaError } = await db
+  .from('agenda_items')
+  .select('*')
+  .eq('meeting_id', meetingId)
+  .order('created_at', { ascending: true });
 
+if (agendaError) {
+  message('Kunde inte läsa dagordningspunkterna: ' + agendaError.message, 'error');
+  return;
+}
+
+const meetingAgendaItems = meetingAgendaItemsData || [];
     if (!data || !data.length) {
       root.textContent = 'Inga dokument uppladdade för mötet.';
       return;
