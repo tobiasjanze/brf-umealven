@@ -4714,6 +4714,7 @@ async function editDocument(doc) {
     const file = $('documentFile').files[0];
 const displayName = $('documentDisplayName').value.trim();
 const sectionNumber = $('documentAgendaSection').value;
+    const agendaItemId = $('documentAgendaSubpoint').value || null;
     if (!meetingId || !file) {
       message('Välj möte och fil.', 'error');
       return;
@@ -4736,7 +4737,8 @@ const sectionNumber = $('documentAgendaSection').value;
     file_name: file.name,
     display_name: displayName || file.name,
     section_number: sectionNumber || null,
-    description: $('documentDescription').value.trim(),
+agenda_item_id: agendaItemId,
+description: $('documentDescription').value.trim(),
     storage_path: path,
     uploaded_by: currentUser.id
 });
