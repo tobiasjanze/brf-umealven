@@ -4691,6 +4691,7 @@ actions.append(openButton, editButton, deleteButton);
     });
   }
 
+
 async function editDocument(doc) {
   const currentName =
     doc.display_name || doc.file_name || doc.name || 'Dokument';
@@ -4730,11 +4731,76 @@ async function editDocument(doc) {
     return;
   }
 
+  let agendaItemId = null;
+
+  if (sectionNumber) {
+    const { data: agendaItemsForSection, error: agendaItemsError } = await db
+      .from('agenda_items')
+      .select('*')
+      .eq('meeting_id', doc.meeting_id)
+      .order('created_at', { ascending: true });
+
+    if (agendaItemsError) {
+      message('Kunde inte läsa underpunkterna: ' + agendaItemsError.message, 'error');
+      return;
+    }
+
+    const subpoints = (agendaItemsForSection || []).filter(item =>
+      String(
+        item.section_number ??
+        item.section ??
+        item.paragraph ??
+        ''
+      ) === sectionNumber
+    );
+
+    if (subpoints.length) {
+      const choices = subpoints.map((item, index) =>
+        String.fromCharCode(97 + index) + ') ' +
+        (item.title || 'Dagordningspunkt')
+      );
+
+      const currentIndex = subpoints.findIndex(item =>
+        String(item.id) === String(doc.agenda_item_id || '')
+      );
+
+      const currentChoice = currentIndex >= 0
+        ? String.fromCharCode(97 + currentIndex)
+        : '';
+
+      const subpointInput = prompt(
+        'Välj underpunkt genom att skriva bokstaven. Lämna tomt för att koppla dokumentet endast till huvudpunkten.\n\n' +
+        choices.join('\n'),
+        currentChoice
+      );
+
+      if (subpointInput === null) return;
+
+      const choice = subpointInput.trim().toLowerCase();
+
+      if (choice) {
+        const selectedIndex = choice.charCodeAt(0) - 97;
+
+        if (
+          choice.length !== 1 ||
+          selectedIndex < 0 ||
+          selectedIndex >= subpoints.length
+        ) {
+          message('Välj en av underpunkternas bokstäver i listan.', 'error');
+          return;
+        }
+
+        agendaItemId = subpoints[selectedIndex].id;
+      }
+    }
+  }
+
   const { error } = await db
     .from('meeting_documents')
     .update({
       display_name: newName,
-      section_number: sectionNumber || null
+      section_number: sectionNumber || null,
+      agenda_item_id: agendaItemId
     })
     .eq('id', doc.id);
 
@@ -4746,6 +4812,7 @@ async function editDocument(doc) {
   await loadDocuments();
   message('Dokumentets uppgifter har uppdaterats.', 'ok');
 }
+
 
   function storagePath(doc) {
     return doc.storage_path || doc.file_path || doc.path || '';
