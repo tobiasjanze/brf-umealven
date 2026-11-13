@@ -3783,8 +3783,14 @@ async function renderHome() {
               data-meeting-response="Inte bestämt">Inte bestämt</button>
           </div>
           <p class="muted" data-response-summary="${esc(meeting.id)}">
-            Hämtar svar …
-          </p>
+  Hämtar svar …
+</p>
+
+${isAdminUser ? `
+  <div data-admin-responses="${esc(meeting.id)}">
+    Hämtar ledamöternas svar ...
+  </div>
+` : ''}
         </div>
 
         <div class="item-actions">
@@ -3803,6 +3809,9 @@ async function renderHome() {
       root.append(node);
 
       loadMeetingResponses(meeting.id);
+      if (isAdminUser) {
+  loadAdminMeetingResponses(meeting.id);
+}
     });
   }
 
@@ -3878,7 +3887,82 @@ async function renderHome() {
     `Kommer inte: ${counts['Kommer inte']} · ` +
     `Inte bestämt: ${counts['Inte bestämt']}`;
 }
+async function loadAdminMeetingResponses(meetingId) {
+  if (!isAdminUser) return;
 
+  const root = document.querySelector(
+    `[data-admin-responses="${meetingId}"]`
+  );
+
+  if (!root) return;
+
+  const { data: members, error: membersError } =
+    await db.rpc('get_active_board_members');
+
+  if (membersError) {
+    root.textContent = 'Kunde inte hämta styrelsemedlemmarna.';
+    return;
+  }
+
+  const { data: responses, error: responsesError } = await db
+    .from('meeting_responses')
+    .select('user_id, response')
+    .eq('meeting_id', meetingId);
+
+  if (responsesError) {
+    root.textContent = 'Kunde inte hämta de individuella svaren.';
+    return;
+  }
+
+  const responseMap = new Map(
+    (responses || []).map(item => [
+      String(item.user_id),
+      item.response
+    ])
+  );
+
+  const rows = (members || []).map(member => {
+    const response = responseMap.get(String(member.user_id));
+
+    return {
+      name: member.display_name || 'Namnlös ledamot',
+      response: response || 'Ej svarat'
+    };
+  });
+
+  const answered = rows.filter(
+    item => item.response !== 'Ej svarat'
+  ).length;
+
+  root.innerHTML = `
+    <details class="admin-response-details">
+      <summary>
+        Administratör – individuella mötessvar
+        (${answered} av ${rows.length} svarat)
+      </summary>
+
+      <div class="admin-response-list">
+        ${rows.map(item => {
+          const color =
+            item.response === 'Kommer' ? 'success' :
+            item.response === 'Kommer inte' ? 'danger' :
+            item.response === 'Inte bestämt' ? 'warning' :
+            'muted';
+
+          return `
+            <div class="admin-response-row">
+              <strong>${esc(item.name)}</strong>
+              <span class="response-${color}">
+                ${esc(item.response)}
+              </span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </details>
+  `;
+}
+  
   $('meetingsList').addEventListener('click', async event => {
     const button = event.target.closest('[data-meeting-response]');
     if (!button) return;
