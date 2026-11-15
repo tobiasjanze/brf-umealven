@@ -3620,6 +3620,12 @@ async function loadContractResponsibleOptions() {
         contractSelect.value = previousContractValue;
     }
     if (annualSelect && previousAnnualValue) {
+        if (![...annualSelect.options].some(option => option.value === previousAnnualValue)) {
+            const legacyOption = document.createElement('option');
+            legacyOption.value = previousAnnualValue;
+            legacyOption.textContent = previousAnnualValue + ' (tidigare angivet)';
+            annualSelect.appendChild(legacyOption);
+        }
         annualSelect.value = previousAnnualValue;
     }
 }
