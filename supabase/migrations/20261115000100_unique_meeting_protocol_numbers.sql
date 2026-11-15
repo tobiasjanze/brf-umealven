@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.meeting_protocol_numbers (
 
 -- Starta nummerserien på 290. Första nya tilldelningen blir 291.
 -- Befintliga mötesrader får inget nummer förrän ett protokoll sparas.
-DO $
+DO $init$
 DECLARE
   current_last bigint;
   current_called boolean;
@@ -35,7 +35,7 @@ BEGIN
   );
 
   PERFORM setval('public.meeting_protocol_number_seq', safe_last, true);
-END $;
+END $init$;
 
 ALTER TABLE public.meeting_protocol_numbers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Active members can read protocol numbers" ON public.meeting_protocol_numbers;
