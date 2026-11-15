@@ -2778,13 +2778,14 @@ button.small.danger:hover {
 /* ===== ÅRSHJUL – BRF UMEÄLVEN ===== */
 .yearwheel-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 390px) minmax(0, 1fr);
+  grid-template-columns: minmax(300px, 410px) minmax(0, 1fr);
   gap: 26px;
   align-items: start;
 }
 .yearwheel-circle {
   position: relative;
-  width: min(100%, 370px);
+  container-type: inline-size;
+  width: min(100%, 390px);
   aspect-ratio: 1;
   margin: 8px auto 18px;
   border-radius: 50%;
@@ -2809,22 +2810,31 @@ button.small.danger:hover {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 76px;
-  min-height: 42px;
-  padding: 7px 5px;
-  border: 1px solid #bfd4e4;
-  border-radius: 11px;
+  width: 68px;
+  min-height: 40px;
+  padding: 7px 4px;
+  border: 1.5px solid;
+  border-radius: 12px;
   background: #fff;
   color: #17324d;
-  font-size: .82rem;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgba(23,50,77,.08);
-  transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-139px) rotate(calc(0deg - var(--angle)));
+  font-size: .84rem;
+  font-weight: 750;
+  box-shadow: 0 3px 9px rgba(23,50,77,.09);
+  transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-41cqi) rotate(calc(0deg - var(--angle)));
+  transition: background .16s ease, color .16s ease, box-shadow .16s ease, border-color .16s ease;
 }
-.yearwheel-month.month-color-0 { background: #e6eff8; border-color: #b7cde0; }
-.yearwheel-month.month-color-1 { background: #e5f1e9; border-color: #b9d5c2; }
-.yearwheel-month.month-color-2 { background: #eee8f6; border-color: #cfc0e2; }
-.yearwheel-month.month-color-3 { background: #f5ecd9; border-color: #dfc99e; }
+.yearwheel-month.month-color-0 { background: #dce9f8; border-color: #91afd2; }
+.yearwheel-month.month-color-1 { background: #d5eaf7; border-color: #88b9d7; }
+.yearwheel-month.month-color-2 { background: #d4ece8; border-color: #85bdb4; }
+.yearwheel-month.month-color-3 { background: #dcebdc; border-color: #9fc5a4; }
+.yearwheel-month.month-color-4 { background: #e8efd3; border-color: #b8c98b; }
+.yearwheel-month.month-color-5 { background: #f4e8c9; border-color: #d9bd7f; }
+.yearwheel-month.month-color-6 { background: #f5dfcf; border-color: #d9a984; }
+.yearwheel-month.month-color-7 { background: #f2d9d9; border-color: #d69b9b; }
+.yearwheel-month.month-color-8 { background: #efd9e5; border-color: #ce9fba; }
+.yearwheel-month.month-color-9 { background: #e8ddf2; border-color: #bba3d2; }
+.yearwheel-month.month-color-10 { background: #dce5f2; border-color: #9aafd0; }
+.yearwheel-month.month-color-11 { background: #d8e8e7; border-color: #91b8b3; }
 .yearwheel-month:hover, .yearwheel-month.active {
   background: #245b83;
   color: #fff;
@@ -6436,7 +6446,7 @@ if (home) {
       const angle = index * 30;
       const hasEvents = annualEvents.some(item => annualEventMonth(item) === monthNumber);
       button.type = 'button';
-      button.className = 'yearwheel-month month-color-' + (index % 4) +
+      button.className = 'yearwheel-month month-color-' + (index % 12) +
         (selectedAnnualMonth === monthNumber ? ' active' : '') +
         (hasEvents ? ' has-events' : '');
       button.style.setProperty('--angle', angle + 'deg');
