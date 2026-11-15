@@ -4942,6 +4942,7 @@ function minutesContentFromEditor(){
 function printMinutesPdf(){
   const meetingId=$('minutesMeetingSelect').value,meeting=meetings.find(m=>String(m.id)===String(meetingId));
   if(!meeting)return message('Välj ett möte först.','error');
+  if(!currentMinutesProtocolNumber)return message('Spara protokollet först så att det får sitt unika löpnummer innan du skapar PDF.','error');
   const c=minutesContentFromEditor(),w=c.__workflow||{},logo=new URL('brf-umealven-logotyp.png',window.location.href).href,protocolName=protocolDisplayName(meeting,currentMinutesProtocolNumber);
   const br=v=>esc(v||'').replace(/\n/g,'<br>');let body='';
   sections.forEach(([n,t])=>{
