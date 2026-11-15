@@ -2863,10 +2863,15 @@ button.small.danger:hover {
   box-shadow: 0 2px 6px rgba(23,50,77,.08);
   transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-139px) rotate(calc(0deg - var(--angle)));
 }
+.yearwheel-month.month-color-0 { background: #e6eff8; border-color: #b7cde0; }
+.yearwheel-month.month-color-1 { background: #e5f1e9; border-color: #b9d5c2; }
+.yearwheel-month.month-color-2 { background: #eee8f6; border-color: #cfc0e2; }
+.yearwheel-month.month-color-3 { background: #f5ecd9; border-color: #dfc99e; }
 .yearwheel-month:hover, .yearwheel-month.active {
   background: #245b83;
   color: #fff;
   border-color: #245b83;
+  box-shadow: 0 3px 10px rgba(23,50,77,.2);
 }
 .yearwheel-month.has-events:not(.active)::after {
   content: "";
@@ -6112,7 +6117,7 @@ if (home) {
       const angle = index * 30;
       const hasEvents = annualEvents.some(item => annualEventMonth(item) === monthNumber);
       button.type = 'button';
-      button.className = 'yearwheel-month' +
+      button.className = 'yearwheel-month month-color-' + (index % 4) +
         (selectedAnnualMonth === monthNumber ? ' active' : '') +
         (hasEvents ? ' has-events' : '');
       button.style.setProperty('--angle', angle + 'deg');
