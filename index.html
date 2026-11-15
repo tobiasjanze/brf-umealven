@@ -3378,7 +3378,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
               <div class="minutes-person-field"><label for="minutesWriter">Protokollförare</label><select id="minutesWriter"><option value="">Välj protokollförare</option></select><input id="minutesWriterCustom" class="hidden" placeholder="Skriv protokollförarens namn" maxlength="120"></div>
               <div class="minutes-person-field"><label for="minutesChair">Mötesordförande</label><select id="minutesChair"><option value="">Välj mötesordförande</option></select><input id="minutesChairCustom" class="hidden" placeholder="Skriv mötesordförandens namn" maxlength="120"></div>
               <div class="minutes-person-field"><label for="minutesReviewer">Justerare</label><select id="minutesReviewer"><option value="">Välj justerare</option></select><input id="minutesReviewerCustom" class="hidden" placeholder="Skriv justerarens namn" maxlength="120"></div>
-              <div><label for="minutesWorkflowStatus">Protokollets status</label><select id="minutesWorkflowStatus"><option>Utkast</option><option>För justering</option><option>Justerat</option></select></div>
+              <div><label for="minutesWorkflowStatus">Protokollets status</label><select id="minutesWorkflowStatus"><option>Utkast</option><option>För justering</option><option>Justerat</option></select><button id="reopenMinutes" type="button" class="secondary minutes-admin-only hidden" style="margin-top:8px">Öppna protokollet igen</button><p id="minutesReopenInfo" class="muted small hidden">Protokollet är justerat och låst för ändringar. Administratören kan öppna det igen vid behov.</p></div>
             </div>
             <div class="minutes-signature-grid">
               <label class="minutes-signature-item"><input type="checkbox" id="minutesWriterSigned"> Protokollförare har undertecknat</label>
@@ -4940,11 +4940,15 @@ function renderMinutesWorkflow() {
   setMinutesPersonField('Chair', w.chair);
   setMinutesPersonField('Reviewer', w.reviewer);
   $('minutesWorkflowStatus').value=w.status||'Utkast';
+  const isFinalized = $('minutesWorkflowStatus').value === 'Justerat';
+  $('minutesWorkflowStatus').disabled = !isAdminUser || isFinalized;
+  $('reopenMinutes').classList.toggle('hidden', !isAdminUser || !isFinalized);
+  $('minutesReopenInfo').classList.toggle('hidden', !isFinalized);
   $('minutesWriterSigned').checked=!!w.writerSigned; $('minutesChairSigned').checked=!!w.chairSigned; $('minutesReviewerSigned').checked=!!w.reviewerSigned;
   $('minutesActionSection').innerHTML='<option value="">Välj paragraf</option>'+sections.map(x=>'<option value="'+esc(x[0])+'">§'+esc(x[0])+' '+esc(x[1])+'</option>').join('');
   applyRolePermissions();
 }
-function collectMinutesWorkflow(){return {writer:minutesPersonValue('Writer'),chair:minutesPersonValue('Chair'),reviewer:minutesPersonValue('Reviewer'),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked};}
+function collectMinutesWorkflow(){return {writer:minutesPersonValue('Writer'),chair:minutesPersonValue('Chair'),reviewer:minutesPersonValue('Reviewer'),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked,reopenHistory:Array.isArray(currentMinutes.__workflow?.reopenHistory)?currentMinutes.__workflow.reopenHistory:[]};}
 function renderMinutesActions(){
   const list=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[],root=$('minutesActionsList'),today=new Date().toISOString().slice(0,10);
   $('minutesActionCount').textContent=list.length+(list.length===1?' uppgift':' uppgifter');
@@ -5102,6 +5106,30 @@ function renderMinutesFields() {
   });
   ['Writer','Chair','Reviewer'].forEach(role => {
     $('minutes' + role).addEventListener('change', () => updateMinutesPersonCustomVisibility(role));
+  });
+
+  $('minutesWorkflowStatus').addEventListener('change', () => {
+    const previousStatus = currentMinutes.__workflow?.status || 'Utkast';
+    if ($('minutesWorkflowStatus').value === 'Justerat' && previousStatus !== 'Justerat') {
+      const approved = confirm('Du håller på att markera protokollet som justerat. När du sparar får protokollet statusen Justerat. Är du säker på att du vill fortsätta?');
+      if (!approved) $('minutesWorkflowStatus').value = previousStatus;
+    }
+  });
+
+  $('reopenMinutes').addEventListener('click', () => {
+    if (!isAdminUser) return message('Endast administratören kan öppna ett justerat protokoll igen.', 'error');
+    const reason = prompt('Ange varför protokollet behöver öppnas igen. Orsaken sparas i protokollets historik:');
+    if (reason === null) return;
+    if (!reason.trim()) return message('Ange en orsak för att öppna protokollet igen.', 'error');
+    const workflow = currentMinutes.__workflow || {};
+    const history = Array.isArray(workflow.reopenHistory) ? workflow.reopenHistory : [];
+    history.push({ at: new Date().toISOString(), by: currentUser?.id || null, reason: reason.trim() });
+    currentMinutes.__workflow = { ...workflow, reopenHistory: history };
+    $('minutesWorkflowStatus').value = 'Utkast';
+    $('minutesWorkflowStatus').disabled = false;
+    $('reopenMinutes').classList.add('hidden');
+    $('minutesReopenInfo').classList.add('hidden');
+    message('Protokollet är öppnat igen. Spara protokollet för att behålla ändringen.', 'ok');
   });
 
   $('saveMinutes').addEventListener('click',async()=>{
@@ -7177,7 +7205,10 @@ $('createNotice').addEventListener('click', createMeetingNotice);
     });
     ['minutesWriter','minutesChair','minutesReviewer'].forEach(id => { $(id).disabled = !admin; });
     ['minutesWriterCustom','minutesChairCustom','minutesReviewerCustom'].forEach(id => { $(id).disabled = !admin; });
-    $('minutesWorkflowStatus').disabled = !admin;
+    const finalized = $('minutesWorkflowStatus').value === 'Justerat';
+    $('minutesWorkflowStatus').disabled = !admin || finalized;
+    $('reopenMinutes').classList.toggle('hidden', !admin || !finalized);
+    $('minutesReopenInfo').classList.toggle('hidden', !finalized);
     ['minutesWriterSigned','minutesChairSigned','minutesReviewerSigned'].forEach(id => { $(id).disabled = !admin; });
     document.querySelectorAll('.minutes-admin-only').forEach(el => el.classList.toggle('hidden', !admin));
     document.querySelectorAll('[data-minute-action-status]').forEach(el => { el.disabled = !admin; });
