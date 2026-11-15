@@ -4910,14 +4910,10 @@ function setMinutesPersonField(role, savedName) {
     custom.value = '';
     custom.classList.add('hidden');
   } else if (name) {
-    // Bevara äldre sparade namn även om personen inte längre har ett aktivt konto.
-    const legacy = document.createElement('option');
-    legacy.value = name;
-    legacy.textContent = name + ' (tidigare angivet)';
-    select.insertBefore(legacy, select.lastElementChild);
-    select.value = name;
-    custom.value = '';
-    custom.classList.add('hidden');
+    // Bevara egna och äldre namn i fältet för egen person även om namnet saknas i kontolistan.
+    select.value = '__custom__';
+    custom.value = name;
+    custom.classList.remove('hidden');
   } else {
     select.value = '';
     custom.value = '';
