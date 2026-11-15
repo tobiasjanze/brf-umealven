@@ -4940,6 +4940,7 @@ function renderMinutesWorkflow() {
   setMinutesPersonField('Chair', w.chair);
   setMinutesPersonField('Reviewer', w.reviewer);
   $('minutesWorkflowStatus').value=w.status||'Utkast';
+  $('minutesWorkflowStatus').dataset.lastStatus = w.status || 'Utkast';
   const isFinalized = $('minutesWorkflowStatus').value === 'Justerat';
   $('minutesWorkflowStatus').disabled = !isAdminUser || isFinalized;
   $('reopenMinutes').classList.toggle('hidden', !isAdminUser || !isFinalized);
@@ -5109,11 +5110,13 @@ function renderMinutesFields() {
   });
 
   $('minutesWorkflowStatus').addEventListener('change', () => {
-    const previousStatus = currentMinutes.__workflow?.status || 'Utkast';
-    if ($('minutesWorkflowStatus').value === 'Justerat' && previousStatus !== 'Justerat') {
+    const statusSelect = $('minutesWorkflowStatus');
+    const previousStatus = statusSelect.dataset.lastStatus || currentMinutes.__workflow?.status || 'Utkast';
+    if (statusSelect.value === 'Justerat' && previousStatus !== 'Justerat') {
       const approved = confirm('Du håller på att markera protokollet som justerat. När du sparar får protokollet statusen Justerat. Är du säker på att du vill fortsätta?');
-      if (!approved) $('minutesWorkflowStatus').value = previousStatus;
+      if (!approved) statusSelect.value = previousStatus;
     }
+    statusSelect.dataset.lastStatus = statusSelect.value;
   });
 
   $('reopenMinutes').addEventListener('click', () => {
@@ -5126,6 +5129,7 @@ function renderMinutesFields() {
     history.push({ at: new Date().toISOString(), by: currentUser?.id || null, reason: reason.trim() });
     currentMinutes.__workflow = { ...workflow, reopenHistory: history };
     $('minutesWorkflowStatus').value = 'Utkast';
+    $('minutesWorkflowStatus').dataset.lastStatus = 'Utkast';
     $('minutesWorkflowStatus').disabled = false;
     $('reopenMinutes').classList.add('hidden');
     $('minutesReopenInfo').classList.add('hidden');
