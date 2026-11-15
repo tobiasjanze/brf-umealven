@@ -3375,9 +3375,9 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
           <div id="minutesProtocolHeader" class="minutes-protocol-header"></div>
           <section class="minutes-panel"><h3>Protokollsuppgifter och justering</h3><p class="muted small">Markera signering först när underskriften faktiskt har mottagits.</p>
             <div class="minutes-meta-grid">
-              <div><label for="minutesWriter">Protokollförare</label><input id="minutesWriter" placeholder="Namn"></div>
-              <div><label for="minutesChair">Mötesordförande</label><input id="minutesChair" placeholder="Namn"></div>
-              <div><label for="minutesReviewer">Justerare</label><input id="minutesReviewer" placeholder="Namn"></div>
+              <div class="minutes-person-field"><label for="minutesWriter">Protokollförare</label><select id="minutesWriter"><option value="">Välj protokollförare</option></select><input id="minutesWriterCustom" class="hidden" placeholder="Skriv protokollförarens namn" maxlength="120"></div>
+              <div class="minutes-person-field"><label for="minutesChair">Mötesordförande</label><select id="minutesChair"><option value="">Välj mötesordförande</option></select><input id="minutesChairCustom" class="hidden" placeholder="Skriv mötesordförandens namn" maxlength="120"></div>
+              <div class="minutes-person-field"><label for="minutesReviewer">Justerare</label><select id="minutesReviewer"><option value="">Välj justerare</option></select><input id="minutesReviewerCustom" class="hidden" placeholder="Skriv justerarens namn" maxlength="120"></div>
               <div><label for="minutesWorkflowStatus">Protokollets status</label><select id="minutesWorkflowStatus"><option>Utkast</option><option>För justering</option><option>Justerat</option></select></div>
             </div>
             <div class="minutes-signature-grid">
@@ -4791,6 +4791,7 @@ async function loadMinutes(meetingId) {
   if (!meetingId) return;
 
   currentMinutes = minutesTemplate();
+  await loadMinutesActivePeople();
 
   const { data, error } = await db
     .from('meeting_minutes')
@@ -4880,16 +4881,74 @@ function protocolPeriod(meeting){
 function protocolDisplayName(meeting,number){
   return 'Protokoll brf Umeälven '+protocolPeriod(meeting)+'('+(number??'Löpnummer tilldelas vid första sparning')+')';
 }
+let minutesActivePeople = [];
+async function loadMinutesActivePeople() {
+  const { data, error } = await db.rpc('get_active_board_members');
+  if (error) {
+    console.error('Kunde inte hämta aktiva styrelsemedlemmar till protokollet:', error);
+    message('Kunde inte hämta kontolistan till protokollet: ' + error.message, 'error');
+    minutesActivePeople = [];
+    return;
+  }
+  minutesActivePeople = (data || [])
+    .filter(member => member && member.display_name)
+    .map(member => String(member.display_name).trim())
+    .filter(Boolean)
+    .filter((name, index, all) => all.indexOf(name) === index)
+    .sort((a, b) => a.localeCompare(b, 'sv'));
+}
+function setMinutesPersonField(role, savedName) {
+  const select = $('minutes' + role);
+  const custom = $('minutes' + role + 'Custom');
+  const name = String(savedName || '').trim();
+  const placeholder = role === 'Writer' ? 'Välj protokollförare' : role === 'Chair' ? 'Välj mötesordförande' : 'Välj justerare';
+  select.innerHTML = '<option value="">' + placeholder + '</option>' +
+    minutesActivePeople.map(person => '<option value="' + esc(person) + '">' + esc(person) + '</option>').join('') +
+    '<option value="__custom__">Annan person – skriv eget namn</option>';
+  if (name && minutesActivePeople.includes(name)) {
+    select.value = name;
+    custom.value = '';
+    custom.classList.add('hidden');
+  } else if (name) {
+    // Bevara äldre sparade namn även om personen inte längre har ett aktivt konto.
+    const legacy = document.createElement('option');
+    legacy.value = name;
+    legacy.textContent = name + ' (tidigare angivet)';
+    select.insertBefore(legacy, select.lastElementChild);
+    select.value = name;
+    custom.value = '';
+    custom.classList.add('hidden');
+  } else {
+    select.value = '';
+    custom.value = '';
+    custom.classList.add('hidden');
+  }
+}
+function minutesPersonValue(role) {
+  const selected = $('minutes' + role).value;
+  return selected === '__custom__'
+    ? $('minutes' + role + 'Custom').value.trim()
+    : selected.trim();
+}
+function updateMinutesPersonCustomVisibility(role) {
+  const select = $('minutes' + role);
+  const custom = $('minutes' + role + 'Custom');
+  const show = select.value === '__custom__';
+  custom.classList.toggle('hidden', !show);
+  if (show) custom.focus();
+}
 function renderMinutesWorkflow() {
   const w=currentMinutes.__workflow||{}, meeting=meetings.find(m=>String(m.id)===String($('minutesMeetingSelect').value));
   $('minutesProtocolHeader').innerHTML=meeting?'<h3>'+esc(protocolDisplayName(meeting,currentMinutesProtocolNumber))+'</h3><p>'+esc(dateText(meetingDate(meeting)))+'</p>':'';
-  $('minutesWriter').value=w.writer||''; $('minutesChair').value=w.chair||''; $('minutesReviewer').value=w.reviewer||'';
+  setMinutesPersonField('Writer', w.writer);
+  setMinutesPersonField('Chair', w.chair);
+  setMinutesPersonField('Reviewer', w.reviewer);
   $('minutesWorkflowStatus').value=w.status||'Utkast';
   $('minutesWriterSigned').checked=!!w.writerSigned; $('minutesChairSigned').checked=!!w.chairSigned; $('minutesReviewerSigned').checked=!!w.reviewerSigned;
   $('minutesActionSection').innerHTML='<option value="">Välj paragraf</option>'+sections.map(x=>'<option value="'+esc(x[0])+'">§'+esc(x[0])+' '+esc(x[1])+'</option>').join('');
   applyRolePermissions();
 }
-function collectMinutesWorkflow(){return {writer:$('minutesWriter').value.trim(),chair:$('minutesChair').value.trim(),reviewer:$('minutesReviewer').value.trim(),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked};}
+function collectMinutesWorkflow(){return {writer:minutesPersonValue('Writer'),chair:minutesPersonValue('Chair'),reviewer:minutesPersonValue('Reviewer'),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked};}
 function renderMinutesActions(){
   const list=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[],root=$('minutesActionsList'),today=new Date().toISOString().slice(0,10);
   $('minutesActionCount').textContent=list.length+(list.length===1?' uppgift':' uppgifter');
@@ -5044,6 +5103,9 @@ function renderMinutesFields() {
 
   $('minutesMeetingSelect').addEventListener('change', () => {
     loadMinutes($('minutesMeetingSelect').value);
+  });
+  ['Writer','Chair','Reviewer'].forEach(role => {
+    $('minutes' + role).addEventListener('change', () => updateMinutesPersonCustomVisibility(role));
   });
 
   $('saveMinutes').addEventListener('click',async()=>{
@@ -7113,10 +7175,12 @@ $('createNotice').addEventListener('click', createMeetingNotice);
 
     // Protokoll – endast administratör får skriva, ändra och spara
     $('saveMinutes').classList.toggle('hidden', !admin);
-    document.querySelectorAll('#minutesFields textarea, #migratedMinutes, #minutesWriter, #minutesChair, #minutesReviewer').forEach(field => {
+    document.querySelectorAll('#minutesFields textarea, #migratedMinutes, #minutesWriterCustom, #minutesChairCustom, #minutesReviewerCustom').forEach(field => {
       field.readOnly = !admin;
       field.setAttribute('aria-readonly', String(!admin));
     });
+    ['minutesWriter','minutesChair','minutesReviewer'].forEach(id => { $(id).disabled = !admin; });
+    ['minutesWriterCustom','minutesChairCustom','minutesReviewerCustom'].forEach(id => { $(id).disabled = !admin; });
     $('minutesWorkflowStatus').disabled = !admin;
     ['minutesWriterSigned','minutesChairSigned','minutesReviewerSigned'].forEach(id => { $(id).disabled = !admin; });
     document.querySelectorAll('.minutes-admin-only').forEach(el => el.classList.toggle('hidden', !admin));
