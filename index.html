@@ -6350,7 +6350,7 @@ if (home) {
             <div class="yearwheel-event-meta">${esc(annualEventDateLabel(item))}</div>
             <div class="yearwheel-event-details">
               ${item.responsible ? '<span><strong>Ansvarig:</strong> ' + esc(annualResponsibleLabel(item.responsible)) + '</span>' : '<span class="muted">Ansvarig ej utsedd</span>'}
-              <span class="annual-status annual-status-' + (item.status === 'Genomförd' ? 'done' : item.status === 'Pågående' ? 'ongoing' : item.status === 'Ej aktuell' ? 'inactive' : 'planned') + '">' + esc(item.status || 'Ej påbörjad') + '</span>
+              <span class="annual-status annual-status-${item.status === 'Genomförd' ? 'done' : item.status === 'Pågående' ? 'ongoing' : item.status === 'Ej aktuell' ? 'inactive' : 'planned'}">${esc(item.status || 'Ej påbörjad')}</span>
             </div>
             ${item.meeting_id ? '<div class="yearwheel-event-meeting"><strong>Styrelsemöte:</strong> ' + esc(annualMeetingLabel(item.meeting_id)) + '</div>' : ''}
             ${item.notes ? '<div class="yearwheel-event-notes">' + esc(item.notes) + '</div>' : ''}
