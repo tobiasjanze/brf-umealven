@@ -2937,6 +2937,29 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   border-color: #dfc99e !important;
 }
 
+.yearwheel-event-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 8px;
+  font-size: .92rem;
+}
+.annual-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: .78rem;
+  font-weight: 700;
+  background: #edf1f5;
+  color: #425466;
+}
+.annual-status-done { background: #e2f2e7; color: #23643b; }
+.annual-status-ongoing { background: #fff0d7; color: #805000; }
+.annual-status-inactive { background: #eeeaf3; color: #625575; }
+.annual-status-planned { background: #e5eff9; color: #245b83; }
+.yearwheel-event-meeting { margin-top: 7px; color: #36536d; font-size: .9rem; }
   </style>
 </head>
 
@@ -3387,6 +3410,25 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
                 </select>
               </div>
             </div>
+            <div class="row">
+              <div>
+                <label for="annualResponsible">Ansvarig person</label>
+                <input id="annualResponsible" maxlength="120" placeholder="Vem ansvarar för aktiviteten?">
+              </div>
+              <div>
+                <label for="annualEventStatus">Status</label>
+                <select id="annualEventStatus">
+                  <option value="Ej påbörjad">Ej påbörjad</option>
+                  <option value="Pågående">Pågående</option>
+                  <option value="Genomförd">Genomförd</option>
+                  <option value="Ej aktuell">Ej aktuell</option>
+                </select>
+              </div>
+            </div>
+            <label for="annualMeetingId">Koppla till styrelsemöte (valfritt)</label>
+            <select id="annualMeetingId">
+              <option value="">Ingen möteskoppling</option>
+            </select>
             <label for="annualEventNotes">Anteckningar (valfritt)</label>
             <textarea id="annualEventNotes" placeholder="Beskriv aktiviteten eller vad styrelsen behöver tänka på..."></textarea>
             <div class="toolbar">
@@ -3676,6 +3718,7 @@ function showLogin() {
 
     renderMeetings();
 populateMeetingSelects();
+populateAnnualMeetingSelect();
 renderHome();
   }
 
@@ -6125,6 +6168,30 @@ if (home) {
     return month ? 'Återkommer i ' + annualMonths[month - 1].toLowerCase() : 'Datum ej angivet';
   }
 
+  function annualMeetingLabel(meetingId) {
+    const meeting = meetings.find(item => String(item.id) === String(meetingId));
+    return meeting
+      ? meetingTitle(meeting) + ' – ' + dateText(meetingDate(meeting))
+      : 'Kopplat möte';
+  }
+
+  function populateAnnualMeetingSelect() {
+    const select = $('annualMeetingId');
+    if (!select) return;
+    const oldValue = select.value;
+    select.innerHTML = '<option value="">Ingen möteskoppling</option>';
+    meetings
+      .slice()
+      .sort((a, b) => String(meetingDate(b)).localeCompare(String(meetingDate(a))))
+      .forEach(meeting => {
+        const option = document.createElement('option');
+        option.value = meeting.id;
+        option.textContent = meetingTitle(meeting) + ' – ' + dateText(meetingDate(meeting));
+        select.append(option);
+      });
+    if ([...select.options].some(option => option.value === oldValue)) select.value = oldValue;
+  }
+
   function renderAnnualWheel() {
     const wheel = $('annualWheel');
     if (!wheel) return;
@@ -6169,6 +6236,11 @@ if (home) {
           <article class="yearwheel-event">
             <div class="yearwheel-event-title">${esc(item.title || 'Aktivitet utan namn')}</div>
             <div class="yearwheel-event-meta">${esc(annualEventDateLabel(item))}</div>
+            <div class="yearwheel-event-details">
+              ${item.responsible ? '<span><strong>Ansvarig:</strong> ' + esc(item.responsible) + '</span>' : '<span class="muted">Ansvarig ej utsedd</span>'}
+              <span class="annual-status annual-status-' + (item.status === 'Genomförd' ? 'done' : item.status === 'Pågående' ? 'ongoing' : item.status === 'Ej aktuell' ? 'inactive' : 'planned') + '">' + esc(item.status || 'Ej påbörjad') + '</span>
+            </div>
+            ${item.meeting_id ? '<div class="yearwheel-event-meeting"><strong>Styrelsemöte:</strong> ' + esc(annualMeetingLabel(item.meeting_id)) + '</div>' : ''}
             ${item.notes ? '<div class="yearwheel-event-notes">' + esc(item.notes) + '</div>' : ''}
             ${isAdminUser ? `
               <div class="item-actions">
@@ -6184,6 +6256,9 @@ if (home) {
   function resetAnnualEventForm() {
     $('annualEventForm').reset();
     $('annualEventId').value = '';
+    $('annualResponsible').value = '';
+    $('annualEventStatus').value = 'Ej påbörjad';
+    $('annualMeetingId').value = '';
     $('annualFormHeading').textContent = 'Lägg till aktivitet';
   }
 
@@ -6218,6 +6293,9 @@ if (home) {
       title: $('annualEventTitle').value.trim(),
       event_date: recurringMonth ? null : eventDate,
       recurring_month: recurringMonth ? Number(recurringMonth) : null,
+      responsible: $('annualResponsible').value.trim() || null,
+      status: $('annualEventStatus').value || 'Ej påbörjad',
+      meeting_id: $('annualMeetingId').value || null,
       notes: $('annualEventNotes').value.trim()
     };
 
@@ -6252,6 +6330,9 @@ if (home) {
       $('annualEventDate').value = item.event_date || '';
       $('annualRecurringMonth').value = item.recurring_month || '';
       $('annualEventNotes').value = item.notes || '';
+      $('annualResponsible').value = item.responsible || '';
+      $('annualEventStatus').value = item.status || 'Ej påbörjad';
+      $('annualMeetingId').value = item.meeting_id || '';
       $('annualFormHeading').textContent = 'Ändra aktivitet';
       $('annualAdminPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
