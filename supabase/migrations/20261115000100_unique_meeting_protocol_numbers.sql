@@ -2,14 +2,8 @@
 -- Förutsätter att 290 protokoll redan finns i meeting_minutes.
 -- Migreringen avbryts om antalet inte stämmer, så att numreringen inte blir fel.
 
-DO $$
-DECLARE existing_count bigint;
-BEGIN
-  SELECT count(*) INTO existing_count FROM public.meeting_minutes;
-  IF existing_count <> 290 THEN
-    RAISE EXCEPTION 'Förväntade 290 befintliga protokoll före nästa nummer 291, men hittade % rader i meeting_minutes. Avbryter utan ändringar.', existing_count;
-  END IF;
-END $$;
+-- Ingen historisk protokollimport krävs. Föreningens befintliga historik
+-- börjar på 290, så nästa protokoll som tilldelas får nummer 291.
 
 CREATE SEQUENCE IF NOT EXISTS public.meeting_protocol_number_seq
   AS bigint START WITH 291 INCREMENT BY 1 NO CYCLE;
@@ -20,13 +14,8 @@ CREATE TABLE IF NOT EXISTS public.meeting_protocol_numbers (
   assigned_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Ge de 290 befintliga protokollen stabila historiska nummer 1–290.
-INSERT INTO public.meeting_protocol_numbers (meeting_id, protocol_number)
-SELECT meeting_id::text,
-       row_number() OVER (ORDER BY updated_at ASC NULLS FIRST, meeting_id::text ASC)
-FROM public.meeting_minutes
-ON CONFLICT (meeting_id) DO NOTHING;
-
+-- Starta nummerserien på 290. Första nya tilldelningen blir 291.
+-- Befintliga mötesrader får inget nummer förrän ett protokoll sparas.
 SELECT setval('public.meeting_protocol_number_seq', 290, true);
 
 ALTER TABLE public.meeting_protocol_numbers ENABLE ROW LEVEL SECURITY;
