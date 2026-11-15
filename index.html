@@ -6264,6 +6264,7 @@ function showHome() {
 }
 
 function showTab(tabName) {
+  if (tabName === 'annual' && currentUser) loadAnnualEvents();
   $('homeView').classList.add('hidden');
   $('appNav').classList.remove('hidden');
 
@@ -6737,6 +6738,7 @@ async function loadUserRole(user) {
   if (error) {
     isAdminUser = false;
     applyRolePermissions();
+    renderAnnualWheel();
     message(
       'Kunde inte kontrollera behörigheten. Administrationsfunktionerna är låsta.',
       'error'
@@ -6747,10 +6749,12 @@ async function loadUserRole(user) {
   if (data === true) {
     isAdminUser = true;
     applyRolePermissions();
+    renderAnnualWheel();
     message('Inloggad med administratörsbehörighet.', 'ok');
   } else {
     isAdminUser = false;
     applyRolePermissions();
+    renderAnnualWheel();
     // Vanlig medlem – inget felmeddelande ska visas.
   }
 }
