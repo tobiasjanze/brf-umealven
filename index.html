@@ -2231,34 +2231,6 @@ button.small.danger:hover {
    SAMT FÖRBÄTTRAD MOBILANPASSNING
    ========================================= */
 
-/* Vattenstämpel på avtalskorten */
-.contract-card {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-}
-
-.contract-card::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  right: 12px;
-  bottom: 5px;
-  width: 185px;
-  height: 135px;
-  opacity: 0.13;
-  pointer-events: none;
-  background-image: url("brf-umealven-symbol.png");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-/* Innehållet ska ligga ovanför vattenstämpeln */
-.contract-card > * {
-  position: relative;
-  z-index: 1;
-}
 
 /* Se till att avtalsinformationen får plats */
 .contract-card,
@@ -2272,12 +2244,6 @@ button.small.danger:hover {
 
 /* Surfplatta */
 @media (max-width: 850px) {
-  .contract-card::after {
-    width: 145px;
-    height: 115px;
-    opacity: 0.12;
-  }
-
   .contract-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2300,14 +2266,6 @@ button.small.danger:hover {
 
   .contract-card {
     padding: 15px 13px 16px 17px;
-  }
-
-  .contract-card::after {
-    width: 105px;
-    height: 95px;
-    right: 5px;
-    bottom: 5px;
-    opacity: 0.10;
   }
 
   .contract-card-header {
