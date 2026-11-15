@@ -43,8 +43,15 @@ $init$;
 
 ALTER TABLE public.meeting_protocol_numbers ENABLE ROW LEVEL SECURITY;
 
--- Alla inloggade får läsa (befintlig SELECT-policy behålls).
--- Ingen inloggad klient får skriva eller radera nummer direkt.
+-- Endast aktiva styrelsemedlemmar får läsa protokollnummer.
+DROP POLICY IF EXISTS "Authenticated users can read protocol numbers" ON public.meeting_protocol_numbers;
+DROP POLICY IF EXISTS "Active members can read protocol numbers" ON public.meeting_protocol_numbers;
+CREATE POLICY "Active members can read protocol numbers"
+  ON public.meeting_protocol_numbers
+  FOR SELECT TO authenticated
+  USING (private.is_active_board_member());
+
+-- Skrivning och radering sker endast via den behörighetskontrollerade funktionen.
 REVOKE INSERT, UPDATE, DELETE ON public.meeting_protocol_numbers FROM anon, authenticated;
 GRANT SELECT ON public.meeting_protocol_numbers TO authenticated;
 
