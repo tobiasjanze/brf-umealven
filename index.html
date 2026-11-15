@@ -2861,7 +2861,7 @@ button.small.danger:hover {
   font-size: .82rem;
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(23,50,77,.08);
-  transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-139px) rotate(calc(0deg - var(--angle)));
+  transform: translate(-50%, -50%);
 }
 .yearwheel-month:hover, .yearwheel-month.active {
   background: #245b83;
@@ -2906,7 +2906,7 @@ button.small.danger:hover {
 @media (max-width: 760px) {
   .yearwheel-layout { grid-template-columns: 1fr; gap: 12px; }
   .yearwheel-circle { width: min(100%, 330px); }
-  .yearwheel-month { width: 68px; font-size: .76rem; transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-123px) rotate(calc(-1 * var(--angle))); }
+  .yearwheel-month { width: 68px; font-size: .76rem; transform: translate(-50%, -50%); }
 }
 
   </style>
@@ -6115,7 +6115,10 @@ if (home) {
       button.className = 'yearwheel-month' +
         (selectedAnnualMonth === monthNumber ? ' active' : '') +
         (hasEvents ? ' has-events' : '');
-      button.style.setProperty('--angle', angle + 'deg');
+      const radius = wheel.clientWidth * 0.375;
+      const radians = angle * Math.PI / 180;
+      button.style.left = `calc(50% + ${Math.sin(radians) * radius}px)`;
+      button.style.top = `calc(50% - ${Math.cos(radians) * radius}px)`;
       button.textContent = month.slice(0, 3);
       button.setAttribute('aria-label', month);
       button.setAttribute('aria-pressed', String(selectedAnnualMonth === monthNumber));
