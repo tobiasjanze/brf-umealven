@@ -4806,7 +4806,7 @@ async function loadMinutes(meetingId) {
   currentMinutesProtocolNumber = null;
   const { data: protocolNumberRow, error: protocolNumberError } = await db
     .from('meeting_protocol_numbers')
-    .select('protocol_number')
+    .select('total_number')
     .eq('meeting_id', String(meetingId))
     .maybeSingle();
   if (protocolNumberError) {
@@ -5055,7 +5055,7 @@ function renderMinutesFields() {
   if(error)return message('Kunde inte spara protokollet: '+error.message,'error');
 
   // Numret tilldelas först när protokollet sparas första gången.
-  const {data:numberData,error:numberError}=await db.rpc('assign_meeting_minutes_number',{p_meeting_id:String(meetingId)});
+  const {data:numberData,error:numberError}=await db.rpc('assign_meeting_minutes_number',{p_meeting_id:String(meetingId),p_protocol_year:Number(protocolPeriod(meetings.find(m=>String(m.id)===String(meetingId))).slice(0,4))});
   if(numberError){
     currentMinutes=content;
     renderMinutesActions();
