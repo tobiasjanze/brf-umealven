@@ -2861,6 +2861,18 @@ button.small.danger:hover {
 .yearwheel-event[open] {
   box-shadow: 0 3px 10px rgba(28, 68, 98, .07);
 }
+.yearwheel-event.annual-deadline-warning { border-left-color: #e6a23c !important; }
+.yearwheel-event.annual-deadline-overdue { border-left-color: #d9534f !important; }
+.yearwheel-event.annual-deadline-done { border-left-color: #399568 !important; }
+.annual-deadline-label {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #9a6417;
+}
+.annual-deadline-label.overdue { color: #b42318; }
+.annual-deadline-label.done { color: #28784e; }
 .annual-event-summary {
   display: flex;
   align-items: center;
@@ -3528,6 +3540,16 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
                   <option value="9">September</option><option value="10">Oktober</option>
                   <option value="11">November</option><option value="12">December</option>
                 </select>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="annualStartDate">Startdatum för uppgiften (valfritt)</label>
+                <input id="annualStartDate" type="date">
+              </div>
+              <div>
+                <label for="annualEndDate">Slutdatum / senast klar (valfritt)</label>
+                <input id="annualEndDate" type="date">
               </div>
             </div>
             <div class="row">
@@ -6306,6 +6328,20 @@ if (home) {
     return month ? 'Återkommer i ' + annualMonths[month - 1].toLowerCase() : 'Datum ej angivet';
   }
 
+  function annualDeadlineState(item) {
+    if (item.status === 'Genomförd') return { className: 'annual-deadline-done', labelClass: 'done', label: 'Genomförd' };
+    if (item.status === 'Ej aktuell' || !item.end_date) return { className: '', labelClass: '', label: '' };
+    const parts = String(item.end_date).slice(0, 10).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(value => !Number.isFinite(value))) return { className: '', labelClass: '', label: '' };
+    const due = new Date(parts[0], parts[1] - 1, parts[2]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysLeft = Math.round((due.getTime() - today.getTime()) / 86400000);
+    if (daysLeft < 0) return { className: 'annual-deadline-overdue', labelClass: 'overdue', label: 'Försenad – ' + Math.abs(daysLeft) + ' dagar' };
+    if (daysLeft <= 30) return { className: 'annual-deadline-warning', labelClass: '', label: daysLeft === 0 ? 'Sista dagen i dag' : daysLeft + ' dagar kvar' };
+    return { className: '', labelClass: '', label: '' };
+  }
+
   function buildAnnualPrintSheet() {
     const sheet = $('annualPrintSheet');
     if (!sheet) return;
@@ -6432,12 +6468,14 @@ if (home) {
           const statusClass = item.status === 'Genomförd' ? 'done' :
             item.status === 'Pågående' ? 'ongoing' :
             item.status === 'Ej aktuell' ? 'inactive' : 'planned';
+          const deadline = annualDeadlineState(item);
           return `
-            <details class="yearwheel-event contract-card annual-event-card">
+            <details class="yearwheel-event contract-card annual-event-card ${deadline.className}">
               <summary class="annual-event-summary">
                 <div class="annual-event-summary-main">
                   <h3>${esc(item.title || 'Aktivitet utan namn')}</h3>
                   <span class="contract-supplier">${esc(annualEventDateLabel(item))}</span>
+                  ${deadline.label ? '<span class="annual-deadline-label ' + deadline.labelClass + '">' + esc(deadline.label) + '</span>' : ''}
                 </div>
                 <span class="annual-status annual-status-${statusClass}">${esc(item.status || 'Ej påbörjad')}</span>
                 <span class="annual-event-chevron" aria-hidden="true"></span>
@@ -6447,6 +6485,14 @@ if (home) {
                   <div class="contract-field">
                     <small>Datum</small>
                     <strong>${esc(annualEventDateLabel(item))}</strong>
+                  </div>
+                  <div class="contract-field">
+                    <small>Startdatum</small>
+                    <strong>${item.start_date ? esc(dateText(item.start_date)) : 'Ej angivet'}</strong>
+                  </div>
+                  <div class="contract-field">
+                    <small>Slutdatum</small>
+                    <strong>${item.end_date ? esc(dateText(item.end_date)) : 'Ej angivet'}</strong>
                   </div>
                   <div class="contract-field">
                     <small>Ansvarig</small>
@@ -6476,6 +6522,8 @@ if (home) {
     $('annualEventForm').reset();
     $('annualEventId').value = '';
     $('annualResponsible').value = '';
+    $('annualStartDate').value = '';
+    $('annualEndDate').value = '';
     $('annualEventStatus').value = 'Ej påbörjad';
     $('annualMeetingId').value = '';
     $('annualFormHeading').textContent = 'Lägg till aktivitet';
@@ -6503,6 +6551,12 @@ if (home) {
     const id = $('annualEventId').value;
     const recurringMonth = $('annualRecurringMonth').value;
     const eventDate = $('annualEventDate').value;
+    const startDate = $('annualStartDate').value;
+    const endDate = $('annualEndDate').value;
+    if (startDate && endDate && endDate < startDate) {
+      message('Slutdatum kan inte ligga före startdatum.', 'error');
+      return;
+    }
     if (!recurringMonth && !eventDate) {
       message('Ange ett datum eller välj en återkommande månad.', 'error');
       return;
@@ -6512,6 +6566,8 @@ if (home) {
       title: $('annualEventTitle').value.trim(),
       event_date: recurringMonth ? null : eventDate,
       recurring_month: recurringMonth ? Number(recurringMonth) : null,
+      start_date: startDate || null,
+      end_date: endDate || null,
       responsible: $('annualResponsible').value.trim() || null,
       status: $('annualEventStatus').value || 'Ej påbörjad',
       meeting_id: $('annualMeetingId').value || null,
@@ -6548,6 +6604,8 @@ if (home) {
       $('annualEventTitle').value = item.title || '';
       $('annualEventDate').value = item.event_date || '';
       $('annualRecurringMonth').value = item.recurring_month || '';
+      $('annualStartDate').value = item.start_date || '';
+      $('annualEndDate').value = item.end_date || '';
       $('annualEventNotes').value = item.notes || '';
       if (item.responsible && ![...$('annualResponsible').options].some(option => option.value === item.responsible)) {
         const legacyOption = document.createElement('option');
