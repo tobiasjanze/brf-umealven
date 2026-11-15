@@ -4803,6 +4803,18 @@ async function loadMinutes(meetingId) {
     return;
   }
 
+  currentMinutesProtocolNumber = null;
+  const { data: protocolNumberRow, error: protocolNumberError } = await db
+    .from('meeting_protocol_numbers')
+    .select('protocol_number')
+    .eq('meeting_id', String(meetingId))
+    .maybeSingle();
+  if (protocolNumberError) {
+    console.warn('Kunde inte läsa protokollnumret:', protocolNumberError.message);
+  } else {
+    currentMinutesProtocolNumber = protocolNumberRow?.protocol_number ?? null;
+  }
+
   if (data?.content) {
     try {
       const saved = typeof data.content === 'string'
@@ -4857,9 +4869,20 @@ async function loadMinutes(meetingId) {
 
 
 let minuteAgendaItems = [];
+let currentMinutesProtocolNumber = null;
+function protocolPeriod(meeting){
+  const raw=String(meetingDate(meeting)||'');
+  const match=raw.match(/^(\\d{4})-(\\d{2})/);
+  if(match)return match[1]+'-'+match[2];
+  const d=new Date(raw);
+  return Number.isNaN(d.getTime())?'Okänt datum':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function protocolDisplayName(meeting,number){
+  return 'Protokoll brf Umeälven '+protocolPeriod(meeting)+'('+(number??'Löpnummer tilldelas vid första sparning')+')';
+}
 function renderMinutesWorkflow() {
   const w=currentMinutes.__workflow||{}, meeting=meetings.find(m=>String(m.id)===String($('minutesMeetingSelect').value));
-  $('minutesProtocolHeader').innerHTML=meeting?'<h3>'+esc(meetingTitle(meeting))+'</h3><p>'+esc(dateText(meetingDate(meeting)))+'</p>':'';
+  $('minutesProtocolHeader').innerHTML=meeting?'<h3>'+esc(protocolDisplayName(meeting,currentMinutesProtocolNumber))+'</h3><p>'+esc(dateText(meetingDate(meeting)))+'</p>':'';
   $('minutesWriter').value=w.writer||''; $('minutesChair').value=w.chair||''; $('minutesReviewer').value=w.reviewer||'';
   $('minutesWorkflowStatus').value=w.status||'Utkast';
   $('minutesWriterSigned').checked=!!w.writerSigned; $('minutesChairSigned').checked=!!w.chairSigned; $('minutesReviewerSigned').checked=!!w.reviewerSigned;
@@ -4919,7 +4942,7 @@ function minutesContentFromEditor(){
 function printMinutesPdf(){
   const meetingId=$('minutesMeetingSelect').value,meeting=meetings.find(m=>String(m.id)===String(meetingId));
   if(!meeting)return message('Välj ett möte först.','error');
-  const c=minutesContentFromEditor(),w=c.__workflow||{},logo=new URL('brf-umealven-logotyp.png',window.location.href).href;
+  const c=minutesContentFromEditor(),w=c.__workflow||{},logo=new URL('brf-umealven-logotyp.png',window.location.href).href,protocolName=protocolDisplayName(meeting,currentMinutesProtocolNumber);
   const br=v=>esc(v||'').replace(/\n/g,'<br>');let body='';
   sections.forEach(([n,t])=>{
     const d=c[n];body+='<section><h2>§'+esc(n)+' '+esc(t)+'</h2>';
@@ -4928,7 +4951,7 @@ function printMinutesPdf(){
     else body+='<p>'+br(typeof d==='string'?d:'')+'</p>';body+='</section>';
   });
   if(c.__actions&&c.__actions.length)body+='<section><h2>Beslut och uppföljning</h2><table><tr><th>Uppgift</th><th>Ansvarig</th><th>Klart senast</th><th>Status</th></tr>'+c.__actions.map(a=>'<tr><td>'+esc(a.title)+'</td><td>'+esc(a.responsible||'—')+'</td><td>'+esc(a.dueDate?dateText(a.dueDate):'—')+'</td><td>'+esc(a.status||'Ej påbörjad')+'</td></tr>').join('')+'</table></section>';
-  const doc='<!doctype html><html lang="sv"><head><meta charset="utf-8"><title>'+esc(meetingTitle(meeting))+'</title><style>@page{size:A4;margin:18mm}body{font:11pt Arial,sans-serif;color:#24364b;line-height:1.5}header{display:flex;align-items:center;gap:25px;border-bottom:5px solid #cfe4f4;padding-bottom:18px;margin-bottom:24px}header img{width:180px;max-height:85px;object-fit:contain}h1{font-size:23pt;margin:0 0 5px}h2{font-size:15pt;background:#eaf2f8;border-left:5px solid #438bb9;padding:9px 12px;margin:22px 0 10px}h3{font-size:11pt;margin:12px 0 3px}section{break-inside:avoid}table{width:100%;border-collapse:collapse}th,td{border:1px solid #d5e0e8;padding:7px;text-align:left}th{background:#eaf2f8}.signatures{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}.sig{border-top:1px solid #526477;padding-top:7px;font-size:9pt}footer{margin-top:35px;border-top:1px solid #d5e0e8;padding-top:8px;color:#73808d;font-size:9pt}</style></head><body><header><img src="'+logo+'" alt="BRF Umeälven"><div><h1>Styrelseprotokoll</h1><strong>'+esc(meetingTitle(meeting))+'</strong><div>'+esc(dateText(meetingDate(meeting)))+'</div></div></header><p><strong>Protokollförare:</strong> '+esc(w.writer||'—')+' &nbsp; <strong>Ordförande:</strong> '+esc(w.chair||'—')+' &nbsp; <strong>Justerare:</strong> '+esc(w.reviewer||'—')+'</p>'+body+'<div class="signatures"><div class="sig">Protokollförare<br>'+esc(w.writer||'')+'</div><div class="sig">Mötesordförande<br>'+esc(w.chair||'')+'</div><div class="sig">Justerare<br>'+esc(w.reviewer||'')+'</div></div><footer>BRF Umeälven · Styrelseprotokoll · '+esc(w.status||'Utkast')+'</footer><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
+  const doc='<!doctype html><html lang="sv"><head><meta charset="utf-8"><title>'+esc(protocolName)+'</title><style>@page{size:A4;margin:18mm}body{font:11pt Arial,sans-serif;color:#24364b;line-height:1.5}header{display:flex;align-items:center;gap:25px;border-bottom:5px solid #cfe4f4;padding-bottom:18px;margin-bottom:24px}header img{width:180px;max-height:85px;object-fit:contain}h1{font-size:23pt;margin:0 0 5px}h2{font-size:15pt;background:#eaf2f8;border-left:5px solid #438bb9;padding:9px 12px;margin:22px 0 10px}h3{font-size:11pt;margin:12px 0 3px}section{break-inside:avoid}table{width:100%;border-collapse:collapse}th,td{border:1px solid #d5e0e8;padding:7px;text-align:left}th{background:#eaf2f8}.signatures{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}.sig{border-top:1px solid #526477;padding-top:7px;font-size:9pt}footer{margin-top:35px;border-top:1px solid #d5e0e8;padding-top:8px;color:#73808d;font-size:9pt}</style></head><body><header><img src="'+logo+'" alt="BRF Umeälven"><div><h1>Styrelseprotokoll</h1><strong>'+esc(protocolName)+'</strong><div>'+esc(dateText(meetingDate(meeting)))+'</div></div></header><p><strong>Protokollförare:</strong> '+esc(w.writer||'—')+' &nbsp; <strong>Ordförande:</strong> '+esc(w.chair||'—')+' &nbsp; <strong>Justerare:</strong> '+esc(w.reviewer||'—')+'</p>'+body+'<div class="signatures"><div class="sig">Protokollförare<br>'+esc(w.writer||'')+'</div><div class="sig">Mötesordförande<br>'+esc(w.chair||'')+'</div><div class="sig">Justerare<br>'+esc(w.reviewer||'')+'</div></div><footer>BRF Umeälven · Styrelseprotokoll · '+esc(w.status||'Utkast')+'</footer><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
   const win=window.open('','_blank');if(!win)return message('Popup blockerad. Tillåt popup-fönster och försök igen.','error');win.document.open();win.document.write(doc);win.document.close();
 }
 function renderMinutesFields() {
@@ -5024,10 +5047,25 @@ function renderMinutesFields() {
 
   $('saveMinutes').addEventListener('click',async()=>{
   if(!isAdminUser)return message('Endast administratör kan ändra protokollet.','error');
-  const meetingId=$('minutesMeetingSelect').value;if(!meetingId)return message('Välj ett möte innan du sparar.','error');
+  const meetingId=$('minutesMeetingSelect').value;
+  if(!meetingId)return message('Välj ett möte innan du sparar.','error');
   const content=minutesContentFromEditor();
   const {error}=await db.from('meeting_minutes').upsert({meeting_id:meetingId,content,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:'meeting_id'});
-  if(error)message('Kunde inte spara protokollet: '+error.message,'error');else{currentMinutes=content;renderMinutesActions();message('Protokollet har sparats.','ok')}
+  if(error)return message('Kunde inte spara protokollet: '+error.message,'error');
+
+  // Numret tilldelas först när protokollet sparas första gången.
+  const {data:numberData,error:numberError}=await db.rpc('assign_meeting_minutes_number',{p_meeting_id:String(meetingId)});
+  if(numberError){
+    currentMinutes=content;
+    renderMinutesActions();
+    renderMinutesWorkflow();
+    return message('Protokollet sparades, men löpnumret kunde inte tilldelas: '+numberError.message,'error');
+  }
+  currentMinutesProtocolNumber=Number(numberData);
+  currentMinutes=content;
+  renderMinutesActions();
+  renderMinutesWorkflow();
+  message('Protokollet har sparats som '+protocolDisplayName(meetings.find(m=>String(m.id)===String(meetingId)),currentMinutesProtocolNumber)+'.','ok');
 });
 $('downloadMinutes').addEventListener('click',()=>printMinutesPdf());
 
