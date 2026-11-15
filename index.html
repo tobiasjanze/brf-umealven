@@ -3413,7 +3413,9 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
             <div class="row">
               <div>
                 <label for="annualResponsible">Ansvarig person</label>
-                <input id="annualResponsible" maxlength="120" placeholder="Vem ansvarar för aktiviteten?">
+                <select id="annualResponsible">
+                  <option value="">Välj ansvarig...</option>
+                </select>
               </div>
               <div>
                 <label for="annualEventStatus">Status</label>
@@ -3580,10 +3582,12 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 // ===== ANSVVARIGA FÖR AVTAL =====
 
 async function loadContractResponsibleOptions() {
-    const select = $('contractResponsible');
-    if (!select) return;
+    const contractSelect = $('contractResponsible');
+    const annualSelect = $('annualResponsible');
+    if (!contractSelect && !annualSelect) return;
 
-    const previousValue = select.value;
+    const previousContractValue = contractSelect?.value || '';
+    const previousAnnualValue = annualSelect?.value || '';
 
     const { data, error } = await db.rpc('get_active_board_members');
 
@@ -3593,29 +3597,35 @@ async function loadContractResponsibleOptions() {
         return;
     }
 
-  boardMemberNames = {};
-
-(data || []).forEach(member => {
-  boardMemberNames[member.user_id] = member.display_name;
-});
-    select.innerHTML = '<option value="">Välj ansvarig...</option>';
-
+    boardMemberNames = {};
     (data || []).forEach(member => {
-        const option = document.createElement('option');
-        option.value = member.user_id;
-        option.textContent = member.display_name;
-        select.appendChild(option);
+        boardMemberNames[member.user_id] = member.display_name;
     });
 
-    if (previousValue) {
-        select.value = previousValue;
+    [contractSelect, annualSelect].filter(Boolean).forEach(select => {
+        const placeholder = select.id === 'annualResponsible'
+          ? 'Välj ansvarig person...'
+          : 'Välj ansvarig...';
+        select.innerHTML = '<option value="">'+ placeholder +'</option>';
+
+        (data || []).forEach(member => {
+            const option = document.createElement('option');
+            option.value = member.user_id;
+            option.textContent = member.display_name;
+            select.appendChild(option);
+        });
+    });
+
+    if (contractSelect && previousContractValue) {
+        contractSelect.value = previousContractValue;
+    }
+    if (annualSelect && previousAnnualValue) {
+        annualSelect.value = previousAnnualValue;
     }
 }
 
-$('contractResponsible')?.addEventListener(
-    'focus',
-    loadContractResponsibleOptions
-);
+$('contractResponsible')?.addEventListener('focus', loadContractResponsibleOptions);
+$('annualResponsible')?.addEventListener('focus', loadContractResponsibleOptions);
   // Visa JavaScript-fel i stället för att misslyckas tyst.
 
   window.addEventListener('error', event => {
@@ -6168,6 +6178,10 @@ if (home) {
     return month ? 'Återkommer i ' + annualMonths[month - 1].toLowerCase() : 'Datum ej angivet';
   }
 
+  function annualResponsibleLabel(responsibleId) {
+    return boardMemberNames[responsibleId] || responsibleId;
+  }
+
   function annualMeetingLabel(meetingId) {
     const meeting = meetings.find(item => String(item.id) === String(meetingId));
     return meeting
@@ -6237,7 +6251,7 @@ if (home) {
             <div class="yearwheel-event-title">${esc(item.title || 'Aktivitet utan namn')}</div>
             <div class="yearwheel-event-meta">${esc(annualEventDateLabel(item))}</div>
             <div class="yearwheel-event-details">
-              ${item.responsible ? '<span><strong>Ansvarig:</strong> ' + esc(item.responsible) + '</span>' : '<span class="muted">Ansvarig ej utsedd</span>'}
+              ${item.responsible ? '<span><strong>Ansvarig:</strong> ' + esc(annualResponsibleLabel(item.responsible)) + '</span>' : '<span class="muted">Ansvarig ej utsedd</span>'}
               <span class="annual-status annual-status-' + (item.status === 'Genomförd' ? 'done' : item.status === 'Pågående' ? 'ongoing' : item.status === 'Ej aktuell' ? 'inactive' : 'planned') + '">' + esc(item.status || 'Ej påbörjad') + '</span>
             </div>
             ${item.meeting_id ? '<div class="yearwheel-event-meeting"><strong>Styrelsemöte:</strong> ' + esc(annualMeetingLabel(item.meeting_id)) + '</div>' : ''}
@@ -6330,6 +6344,12 @@ if (home) {
       $('annualEventDate').value = item.event_date || '';
       $('annualRecurringMonth').value = item.recurring_month || '';
       $('annualEventNotes').value = item.notes || '';
+      if (item.responsible && ![...$('annualResponsible').options].some(option => option.value === item.responsible)) {
+        const legacyOption = document.createElement('option');
+        legacyOption.value = item.responsible;
+        legacyOption.textContent = item.responsible + ' (tidigare angivet)';
+        $('annualResponsible').appendChild(legacyOption);
+      }
       $('annualResponsible').value = item.responsible || '';
       $('annualEventStatus').value = item.status || 'Ej påbörjad';
       $('annualMeetingId').value = item.meeting_id || '';
