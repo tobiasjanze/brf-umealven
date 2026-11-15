@@ -2816,6 +2816,99 @@ button.small.danger:hover {
   }
 }
 
+  
+/* ===== ÅRSHJUL – BRF UMEÄLVEN ===== */
+.yearwheel-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 390px) minmax(0, 1fr);
+  gap: 26px;
+  align-items: start;
+}
+.yearwheel-circle {
+  position: relative;
+  width: min(100%, 370px);
+  aspect-ratio: 1;
+  margin: 8px auto 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 34%, #edf5fb 34% 61%, #dcecf8 61% 63%, #f7fbfe 64%);
+  border: 1px solid #c9ddeb;
+  box-shadow: inset 0 0 0 9px #f7fbfe, 0 5px 18px rgba(23,50,77,.08);
+}
+.yearwheel-center {
+  position: absolute;
+  inset: 35%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #17324d;
+  pointer-events: none;
+}
+.yearwheel-center strong { font-size: 1.05rem; }
+.yearwheel-center span { color: #687783; font-size: .78rem; }
+.yearwheel-month {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 76px;
+  min-height: 42px;
+  padding: 7px 5px;
+  border: 1px solid #bfd4e4;
+  border-radius: 11px;
+  background: #fff;
+  color: #17324d;
+  font-size: .82rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(23,50,77,.08);
+  transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-139px) rotate(calc(0deg - var(--angle)));
+}
+.yearwheel-month:hover, .yearwheel-month.active {
+  background: #245b83;
+  color: #fff;
+  border-color: #245b83;
+}
+.yearwheel-month.has-events:not(.active)::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: #168bd0;
+  vertical-align: middle;
+}
+.yearwheel-list {
+  background: #f8fbfd;
+  border: 1px solid #d7e4ed;
+  border-radius: 13px;
+  padding: 16px;
+  min-width: 0;
+}
+.yearwheel-list h3 { margin-top: 0; color: #17324d; }
+.yearwheel-event {
+  padding: 13px 0;
+  border-bottom: 1px solid #dce6ed;
+}
+.yearwheel-event:last-child { border-bottom: 0; }
+.yearwheel-event-title { color: #17324d; font-weight: 700; }
+.yearwheel-event-meta { color: #687783; font-size: .88rem; margin-top: 3px; }
+.yearwheel-event-notes { white-space: pre-wrap; margin-top: 7px; }
+.yearwheel-admin {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #d7e4ed;
+  border-radius: 12px;
+  background: #fbfdff;
+}
+.yearwheel-filterbar { display:flex; gap:8px; flex-wrap:wrap; margin: 0 0 12px; }
+.yearwheel-filterbar button.active { background:#245b83; color:#fff; }
+@media (max-width: 760px) {
+  .yearwheel-layout { grid-template-columns: 1fr; gap: 12px; }
+  .yearwheel-circle { width: min(100%, 330px); }
+  .yearwheel-month { width: 68px; font-size: .76rem; transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-123px) rotate(calc(-1 * var(--angle))); }
+}
+
   </style>
 </head>
 
@@ -2950,6 +3043,14 @@ button.small.danger:hover {
         
         
 
+        
+<button class="home-card" data-open-tab="annual">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/>
+  </svg>
+  <strong>Årshjul</strong>
+  <span>Återkommande aktiviteter och viktiga datum</span>
+</button>
         <div id="homeContractsSummary" class="contract-summary">
           Hämtar avtalsöversikt ...
         </div>
@@ -2963,6 +3064,7 @@ button.small.danger:hover {
       <button class="tab" data-tab="minutes">Protokoll</button>
       <button class="tab" data-tab="documents">Mötesdokument</button>
       <button class="tab" data-tab="contracts">Bevaka avtal</button>
+      <button class="tab" data-tab="annual">Årshjul</button>
       <button id="homeBtn" class="tab home-back" type="button">
   Startsida
 </button>
@@ -3216,6 +3318,60 @@ button.small.danger:hover {
 
       </div>
     </section>
+
+    <!-- ÅRSHJUL -->
+    <section id="tab-annual" class="tabcontent hidden">
+      <div class="panel">
+        <h2>Årshjul – BRF Umeälven</h2>
+        <p class="muted">Föreningens återkommande aktiviteter och viktiga datum under året. Välj en månad i årshjulet för att se aktiviteterna.</p>
+        <div class="yearwheel-layout">
+          <div>
+            <div id="annualWheel" class="yearwheel-circle" aria-label="Interaktivt årshjul">
+              <div class="yearwheel-center"><strong>BRF Umeälven</strong><span>Årets aktiviteter</span></div>
+            </div>
+            <div class="yearwheel-filterbar">
+              <button type="button" id="annualShowAll" class="active">Visa hela året</button>
+            </div>
+          </div>
+          <div class="yearwheel-list">
+            <h3 id="annualListHeading">Aktiviteter under året</h3>
+            <div id="annualEventsList"><p class="muted">Hämtar aktiviteter ...</p></div>
+          </div>
+        </div>
+        <div id="annualAdminPanel" class="yearwheel-admin">
+          <h3 id="annualFormHeading">Lägg till aktivitet</h3>
+          <form id="annualEventForm">
+            <input type="hidden" id="annualEventId">
+            <label for="annualEventTitle">Aktivitet</label>
+            <input id="annualEventTitle" maxlength="160" required placeholder="Exempel: Vårstädning">
+            <div class="row">
+              <div>
+                <label for="annualEventDate">Datum (för aktivitet med fast datum)</label>
+                <input id="annualEventDate" type="date">
+              </div>
+              <div>
+                <label for="annualRecurringMonth">Eller återkommande månad</label>
+                <select id="annualRecurringMonth">
+                  <option value="">Välj månad om aktiviteten återkommer</option>
+                  <option value="1">Januari</option><option value="2">Februari</option>
+                  <option value="3">Mars</option><option value="4">April</option>
+                  <option value="5">Maj</option><option value="6">Juni</option>
+                  <option value="7">Juli</option><option value="8">Augusti</option>
+                  <option value="9">September</option><option value="10">Oktober</option>
+                  <option value="11">November</option><option value="12">December</option>
+                </select>
+              </div>
+            </div>
+            <label for="annualEventNotes">Anteckningar (valfritt)</label>
+            <textarea id="annualEventNotes" placeholder="Beskriv aktiviteten eller vad styrelsen behöver tänka på..."></textarea>
+            <div class="toolbar">
+              <button class="primary" type="submit">Spara aktivitet</button>
+              <button type="button" id="annualCancelEdit">Rensa</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
   </section>
 
   <div class="footer">BRF Umeälven · Styrelseportal</div>
@@ -3244,6 +3400,8 @@ button.small.danger:hover {
 
   let currentUser = null;
   let meetings = [];
+  let annualEvents = [];
+  let selectedAnnualMonth = null;
   let selectedMeetingId = null;
   let agendaItems = [];
   let currentMinutes = {};
@@ -3470,6 +3628,7 @@ function showLogin() {
     await loadMeetings();
     await loadContractResponsibleOptions();
     await loadContracts();
+    await loadAnnualEvents();
   } finally {
     loading = false;
   }
@@ -5902,6 +6061,193 @@ if (home) {
     }
   });
 
+
+  // ===== ÅRSHJUL – ISOLERAD FUNKTION =====
+  const annualMonths = [
+    'Januari','Februari','Mars','April','Maj','Juni',
+    'Juli','Augusti','September','Oktober','November','December'
+  ];
+
+  async function loadAnnualEvents() {
+    const { data, error } = await db
+      .from('annual_events')
+      .select('*')
+      .order('event_date', { ascending: true, nullsFirst: false });
+
+    if (error) {
+      console.error('Kunde inte läsa årshjulet:', error);
+      $('annualEventsList').innerHTML =
+        '<p class="muted">Årshjulet kunde inte hämtas. Kontrollera att tabellen annual_events finns och att läsbehörigheten är aktiv.</p>';
+      return;
+    }
+
+    annualEvents = data || [];
+    renderAnnualWheel();
+  }
+
+  function annualEventMonth(item) {
+    if (item.recurring_month) return Number(item.recurring_month);
+    if (item.event_date) {
+      const month = Number(String(item.event_date).slice(5, 7));
+      return Number.isFinite(month) ? month : null;
+    }
+    return null;
+  }
+
+  function annualEventDateLabel(item) {
+    if (item.event_date) return dateText(item.event_date);
+    const month = annualEventMonth(item);
+    return month ? 'Återkommer i ' + annualMonths[month - 1].toLowerCase() : 'Datum ej angivet';
+  }
+
+  function renderAnnualWheel() {
+    const wheel = $('annualWheel');
+    if (!wheel) return;
+
+    wheel.querySelectorAll('.yearwheel-month').forEach(node => node.remove());
+
+    annualMonths.forEach((month, index) => {
+      const monthNumber = index + 1;
+      const button = document.createElement('button');
+      const angle = index * 30;
+      const hasEvents = annualEvents.some(item => annualEventMonth(item) === monthNumber);
+      button.type = 'button';
+      button.className = 'yearwheel-month' +
+        (selectedAnnualMonth === monthNumber ? ' active' : '') +
+        (hasEvents ? ' has-events' : '');
+      button.style.setProperty('--angle', angle + 'deg');
+      button.textContent = month.slice(0, 3);
+      button.setAttribute('aria-label', month);
+      button.setAttribute('aria-pressed', String(selectedAnnualMonth === monthNumber));
+      button.addEventListener('click', () => {
+        selectedAnnualMonth = monthNumber;
+        renderAnnualWheel();
+      });
+      wheel.append(button);
+    });
+
+    const visible = annualEvents
+      .filter(item => selectedAnnualMonth === null || annualEventMonth(item) === selectedAnnualMonth)
+      .sort((a, b) => {
+        const ma = annualEventMonth(a) || 13;
+        const mb = annualEventMonth(b) || 13;
+        if (ma !== mb) return ma - mb;
+        return String(a.event_date || '').localeCompare(String(b.event_date || ''));
+      });
+
+    $('annualListHeading').textContent = selectedAnnualMonth
+      ? 'Aktiviteter i ' + annualMonths[selectedAnnualMonth - 1]
+      : 'Aktiviteter under året';
+
+    $('annualEventsList').innerHTML = visible.length
+      ? visible.map(item => `
+          <article class="yearwheel-event">
+            <div class="yearwheel-event-title">${esc(item.title || 'Aktivitet utan namn')}</div>
+            <div class="yearwheel-event-meta">${esc(annualEventDateLabel(item))}</div>
+            ${item.notes ? '<div class="yearwheel-event-notes">' + esc(item.notes) + '</div>' : ''}
+            ${isAdminUser ? `
+              <div class="item-actions">
+                <button type="button" class="small" data-annual-edit="${esc(item.id)}">Ändra</button>
+                <button type="button" class="small danger" data-annual-delete="${esc(item.id)}">Ta bort</button>
+              </div>` : ''}
+          </article>`).join('')
+      : '<p class="muted">Det finns inga aktiviteter för den här vyn ännu.</p>';
+
+    applyRolePermissions();
+  }
+
+  function resetAnnualEventForm() {
+    $('annualEventForm').reset();
+    $('annualEventId').value = '';
+    $('annualFormHeading').textContent = 'Lägg till aktivitet';
+  }
+
+  $('annualRecurringMonth').addEventListener('change', () => {
+    if ($('annualRecurringMonth').value) $('annualEventDate').value = '';
+  });
+  $('annualEventDate').addEventListener('change', () => {
+    if ($('annualEventDate').value) $('annualRecurringMonth').value = '';
+  });
+  $('annualCancelEdit').addEventListener('click', resetAnnualEventForm);
+  $('annualShowAll').addEventListener('click', () => {
+    selectedAnnualMonth = null;
+    renderAnnualWheel();
+  });
+
+  $('annualEventForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!isAdminUser) {
+      message('Du har inte behörighet att ändra årshjulet.', 'error');
+      return;
+    }
+
+    const id = $('annualEventId').value;
+    const recurringMonth = $('annualRecurringMonth').value;
+    const eventDate = $('annualEventDate').value;
+    if (!recurringMonth && !eventDate) {
+      message('Ange ett datum eller välj en återkommande månad.', 'error');
+      return;
+    }
+
+    const payload = {
+      title: $('annualEventTitle').value.trim(),
+      event_date: recurringMonth ? null : eventDate,
+      recurring_month: recurringMonth ? Number(recurringMonth) : null,
+      notes: $('annualEventNotes').value.trim()
+    };
+
+    const result = id
+      ? await db.from('annual_events').update(payload).eq('id', id)
+      : await db.from('annual_events').insert({
+          ...payload,
+          created_by: currentUser.id
+        });
+
+    if (result.error) {
+      message('Kunde inte spara aktiviteten: ' + result.error.message, 'error');
+      return;
+    }
+
+    resetAnnualEventForm();
+    await loadAnnualEvents();
+    message(id ? 'Aktiviteten har uppdaterats.' : 'Aktiviteten har lagts till i årshjulet.', 'ok');
+  });
+
+  $('annualEventsList').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-annual-edit]');
+    const deleteButton = event.target.closest('[data-annual-delete]');
+
+    if (editButton) {
+      if (!isAdminUser) return;
+      const item = annualEvents.find(entry => String(entry.id) === editButton.dataset.annualEdit);
+      if (!item) return;
+
+      $('annualEventId').value = item.id;
+      $('annualEventTitle').value = item.title || '';
+      $('annualEventDate').value = item.event_date || '';
+      $('annualRecurringMonth').value = item.recurring_month || '';
+      $('annualEventNotes').value = item.notes || '';
+      $('annualFormHeading').textContent = 'Ändra aktivitet';
+      $('annualAdminPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    if (deleteButton) {
+      if (!isAdminUser) return;
+      const item = annualEvents.find(entry => String(entry.id) === deleteButton.dataset.annualDelete);
+      if (!item || !confirm('Vill du ta bort aktiviteten "' + item.title + '"?')) return;
+
+      const { error } = await db.from('annual_events').delete().eq('id', item.id);
+      if (error) {
+        message('Kunde inte ta bort aktiviteten: ' + error.message, 'error');
+        return;
+      }
+      await loadAnnualEvents();
+      message('Aktiviteten har tagits bort.', 'ok');
+    }
+  });
+
+
   // ===== NAVIGERING =====
 
 function showHome() {
@@ -5918,6 +6264,7 @@ function showHome() {
 }
 
 function showTab(tabName) {
+  if (tabName === 'annual' && currentUser) loadAnnualEvents();
   $('homeView').classList.add('hidden');
   $('appNav').classList.remove('hidden');
 
@@ -6341,13 +6688,18 @@ $('createNotice').classList.toggle('hidden', !admin);
     // Avtal – endast administratören får hantera
     $('contractAdminPanel').classList.toggle('hidden', !admin);
 
+    // Årshjul – alla får läsa, endast administratören får ändra
+    $('annualAdminPanel').classList.toggle('hidden', !admin);
+
     // Dölj redigera- och ta bort-knappar
     document.querySelectorAll(
       '[data-action="edit"],' +
       '[data-action="delete"],' +
       '[data-delete-agenda],' +
       '[data-contract-edit],' +
-      '[data-contract-delete]'
+      '[data-contract-delete],' +
+      '[data-annual-edit],' +
+      '[data-annual-delete]'
     ).forEach(button => {
       button.classList.toggle('hidden', !admin);
     });
@@ -6386,6 +6738,7 @@ async function loadUserRole(user) {
   if (error) {
     isAdminUser = false;
     applyRolePermissions();
+    renderAnnualWheel();
     message(
       'Kunde inte kontrollera behörigheten. Administrationsfunktionerna är låsta.',
       'error'
@@ -6396,10 +6749,12 @@ async function loadUserRole(user) {
   if (data === true) {
     isAdminUser = true;
     applyRolePermissions();
+    renderAnnualWheel();
     message('Inloggad med administratörsbehörighet.', 'ok');
   } else {
     isAdminUser = false;
     applyRolePermissions();
+    renderAnnualWheel();
     // Vanlig medlem – inget felmeddelande ska visas.
   }
 }
@@ -6423,7 +6778,8 @@ async function loadUserRole(user) {
       'meetingForm',
       'agendaForm',
       'uploadForm',
-      'contractForm'
+      'contractForm',
+      'annualEventForm'
     ];
 
     if (restrictedForms.includes(event.target.id)) {
@@ -6455,6 +6811,7 @@ async function loadUserRole(user) {
       ) ||
       button.id === 'saveMinutes' ||
       button.id === 'cancelMeetingEdit' ||
+      button.matches('[data-annual-edit], [data-annual-delete]') ||
       (
         button.closest('.file-row') &&
         button.textContent.trim() === 'Ta bort'
