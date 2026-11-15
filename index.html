@@ -2892,13 +2892,81 @@ button.small.danger:hover {
 }
 .yearwheel-list h3 { margin-top: 0; color: #17324d; }
 .yearwheel-event {
-  padding: 13px 0;
-  border-bottom: 1px solid #dce6ed;
+  margin: 12px 0;
+  padding: 0;
+  border: 1px solid #d3e1eb;
+  border-left: 6px solid #8dbbdc;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
 }
-.yearwheel-event:last-child { border-bottom: 0; }
-.yearwheel-event-title { color: #17324d; font-weight: 700; }
-.yearwheel-event-meta { color: #687783; font-size: .88rem; margin-top: 3px; }
-.yearwheel-event-notes { white-space: pre-wrap; margin-top: 7px; }
+.yearwheel-event[open] {
+  box-shadow: 0 3px 10px rgba(28, 68, 98, .07);
+}
+.annual-event-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.annual-event-summary::-webkit-details-marker { display: none; }
+.annual-event-summary::marker { content: ""; }
+.annual-event-summary-main { flex: 1 1 auto; min-width: 0; }
+.annual-event-summary h3 {
+  margin: 0;
+  color: #17324d;
+  font-size: 1.08rem;
+  overflow-wrap: anywhere;
+}
+.annual-event-summary .contract-supplier {
+  display: block;
+  margin-top: 4px;
+  color: #687783;
+  font-size: .88rem;
+}
+.annual-event-chevron {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #52728b;
+  border-bottom: 2px solid #52728b;
+  transform: rotate(45deg);
+  transition: transform .18s ease;
+  margin: 0 5px 5px 3px;
+}
+.yearwheel-event[open] .annual-event-chevron {
+  transform: rotate(225deg);
+  margin-bottom: -5px;
+}
+.annual-event-expanded {
+  padding: 0 16px 15px;
+  border-top: 1px solid #dce5ec;
+}
+.annual-event-grid { margin-top: 15px; }
+.annual-event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 13px;
+  color: #243d54;
+}
+.annual-event-info small {
+  color: #687783;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.annual-event-notes { margin-top: 13px; white-space: pre-wrap; }
+.annual-event-no-notes { margin: 12px 0 0; }
+.annual-event-actions { margin-top: 14px; }
+@media (max-width: 600px) {
+  .annual-event-summary { align-items: flex-start; padding: 13px; }
+  .annual-event-expanded { padding: 0 13px 13px; }
+  .annual-event-grid { grid-template-columns: 1fr; }
+}
 .yearwheel-admin {
   margin-top: 18px;
   padding: 18px;
@@ -6402,22 +6470,45 @@ if (home) {
       : 'Aktiviteter under året';
 
     $('annualEventsList').innerHTML = visible.length
-      ? visible.map(item => `
-          <article class="yearwheel-event">
-            <div class="yearwheel-event-title">${esc(item.title || 'Aktivitet utan namn')}</div>
-            <div class="yearwheel-event-meta">${esc(annualEventDateLabel(item))}</div>
-            <div class="yearwheel-event-details">
-              ${item.responsible ? '<span><strong>Ansvarig:</strong> ' + esc(annualResponsibleLabel(item.responsible)) + '</span>' : '<span class="muted">Ansvarig ej utsedd</span>'}
-              <span class="annual-status annual-status-${item.status === 'Genomförd' ? 'done' : item.status === 'Pågående' ? 'ongoing' : item.status === 'Ej aktuell' ? 'inactive' : 'planned'}">${esc(item.status || 'Ej påbörjad')}</span>
-            </div>
-            ${item.meeting_id ? '<div class="yearwheel-event-meeting"><strong>Styrelsemöte:</strong> ' + esc(annualMeetingLabel(item.meeting_id)) + '</div>' : ''}
-            ${item.notes ? '<div class="yearwheel-event-notes">' + esc(item.notes) + '</div>' : ''}
-            ${isAdminUser ? `
-              <div class="item-actions">
-                <button type="button" class="small" data-annual-edit="${esc(item.id)}">Ändra</button>
-                <button type="button" class="small danger" data-annual-delete="${esc(item.id)}">Ta bort</button>
-              </div>` : ''}
-          </article>`).join('')
+      ? visible.map(item => {
+          const statusClass = item.status === 'Genomförd' ? 'done' :
+            item.status === 'Pågående' ? 'ongoing' :
+            item.status === 'Ej aktuell' ? 'inactive' : 'planned';
+          return `
+            <details class="yearwheel-event contract-card annual-event-card">
+              <summary class="annual-event-summary">
+                <div class="annual-event-summary-main">
+                  <h3>${esc(item.title || 'Aktivitet utan namn')}</h3>
+                  <span class="contract-supplier">${esc(annualEventDateLabel(item))}</span>
+                </div>
+                <span class="annual-status annual-status-${statusClass}">${esc(item.status || 'Ej påbörjad')}</span>
+                <span class="annual-event-chevron" aria-hidden="true"></span>
+              </summary>
+              <div class="annual-event-expanded">
+                <div class="contract-card-grid annual-event-grid">
+                  <div class="contract-field">
+                    <small>Datum</small>
+                    <strong>${esc(annualEventDateLabel(item))}</strong>
+                  </div>
+                  <div class="contract-field">
+                    <small>Ansvarig</small>
+                    <strong>${esc(item.responsible ? annualResponsibleLabel(item.responsible) : 'Ej utsedd')}</strong>
+                  </div>
+                  <div class="contract-field">
+                    <small>Status</small>
+                    <strong>${esc(item.status || 'Ej påbörjad')}</strong>
+                  </div>
+                </div>
+                ${item.meeting_id ? '<div class="annual-event-info"><small>Styrelsemöte</small><strong>' + esc(annualMeetingLabel(item.meeting_id)) + '</strong></div>' : ''}
+                ${item.notes ? '<div class="contract-card-description annual-event-notes"><strong>Anteckningar</strong><br>' + esc(item.notes) + '</div>' : '<p class="muted annual-event-no-notes">Inga anteckningar registrerade.</p>'}
+                ${isAdminUser ? `
+                  <div class="contract-card-actions annual-event-actions">
+                    <button type="button" data-annual-edit="${esc(item.id)}">Ändra</button>
+                    <button type="button" class="danger" data-annual-delete="${esc(item.id)}">Ta bort</button>
+                  </div>` : ''}
+              </div>
+            </details>`;
+        }).join('')
       : '<p class="muted">Det finns inga aktiviteter för den här vyn ännu.</p>';
 
     applyRolePermissions();
