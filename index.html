@@ -2823,18 +2823,19 @@ button.small.danger:hover {
   transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-41cqi) rotate(calc(0deg - var(--angle)));
   transition: background .16s ease, color .16s ease, box-shadow .16s ease, border-color .16s ease;
 }
-.yearwheel-month.month-color-0 { background: #dce9f8; border-color: #91afd2; }
-.yearwheel-month.month-color-1 { background: #d5eaf7; border-color: #88b9d7; }
-.yearwheel-month.month-color-2 { background: #d4ece8; border-color: #85bdb4; }
-.yearwheel-month.month-color-3 { background: #dcebdc; border-color: #9fc5a4; }
-.yearwheel-month.month-color-4 { background: #e8efd3; border-color: #b8c98b; }
-.yearwheel-month.month-color-5 { background: #f4e8c9; border-color: #d9bd7f; }
-.yearwheel-month.month-color-6 { background: #f5dfcf; border-color: #d9a984; }
-.yearwheel-month.month-color-7 { background: #f2d9d9; border-color: #d69b9b; }
-.yearwheel-month.month-color-8 { background: #efd9e5; border-color: #ce9fba; }
-.yearwheel-month.month-color-9 { background: #e8ddf2; border-color: #bba3d2; }
-.yearwheel-month.month-color-10 { background: #dce5f2; border-color: #9aafd0; }
-.yearwheel-month.month-color-11 { background: #d8e8e7; border-color: #91b8b3; }
+/* Tolv tydligt åtskilda, mjuka färger – en unik nyans per månad */
+.yearwheel-month.month-palette-0 { background: #c9def5 !important; border-color: #739bc8 !important; }
+.yearwheel-month.month-palette-1 { background: #bfe4ef !important; border-color: #65aabd !important; }
+.yearwheel-month.month-palette-2 { background: #bfe7dc !important; border-color: #68ad9b !important; }
+.yearwheel-month.month-palette-3 { background: #cce8bd !important; border-color: #8bb66e !important; }
+.yearwheel-month.month-palette-4 { background: #e2e9ae !important; border-color: #aab65d !important; }
+.yearwheel-month.month-palette-5 { background: #f3e0a7 !important; border-color: #c6a34f !important; }
+.yearwheel-month.month-palette-6 { background: #f4d1a8 !important; border-color: #cb965e !important; }
+.yearwheel-month.month-palette-7 { background: #efc2b7 !important; border-color: #c77e70 !important; }
+.yearwheel-month.month-palette-8 { background: #eabdc9 !important; border-color: #bd7890 !important; }
+.yearwheel-month.month-palette-9 { background: #d9c3e9 !important; border-color: #a183c0 !important; }
+.yearwheel-month.month-palette-10 { background: #c8d1ee !important; border-color: #8294c5 !important; }
+.yearwheel-month.month-palette-11 { background: #c4dfe0 !important; border-color: #78a9aa !important; }
 .yearwheel-month:hover, .yearwheel-month.active {
   background: #245b83;
   color: #fff;
@@ -6446,7 +6447,7 @@ if (home) {
       const angle = index * 30;
       const hasEvents = annualEvents.some(item => annualEventMonth(item) === monthNumber);
       button.type = 'button';
-      button.className = 'yearwheel-month month-color-' + (index % 12) +
+      button.className = 'yearwheel-month month-palette-' + (index % 12) +
         (selectedAnnualMonth === monthNumber ? ' active' : '') +
         (hasEvents ? ' has-events' : '');
       button.style.setProperty('--angle', angle + 'deg');
