@@ -3102,6 +3102,25 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   @page { size:A4 portrait; margin:12mm; }
 }
 
+/* Protokollflik */
+.minutes-page-heading,.minutes-section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.minutes-readonly-note,.minutes-count{font-size:.82rem;color:var(--muted);background:#eef4f8;border:1px solid var(--border);border-radius:20px;padding:7px 11px}
+.minutes-protocol-header{margin:16px 0;padding:16px 18px;border-left:5px solid var(--blue);border-radius:10px;background:linear-gradient(110deg,#edf5fb,#fff)}
+.minutes-protocol-header h3{margin:0 0 5px;color:var(--navy)}.minutes-protocol-header p{margin:0;color:var(--muted)}
+.minutes-panel{border:1px solid var(--border);border-radius:12px;padding:18px;margin:16px 0;background:#fbfdff}.minutes-panel h3{margin:0 0 8px;color:var(--navy)}
+.minutes-meta-grid,.minutes-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.minutes-signature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.minutes-signature-item{display:flex;align-items:flex-start;gap:8px;padding:10px;border:1px solid var(--border);border-radius:9px;background:white;font-size:.9rem}
+.minutes-signature-item input{width:auto;margin:3px 0 0}.minutes-signature-disclaimer{font-size:.8rem;color:var(--muted);margin:12px 0 0}
+.minutes-action-form{margin-top:14px;padding:14px;background:#f0f5f9;border-radius:10px}.minutes-action-form button{margin-top:12px}
+.minutes-action-card{border:1px solid var(--border);border-left:4px solid #8bb9d6;background:white;border-radius:10px;padding:13px 15px;margin:10px 0}
+.minutes-action-card.is-done{border-left-color:#55a477;opacity:.8}.minutes-action-card.is-overdue{border-left-color:#d9534f}
+.minutes-action-card h4{margin:0 0 6px;color:var(--navy)}.minutes-action-meta{display:flex;gap:8px 16px;flex-wrap:wrap;color:var(--muted);font-size:.86rem}
+.minutes-action-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.minutes-action-controls select{max-width:180px}
+.minutes-previous-actions{padding:13px;border-radius:10px;background:#fff8e9;border:1px solid #ecd7a9;margin:12px 0}
+.minutes-previous-actions h4{margin:0 0 8px}.minutes-previous-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #eadfca}
+.minutes-previous-item:first-of-type{border-top:0}
+@media(max-width:700px){.minutes-meta-grid,.minutes-action-grid,.minutes-signature-grid{grid-template-columns:1fr}.minutes-page-heading{display:block}.minutes-readonly-note{display:inline-block;margin:6px 0}}
   </style>
 </head>
 
@@ -3348,30 +3367,38 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
     <!-- PROTOKOLL -->
 
     <section id="tab-minutes" class="tabcontent hidden">
-      <div class="panel">
-        <h2>Protokoll</h2>
-
-        <p class="muted">
-          Välj möte och fyll i respektive paragraf.
-        </p>
-
-        <label for="minutesMeetingSelect">Möte</label>
-        <select id="minutesMeetingSelect">
-          <option value="">Välj möte</option>
-        </select>
-
+      <div class="panel minutes-page">
+        <div class="minutes-page-heading"><div><h2>Protokoll</h2><p class="muted">Skriv, följ upp och arkivera styrelsens beslut på ett och samma ställe.</p></div><span class="minutes-readonly-note">Övriga användare har läsbehörighet</span></div>
+        <label for="minutesMeetingSelect">Välj styrelsemöte</label>
+        <select id="minutesMeetingSelect"><option value="">Välj möte</option></select>
         <div id="minutesEditor" class="hidden">
+          <div id="minutesProtocolHeader" class="minutes-protocol-header"></div>
+          <section class="minutes-panel"><h3>Protokollsuppgifter och justering</h3><p class="muted small">Markera signering först när underskriften faktiskt har mottagits.</p>
+            <div class="minutes-meta-grid">
+              <div><label for="minutesWriter">Protokollförare</label><input id="minutesWriter" placeholder="Namn"></div>
+              <div><label for="minutesChair">Mötesordförande</label><input id="minutesChair" placeholder="Namn"></div>
+              <div><label for="minutesReviewer">Justerare</label><input id="minutesReviewer" placeholder="Namn"></div>
+              <div><label for="minutesWorkflowStatus">Protokollets status</label><select id="minutesWorkflowStatus"><option>Utkast</option><option>För justering</option><option>Justerat</option></select></div>
+            </div>
+            <div class="minutes-signature-grid">
+              <label class="minutes-signature-item"><input type="checkbox" id="minutesWriterSigned"> Protokollförare har undertecknat</label>
+              <label class="minutes-signature-item"><input type="checkbox" id="minutesChairSigned"> Ordförande har justerat</label>
+              <label class="minutes-signature-item"><input type="checkbox" id="minutesReviewerSigned"> Justerare har justerat</label>
+            </div>
+            <p class="minutes-signature-disclaimer">Detta är en administrativ checklista, inte en elektronisk underskrift.</p>
+          </section>
+          <section class="minutes-panel"><div class="minutes-section-heading"><div><h3>Beslut och uppföljning</h3><p class="muted small">Registrera uppgifter som styrelsen beslutat ska utföras.</p></div><span id="minutesActionCount" class="minutes-count">0 uppgifter</span></div>
+            <div id="minutesPreviousActions" class="minutes-previous-actions hidden"></div><div id="minutesActionsList"></div>
+            <div class="minutes-action-form minutes-admin-only"><div class="minutes-action-grid">
+              <div><label for="minutesActionTitle">Uppgift / beslut</label><input id="minutesActionTitle" maxlength="240" placeholder="Vad ska göras?"></div>
+              <div><label for="minutesActionSection">Paragraf</label><select id="minutesActionSection"><option value="">Välj paragraf</option></select></div>
+              <div><label for="minutesActionResponsible">Ansvarig</label><input id="minutesActionResponsible" maxlength="120" placeholder="Ansvarig person"></div>
+              <div><label for="minutesActionDue">Klart senast</label><input id="minutesActionDue" type="date"></div>
+            </div><button id="addMinutesAction" type="button" class="secondary">Lägg till uppgift</button></div>
+          </section>
           <div id="minutesFields"></div>
-
-          <div class="toolbar">
-            <button id="saveMinutes" class="primary" type="button">
-              Spara protokoll
-            </button>
-
-            <button id="downloadMinutes" type="button">
-              Ladda ner protokoll (.txt)
-            </button>
-          </div>
+          <div class="toolbar minutes-toolbar"><button id="saveMinutes" class="primary" type="button">Spara protokoll</button><button id="downloadMinutes" type="button" class="secondary">Skriv ut / spara som PDF</button></div>
+          <p class="muted small">Välj ”Spara som PDF” i webbläsarens utskriftsfönster.</p>
         </div>
       </div>
     </section>
@@ -4823,10 +4850,88 @@ async function loadMinutes(meetingId) {
   });
 
   renderMinutesFields();
+  renderMinutesWorkflow();
+  renderMinutesActions();
+  await loadPreviousMinutesActions(meetingId);
 }
 
+
 let minuteAgendaItems = [];
-  function renderMinutesFields() {
+function renderMinutesWorkflow() {
+  const w=currentMinutes.__workflow||{}, meeting=meetings.find(m=>String(m.id)===String($('minutesMeetingSelect').value));
+  $('minutesProtocolHeader').innerHTML=meeting?'<h3>'+esc(meetingTitle(meeting))+'</h3><p>'+esc(dateText(meetingDate(meeting)))+'</p>':'';
+  $('minutesWriter').value=w.writer||''; $('minutesChair').value=w.chair||''; $('minutesReviewer').value=w.reviewer||'';
+  $('minutesWorkflowStatus').value=w.status||'Utkast';
+  $('minutesWriterSigned').checked=!!w.writerSigned; $('minutesChairSigned').checked=!!w.chairSigned; $('minutesReviewerSigned').checked=!!w.reviewerSigned;
+  $('minutesActionSection').innerHTML='<option value="">Välj paragraf</option>'+sections.map(x=>'<option value="'+esc(x[0])+'">§'+esc(x[0])+' '+esc(x[1])+'</option>').join('');
+  applyRolePermissions();
+}
+function collectMinutesWorkflow(){return {writer:$('minutesWriter').value.trim(),chair:$('minutesChair').value.trim(),reviewer:$('minutesReviewer').value.trim(),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked};}
+function renderMinutesActions(){
+  const list=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[],root=$('minutesActionsList'),today=new Date().toISOString().slice(0,10);
+  $('minutesActionCount').textContent=list.length+(list.length===1?' uppgift':' uppgifter');
+  if(!list.length){root.innerHTML='<p class="muted">Inga uppföljningsuppgifter registrerade för detta möte.</p>';return;}
+  root.innerHTML=list.map((a,i)=>{
+    const done=a.status==='Klar',late=!done&&a.dueDate&&a.dueDate<today,sec=sections.find(x=>String(x[0])===String(a.section));
+    const opts=['Ej påbörjad','Pågående','Klar'].map(v=>'<option '+(a.status===v?'selected':'')+'>'+v+'</option>').join('');
+    return '<article class="minutes-action-card '+(done?'is-done':late?'is-overdue':'')+'"><h4>'+esc(a.title||'Uppgift')+'</h4><div class="minutes-action-meta"><span>'+esc(sec?'§'+sec[0]+' '+sec[1]:'Ingen paragraf')+'</span><span>Ansvarig: '+esc(a.responsible||'Ej utsedd')+'</span><span>Klart senast: '+esc(a.dueDate?dateText(a.dueDate):'Ej angivet')+'</span></div><div class="minutes-action-controls">'+(isAdminUser?'<select data-minute-action-status="'+i+'">'+opts+'</select><button type="button" class="secondary" data-minute-action-delete="'+i+'">Ta bort</button>':'<span class="muted">Status: '+esc(a.status||'Ej påbörjad')+'</span>')+'</div></article>';
+  }).join('');
+}
+async function loadPreviousMinutesActions(currentMeetingId){
+  const root=$('minutesPreviousActions');root.classList.add('hidden');root.innerHTML='';
+  const {data,error}=await db.from('meeting_minutes').select('meeting_id, content');
+  if(error){console.warn('Kunde inte läsa tidigare uppgifter',error.message);return;}
+  const items=[];
+  (data||[]).forEach(row=>{
+    if(String(row.meeting_id)===String(currentMeetingId))return;
+    let saved=row.content;if(typeof saved==='string'){try{saved=JSON.parse(saved)}catch(e){return}}
+    (Array.isArray(saved&&saved.__actions)?saved.__actions:[]).forEach(a=>{if(a.status!=='Klar')items.push({...a,sourceMeetingId:row.meeting_id})});
+  });
+  items.sort((a,b)=>String(a.dueDate||'9999-12-31').localeCompare(String(b.dueDate||'9999-12-31')));
+  if(!items.length)return;root._outstanding=items;
+  root.innerHTML='<h4>Pågående beslut från tidigare möten</h4><p class="muted small">Lägg till en tidigare uppgift i aktuellt protokoll när den ska följas upp igen.</p>'+items.map((a,i)=>{
+    const m=meetings.find(x=>String(x.id)===String(a.sourceMeetingId));
+    return '<div class="minutes-previous-item"><span><strong>'+esc(a.title||'Uppgift')+'</strong><br><span class="muted small">'+esc(m?meetingTitle(m):'Tidigare möte')+' · '+esc(a.responsible||'Ej utsedd')+'</span></span>'+(isAdminUser?'<button type="button" class="secondary" data-minute-action-carry="'+i+'">Lägg till</button>':'')+'</div>';
+  }).join('');root.classList.remove('hidden');
+}
+$('addMinutesAction').addEventListener('click',()=>{
+  if(!isAdminUser)return message('Endast administratör kan ändra protokollet.','error');
+  const title=$('minutesActionTitle').value.trim();if(!title)return message('Skriv vad uppgiften gäller.','error');
+  currentMinutes.__actions=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[];
+  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title,section:$('minutesActionSection').value,responsible:$('minutesActionResponsible').value.trim(),dueDate:$('minutesActionDue').value,status:'Ej påbörjad',createdAt:new Date().toISOString()});
+  $('minutesActionTitle').value='';$('minutesActionResponsible').value='';$('minutesActionDue').value='';$('minutesActionSection').value='';renderMinutesActions();
+});
+$('minutesActionsList').addEventListener('change',e=>{const i=e.target.dataset.minuteActionStatus;if(i===undefined||!isAdminUser)return;currentMinutes.__actions[Number(i)].status=e.target.value;renderMinutesActions()});
+$('minutesActionsList').addEventListener('click',e=>{const i=e.target.dataset.minuteActionDelete;if(i===undefined||!isAdminUser)return;currentMinutes.__actions.splice(Number(i),1);renderMinutesActions()});
+$('minutesPreviousActions').addEventListener('click',e=>{
+  const i=e.target.dataset.minuteActionCarry;if(i===undefined||!isAdminUser)return;
+  const a=$('minutesPreviousActions')._outstanding&&$('minutesPreviousActions')._outstanding[Number(i)];if(!a)return;
+  currentMinutes.__actions=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[];
+  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title:a.title,section:a.section||'',responsible:a.responsible||'',dueDate:a.dueDate||'',status:a.status||'Ej påbörjad',carriedFrom:a.sourceMeetingId});
+  renderMinutesActions();message('Uppgiften har lagts till. Spara protokollet för att behålla ändringen.','ok');
+});
+function minutesContentFromEditor(){
+  const content={...minutesTemplate(),...currentMinutes};
+  document.querySelectorAll('[data-minute-section]').forEach(f=>{const n=f.dataset.minuteSection;if(f.dataset.minuteSub)content[n][f.dataset.minuteSub]=f.value;else content[n]=f.value});
+  const old=$('migratedMinutes');if(old)content.migratedText=old.value;
+  content.__workflow=collectMinutesWorkflow();content.__actions=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[];return content;
+}
+function printMinutesPdf(){
+  const meetingId=$('minutesMeetingSelect').value,meeting=meetings.find(m=>String(m.id)===String(meetingId));
+  if(!meeting)return message('Välj ett möte först.','error');
+  const c=minutesContentFromEditor(),w=c.__workflow||{},logo=new URL('brf-umealven-logotyp.png',window.location.href).href;
+  const br=v=>esc(v||'').replace(/\n/g,'<br>');let body='';
+  sections.forEach(([n,t])=>{
+    const d=c[n];body+='<section><h2>§'+esc(n)+' '+esc(t)+'</h2>';
+    if(n==='6')reportHeadings.forEach(h=>{body+='<h3>'+esc(h)+'</h3><p>'+br(d&&d[h])+'</p>'});
+    else if(['7','8','9','10','11'].includes(String(n))){body+='<p>'+br(d&&d.__sectionText)+'</p>';minuteAgendaItems.filter(x=>String(x.section_number)===String(n)).forEach((x,i)=>{body+='<h3>'+String.fromCharCode(97+i)+') '+esc(x.title)+'</h3><p>'+br(d&&d['item_'+x.id])+'</p>'})}
+    else body+='<p>'+br(typeof d==='string'?d:'')+'</p>';body+='</section>';
+  });
+  if(c.__actions&&c.__actions.length)body+='<section><h2>Beslut och uppföljning</h2><table><tr><th>Uppgift</th><th>Ansvarig</th><th>Klart senast</th><th>Status</th></tr>'+c.__actions.map(a=>'<tr><td>'+esc(a.title)+'</td><td>'+esc(a.responsible||'—')+'</td><td>'+esc(a.dueDate?dateText(a.dueDate):'—')+'</td><td>'+esc(a.status||'Ej påbörjad')+'</td></tr>').join('')+'</table></section>';
+  const doc='<!doctype html><html lang="sv"><head><meta charset="utf-8"><title>'+esc(meetingTitle(meeting))+'</title><style>@page{size:A4;margin:18mm}body{font:11pt Arial,sans-serif;color:#24364b;line-height:1.5}header{display:flex;align-items:center;gap:25px;border-bottom:5px solid #cfe4f4;padding-bottom:18px;margin-bottom:24px}header img{width:180px;max-height:85px;object-fit:contain}h1{font-size:23pt;margin:0 0 5px}h2{font-size:15pt;background:#eaf2f8;border-left:5px solid #438bb9;padding:9px 12px;margin:22px 0 10px}h3{font-size:11pt;margin:12px 0 3px}section{break-inside:avoid}table{width:100%;border-collapse:collapse}th,td{border:1px solid #d5e0e8;padding:7px;text-align:left}th{background:#eaf2f8}.signatures{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}.sig{border-top:1px solid #526477;padding-top:7px;font-size:9pt}footer{margin-top:35px;border-top:1px solid #d5e0e8;padding-top:8px;color:#73808d;font-size:9pt}</style></head><body><header><img src="'+logo+'" alt="BRF Umeälven"><div><h1>Styrelseprotokoll</h1><strong>'+esc(meetingTitle(meeting))+'</strong><div>'+esc(dateText(meetingDate(meeting)))+'</div></div></header><p><strong>Protokollförare:</strong> '+esc(w.writer||'—')+' &nbsp; <strong>Ordförande:</strong> '+esc(w.chair||'—')+' &nbsp; <strong>Justerare:</strong> '+esc(w.reviewer||'—')+'</p>'+body+'<div class="signatures"><div class="sig">Protokollförare<br>'+esc(w.writer||'')+'</div><div class="sig">Mötesordförande<br>'+esc(w.chair||'')+'</div><div class="sig">Justerare<br>'+esc(w.reviewer||'')+'</div></div><footer>BRF Umeälven · Styrelseprotokoll · '+esc(w.status||'Utkast')+'</footer><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
+  const win=window.open('','_blank');if(!win)return message('Popup blockerad. Tillåt popup-fönster och försök igen.','error');win.document.open();win.document.write(doc);win.document.close();
+}
+function renderMinutesFields() {
     const root = $('minutesFields');
     root.innerHTML = '';
 
@@ -4917,142 +5022,14 @@ let minuteAgendaItems = [];
     loadMinutes($('minutesMeetingSelect').value);
   });
 
-  $('saveMinutes').addEventListener('click', async () => {
-    const meetingId = $('minutesMeetingSelect').value;
-
-    if (!meetingId) {
-      message('Välj ett möte innan du sparar protokollet.', 'error');
-      return;
-    }
-
-    const content = minutesTemplate();
-
-    document.querySelectorAll('[data-minute-section]').forEach(textarea => {
-      const number = textarea.dataset.minuteSection;
-
-      if (textarea.dataset.minuteSub) {
-        content[number][textarea.dataset.minuteSub] = textarea.value;
-      } else {
-        content[number] = textarea.value;
-      }
-    });
-
-    const oldText = $('migratedMinutes');
-
-    if (oldText) {
-      content.migratedText = oldText.value;
-    }
-
-    const { error } = await db
-      .from('meeting_minutes')
-      .upsert({
-        meeting_id: meetingId,
-        content,
-        updated_by: currentUser.id,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'meeting_id'
-      });
-
-    if (error) {
-      message('Kunde inte spara protokollet: ' + error.message, 'error');
-    } else {
-      currentMinutes = content;
-      message('Protokollet har sparats.', 'ok');
-    }
-  });
-
-  
-$('downloadMinutes').addEventListener('click', () => {
-  const meetingId = $('minutesMeetingSelect').value;
-
-  if (!meetingId) {
-    message('Välj ett möte innan du laddar ner protokollet.', 'error');
-    return;
-  }
-
-  const meeting = meetings.find(
-    item => String(item.id) === String(meetingId)
-  );
-
-  if (!meeting) {
-    message('Kunde inte hitta det valda mötet.', 'error');
-    return;
-  }
-
-  // Läs in allt aktuellt innehåll direkt från formuläret
-  const downloadContent = minutesTemplate();
-
-  document.querySelectorAll('[data-minute-section]').forEach(textarea => {
-    const number = textarea.dataset.minuteSection;
-
-    if (textarea.dataset.minuteSub) {
-      downloadContent[number][textarea.dataset.minuteSub] =
-        textarea.value;
-    } else {
-      downloadContent[number] = textarea.value;
-    }
-  });
-
-  const oldText = $('migratedMinutes');
-
-  if (oldText) {
-    downloadContent.migratedText = oldText.value;
-  }
-
-  let output =
-    `${meetingTitle(meeting)}\n` +
-    `${dateText(meetingDate(meeting))}\n\n`;
-
-  sections.forEach(([number, title]) => {
-    output += `§${number} ${title}\n`;
-
-    if (number === '6') {
-      reportHeadings.forEach(heading => {
-        output +=
-          `${heading}:\n` +
-          `${downloadContent[number]?.[heading] || ''}\n\n`;
-      });
-
-    } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
-
-      const sectionData = downloadContent[number] || {};
-
-      if (sectionData.__sectionText) {
-        output += `${sectionData.__sectionText}\n\n`;
-      }
-
-      const addedItems = minuteAgendaItems.filter(
-        item => String(item.section_number) === String(number)
-      );
-
-      addedItems.forEach((item, index) => {
-        const letter = String.fromCharCode(97 + index);
-        const key = `item_${item.id}`;
-
-        output += `${letter}) ${item.title || 'Dagordningspunkt'}\n`;
-        output += `${sectionData[key] || ''}\n\n`;
-      });
-
-    } else {
-      output += `${downloadContent[number] || ''}\n\n`;
-    }
-  });
-
-  if (downloadContent.migratedText) {
-    output +=
-      `Äldre protokolltext\n` +
-      `${downloadContent.migratedText}\n\n`;
-  }
-
-  downloadBlob(
-    output,
-    `${safeFile(meetingTitle(meeting))}.txt`,
-    'text/plain;charset=utf-8'
-  );
-
-  message('Protokollet har laddats ner.', 'ok');
+  $('saveMinutes').addEventListener('click',async()=>{
+  if(!isAdminUser)return message('Endast administratör kan ändra protokollet.','error');
+  const meetingId=$('minutesMeetingSelect').value;if(!meetingId)return message('Välj ett möte innan du sparar.','error');
+  const content=minutesContentFromEditor();
+  const {error}=await db.from('meeting_minutes').upsert({meeting_id:meetingId,content,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:'meeting_id'});
+  if(error)message('Kunde inte spara protokollet: '+error.message,'error');else{currentMinutes=content;renderMinutesActions();message('Protokollet har sparats.','ok')}
 });
+$('downloadMinutes').addEventListener('click',()=>printMinutesPdf());
 
     // ===== MÖTESDOKUMENT =====
 
@@ -7095,15 +7072,17 @@ $('createNotice').addEventListener('click', createMeetingNotice);
       agendaForm.closest('.panel').classList.toggle('hidden', !admin);
     }
 
-    // Protokoll – medlemmar får läsa men inte skriva
+    // Protokoll – endast administratör får skriva, ändra och spara
     $('saveMinutes').classList.toggle('hidden', !admin);
-
-    document.querySelectorAll(
-      '#minutesFields textarea, #migratedMinutes'
-    ).forEach(field => {
+    document.querySelectorAll('#minutesFields textarea, #migratedMinutes, #minutesWriter, #minutesChair, #minutesReviewer').forEach(field => {
       field.readOnly = !admin;
       field.setAttribute('aria-readonly', String(!admin));
     });
+    $('minutesWorkflowStatus').disabled = !admin;
+    ['minutesWriterSigned','minutesChairSigned','minutesReviewerSigned'].forEach(id => { $(id).disabled = !admin; });
+    document.querySelectorAll('.minutes-admin-only').forEach(el => el.classList.toggle('hidden', !admin));
+    document.querySelectorAll('[data-minute-action-status]').forEach(el => { el.disabled = !admin; });
+    document.querySelectorAll('[data-minute-action-delete],[data-minute-action-carry]').forEach(el => el.classList.toggle('hidden', !admin));
 
     // Mötesdokument – endast administratören får ladda upp
     $('uploadForm').classList.toggle('hidden', !admin);
