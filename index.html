@@ -2980,16 +2980,32 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
     box-sizing:border-box !important;
   }
   #annualPrintSheet .annual-print-header {
+    position:relative !important;
+    overflow:hidden !important;
     display:flex !important;
     flex-direction:row !important;
     align-items:center !important;
     justify-content:flex-start !important;
     gap:8mm !important;
-    border-bottom:1px solid #cbddeb !important;
-    padding:0 0 4mm !important;
+    border-bottom:0 !important;
+    padding:0 0 8mm !important;
     margin:0 0 5mm !important;
-    min-height:25mm !important;
+    min-height:29mm !important;
     break-inside:avoid !important;
+  }
+  #annualPrintSheet .annual-print-header::after {
+    content:"" !important;
+    position:absolute !important;
+    left:-1% !important;
+    bottom:0 !important;
+    width:102% !important;
+    height:5mm !important;
+    background:linear-gradient(90deg,#d8edfc 0%,#a9d4f2 35%,#dceffc 68%,#a8d2ef 100%) !important;
+    clip-path:polygon(0 18%,10% 52%,22% 82%,34% 70%,46% 28%,58% 55%,72% 68%,84% 18%,100% 44%,100% 100%,0 100%) !important;
+    opacity:.95 !important;
+    print-color-adjust:exact !important;
+    -webkit-print-color-adjust:exact !important;
+    pointer-events:none !important;
   }
   #annualPrintSheet .annual-print-logo {
     display:block !important;
