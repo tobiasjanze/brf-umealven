@@ -4812,7 +4812,7 @@ async function loadMinutes(meetingId) {
   if (protocolNumberError) {
     console.warn('Kunde inte läsa protokollnumret:', protocolNumberError.message);
   } else {
-    currentMinutesProtocolNumber = protocolNumberRow?.protocol_number ?? null;
+    currentMinutesProtocolNumber = protocolNumberRow?.total_number ?? null;
   }
 
   if (data?.content) {
