@@ -1,7 +1,4 @@
 -- BRF Umeälven: unika protokollnummer
--- Förutsätter att 290 protokoll redan finns i meeting_minutes.
--- Migreringen avbryts om antalet inte stämmer, så att numreringen inte blir fel.
-
 -- Ingen historisk protokollimport krävs. Föreningens befintliga historik
 -- börjar på 290, så nästa protokoll som tilldelas får nummer 291.
 
@@ -16,7 +13,29 @@ CREATE TABLE IF NOT EXISTS public.meeting_protocol_numbers (
 
 -- Starta nummerserien på 290. Första nya tilldelningen blir 291.
 -- Befintliga mötesrader får inget nummer förrän ett protokoll sparas.
-SELECT setval('public.meeting_protocol_number_seq', 290, true);
+DO $
+DECLARE
+  current_last bigint;
+  current_called boolean;
+  highest_assigned bigint;
+  safe_last bigint;
+BEGIN
+  SELECT last_value, is_called
+    INTO current_last, current_called
+    FROM public.meeting_protocol_number_seq;
+
+  SELECT COALESCE(MAX(protocol_number), 290)
+    INTO highest_assigned
+    FROM public.meeting_protocol_numbers;
+
+  safe_last := GREATEST(
+    290,
+    highest_assigned,
+    CASE WHEN current_called THEN current_last ELSE 290 END
+  );
+
+  PERFORM setval('public.meeting_protocol_number_seq', safe_last, true);
+END $;
 
 ALTER TABLE public.meeting_protocol_numbers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Active members can read protocol numbers" ON public.meeting_protocol_numbers;
