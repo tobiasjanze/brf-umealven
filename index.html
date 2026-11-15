@@ -4872,7 +4872,7 @@ let minuteAgendaItems = [];
 let currentMinutesProtocolNumber = null;
 function protocolPeriod(meeting){
   const raw=String(meetingDate(meeting)||'');
-  const match=raw.match(/^(\\d{4})-(\\d{2})/);
+  const match=raw.match(/^(\d{4})-(\d{2})/);
   if(match)return match[1]+'-'+match[2];
   const d=new Date(raw);
   return Number.isNaN(d.getTime())?'Okänt datum':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
