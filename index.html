@@ -2960,6 +2960,46 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 .annual-status-inactive { background: #eeeaf3; color: #625575; }
 .annual-status-planned { background: #e5eff9; color: #245b83; }
 .yearwheel-event-meeting { margin-top: 7px; color: #36536d; font-size: .9rem; }
+ 
+/* Utskrift av årshjulet */
+.annual-toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+#annualPrintSheet { display:none; }
+@media print {
+  body * { visibility:hidden !important; }
+  #annualPrintSheet, #annualPrintSheet * { visibility:visible !important; }
+  #annualPrintSheet {
+    display:block !important;
+    position:absolute !important;
+    inset:0 auto auto 0 !important;
+    width:100% !important;
+    padding:12mm !important;
+    margin:0 !important;
+    background:#fff !important;
+    color:#172b3f !important;
+    font-family:Arial, sans-serif !important;
+    box-sizing:border-box !important;
+  }
+  #annualPrintSheet h1 { font-size:22pt !important; margin:0 0 4mm !important; }
+  #annualPrintSheet .annual-print-subtitle { color:#526477 !important; margin:0 0 8mm !important; }
+  #annualPrintSheet .annual-print-month { margin:0 0 6mm !important; break-inside:avoid !important; }
+  #annualPrintSheet .annual-print-month h2 {
+    font-size:14pt !important; margin:0 0 2mm !important;
+    padding:2mm 3mm !important; background:#eaf2f9 !important;
+    border-left:4px solid #2787bd !important; print-color-adjust:exact; -webkit-print-color-adjust:exact;
+  }
+  #annualPrintSheet .annual-print-event {
+    padding:2.5mm 3mm !important; margin:0 0 2mm !important;
+    border:1px solid #d5e0e9 !important; border-radius:2mm !important;
+    break-inside:avoid !important;
+  }
+  #annualPrintSheet .annual-print-event h3 { font-size:11pt !important; margin:0 0 1mm !important; }
+  #annualPrintSheet .annual-print-meta { font-size:9pt !important; color:#526477 !important; margin:0 0 1mm !important; }
+  #annualPrintSheet .annual-print-notes { font-size:9.5pt !important; white-space:pre-wrap !important; margin-top:1.5mm !important; }
+  #annualPrintSheet .annual-print-status { font-weight:bold !important; }
+  #annualPrintSheet .annual-print-empty { color:#667788 !important; font-style:italic !important; }
+  @page { size:A4 portrait; margin:12mm; }
+}
+
   </style>
 </head>
 
@@ -3377,8 +3417,9 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
             <div id="annualWheel" class="yearwheel-circle" aria-label="Interaktivt årshjul">
               <div class="yearwheel-center"><strong>BRF Umeälven</strong><span>Årets aktiviteter</span></div>
             </div>
-            <div class="yearwheel-filterbar">
+            <div class="yearwheel-filterbar annual-toolbar">
               <button type="button" id="annualShowAll" class="active">Visa hela året</button>
+              <button type="button" id="annualPrintPdf" class="secondary">Skriv ut / spara som PDF</button>
             </div>
           </div>
           <div class="yearwheel-list">
@@ -3442,6 +3483,8 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
       </div>
     </section>
   </section>
+
+  <div id="annualPrintSheet" aria-hidden="true"></div>
 
   <div class="footer">BRF Umeälven · Styrelseportal</div>
 
@@ -6183,6 +6226,55 @@ if (home) {
     const month = annualEventMonth(item);
     return month ? 'Återkommer i ' + annualMonths[month - 1].toLowerCase() : 'Datum ej angivet';
   }
+
+  function buildAnnualPrintSheet() {
+    const sheet = $('annualPrintSheet');
+    if (!sheet) return;
+
+    const ordered = annualEvents.slice().sort((a, b) => {
+      const ma = annualEventMonth(a) || 13;
+      const mb = annualEventMonth(b) || 13;
+      if (ma !== mb) return ma - mb;
+      return String(a.event_date || '').localeCompare(String(b.event_date || ''));
+    });
+
+    const groups = annualMonths.map((month, index) => {
+      const monthEvents = ordered.filter(item => annualEventMonth(item) === index + 1);
+      return `
+        <section class="annual-print-month">
+          <h2>${esc(month)}</h2>
+          ${monthEvents.length ? monthEvents.map(item => `
+            <article class="annual-print-event">
+              <h3>${esc(item.title || 'Aktivitet utan namn')}</h3>
+              <p class="annual-print-meta">
+                ${esc(annualEventDateLabel(item))} ·
+                Ansvarig: ${esc(item.responsible ? annualResponsibleLabel(item.responsible) : 'Ej utsedd')} ·
+                Status: <span class="annual-print-status">${esc(item.status || 'Ej påbörjad')}</span>
+              </p>
+              ${item.meeting_id ? '<p class="annual-print-meta">Styrelsemöte: ' + esc(annualMeetingLabel(item.meeting_id)) + '</p>' : ''}
+              ${item.notes ? '<div class="annual-print-notes">' + esc(item.notes) + '</div>' : ''}
+            </article>
+          `).join('') : '<p class="annual-print-empty">Inga registrerade aktiviteter.</p>'}
+        </section>`;
+    }).join('');
+
+    sheet.innerHTML = `
+      <h1>BRF Umeälven – Årshjul ${new Date().getFullYear()}</h1>
+      <p class="annual-print-subtitle">Årets aktiviteter och viktiga datum · Utskriftsdatum: ${new Date().toLocaleDateString('sv-SE')}</p>
+      ${groups}
+    `;
+  }
+
+  $('annualPrintPdf')?.addEventListener('click', async () => {
+    try {
+      await loadAnnualEvents();
+      buildAnnualPrintSheet();
+      window.print();
+    } catch (error) {
+      console.error('Kunde inte skapa utskriftsunderlaget:', error);
+      message('Kunde inte skapa utskriftsunderlaget. Försök igen.', 'error');
+    }
+  });
 
   function annualResponsibleLabel(responsibleId) {
     return boardMemberNames[responsibleId] || responsibleId;
