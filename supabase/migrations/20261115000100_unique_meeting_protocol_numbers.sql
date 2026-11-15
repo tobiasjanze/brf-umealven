@@ -50,7 +50,7 @@ CREATE OR REPLACE FUNCTION public.assign_meeting_minutes_number(p_meeting_id tex
 RETURNS bigint
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, private
+SET search_path = ''
 AS $$
 DECLARE assigned_number bigint;
 BEGIN
@@ -59,11 +59,11 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
-  IF p_meeting_id IS NULL OR btrim(p_meeting_id) = '' THEN
+  IF p_meeting_id IS NULL OR pg_catalog.btrim(p_meeting_id) = '' THEN
     RAISE EXCEPTION 'Mötes-ID saknas.';
   END IF;
 
-  PERFORM pg_advisory_xact_lock(hashtext('brf-meeting-protocol-numbering'), hashtext(p_meeting_id));
+  PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext('brf-meeting-protocol-numbering'), pg_catalog.hashtext(p_meeting_id));
 
   SELECT protocol_number INTO assigned_number
   FROM public.meeting_protocol_numbers
@@ -73,7 +73,7 @@ BEGIN
     RETURN assigned_number;
   END IF;
 
-  assigned_number := nextval('public.meeting_protocol_number_seq');
+  assigned_number := pg_catalog.nextval('public.meeting_protocol_number_seq');
 
   INSERT INTO public.meeting_protocol_numbers (meeting_id, protocol_number)
   VALUES (p_meeting_id, assigned_number);
