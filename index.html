@@ -2981,22 +2981,43 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   }
   #annualPrintSheet .annual-print-header {
     display:flex !important;
+    flex-direction:row !important;
     align-items:center !important;
-    gap:9mm !important;
+    justify-content:flex-start !important;
+    gap:8mm !important;
     border-bottom:1px solid #cbddeb !important;
-    padding:0 0 6mm !important;
-    margin:0 0 7mm !important;
+    padding:0 0 4mm !important;
+    margin:0 0 5mm !important;
+    min-height:25mm !important;
+    break-inside:avoid !important;
   }
   #annualPrintSheet .annual-print-logo {
     display:block !important;
-    width:48mm !important;
-    max-width:48mm !important;
+    flex:0 0 42mm !important;
+    width:42mm !important;
+    max-width:42mm !important;
+    max-height:24mm !important;
     height:auto !important;
     object-fit:contain !important;
+    object-position:left center !important;
   }
-  #annualPrintSheet .annual-print-heading { flex:1 !important; min-width:0 !important; }
-  #annualPrintSheet h1 { font-size:22pt !important; margin:0 0 2mm !important; }
-  #annualPrintSheet .annual-print-subtitle { color:#526477 !important; margin:0 0 8mm !important; }
+  #annualPrintSheet .annual-print-heading {
+    flex:1 1 auto !important;
+    min-width:0 !important;
+    text-align:left !important;
+  }
+  #annualPrintSheet h1 {
+    font-size:19pt !important;
+    line-height:1.15 !important;
+    margin:0 0 1.5mm !important;
+    color:#17324d !important;
+  }
+  #annualPrintSheet .annual-print-subtitle {
+    color:#526477 !important;
+    font-size:9.5pt !important;
+    line-height:1.35 !important;
+    margin:0 !important;
+  }
   #annualPrintSheet .annual-print-month { margin:0 0 6mm !important; break-inside:avoid !important; }
   #annualPrintSheet .annual-print-month h2 {
     font-size:14pt !important; margin:0 0 2mm !important;
