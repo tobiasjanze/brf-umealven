@@ -6353,15 +6353,45 @@ if (home) {
     return { className: '', labelClass: '', label: '' };
   }
 
+  function annualEventPriority(item) {
+    if (item.status === 'Ej aktuell') return 4;
+    if (item.status === 'Genomförd') return 3;
+    const deadline = annualDeadlineState(item);
+    if (deadline.className === 'annual-deadline-overdue') return 0;
+    if (deadline.className === 'annual-deadline-warning') return 1;
+    return 2;
+  }
+
+  function annualEventSortDate(item) {
+    // Sortera på ett faktiskt datum när det finns. Återkommande aktiviteter
+    // utan fast datum placeras efter daterade aktiviteter inom samma prioritet.
+    return String(item.event_date || item.start_date || item.end_date || '').slice(0, 10);
+  }
+
+  function compareAnnualEvents(a, b) {
+    const priorityDifference = annualEventPriority(a) - annualEventPriority(b);
+    if (priorityDifference !== 0) return priorityDifference;
+
+    const dateA = annualEventSortDate(a);
+    const dateB = annualEventSortDate(b);
+    if (dateA && dateB && dateA !== dateB) return dateA.localeCompare(dateB);
+    if (dateA && !dateB) return -1;
+    if (!dateA && dateB) return 1;
+
+    const monthA = annualEventMonth(a) || 13;
+    const monthB = annualEventMonth(b) || 13;
+    return monthA - monthB || String(a.title || '').localeCompare(String(b.title || ''), 'sv');
+  }
+
   function buildAnnualPrintSheet() {
     const sheet = $('annualPrintSheet');
     if (!sheet) return;
 
     const ordered = annualEvents.slice().sort((a, b) => {
-      const ma = annualEventMonth(a) || 13;
-      const mb = annualEventMonth(b) || 13;
-      if (ma !== mb) return ma - mb;
-      return String(a.event_date || '').localeCompare(String(b.event_date || ''));
+      // PDF: behåll månadsindelningen, men prioritera kritiska aktiviteter
+      // först inom respektive månad.
+      const monthDifference = (annualEventMonth(a) || 13) - (annualEventMonth(b) || 13);
+      return monthDifference || compareAnnualEvents(a, b);
     });
 
     const groups = annualMonths.map((month, index) => {
@@ -6463,12 +6493,7 @@ if (home) {
 
     const visible = annualEvents
       .filter(item => selectedAnnualMonth === null || annualEventMonth(item) === selectedAnnualMonth)
-      .sort((a, b) => {
-        const ma = annualEventMonth(a) || 13;
-        const mb = annualEventMonth(b) || 13;
-        if (ma !== mb) return ma - mb;
-        return String(a.event_date || '').localeCompare(String(b.event_date || ''));
-      });
+      .sort(compareAnnualEvents);
 
     $('annualListHeading').textContent = selectedAnnualMonth
       ? 'Aktiviteter i ' + annualMonths[selectedAnnualMonth - 1]
