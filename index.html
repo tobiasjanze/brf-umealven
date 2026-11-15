@@ -2979,7 +2979,23 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
     font-family:Arial, sans-serif !important;
     box-sizing:border-box !important;
   }
-  #annualPrintSheet h1 { font-size:22pt !important; margin:0 0 4mm !important; }
+  #annualPrintSheet .annual-print-header {
+    display:flex !important;
+    align-items:center !important;
+    gap:9mm !important;
+    border-bottom:1px solid #cbddeb !important;
+    padding:0 0 6mm !important;
+    margin:0 0 7mm !important;
+  }
+  #annualPrintSheet .annual-print-logo {
+    display:block !important;
+    width:48mm !important;
+    max-width:48mm !important;
+    height:auto !important;
+    object-fit:contain !important;
+  }
+  #annualPrintSheet .annual-print-heading { flex:1 !important; min-width:0 !important; }
+  #annualPrintSheet h1 { font-size:22pt !important; margin:0 0 2mm !important; }
   #annualPrintSheet .annual-print-subtitle { color:#526477 !important; margin:0 0 8mm !important; }
   #annualPrintSheet .annual-print-month { margin:0 0 6mm !important; break-inside:avoid !important; }
   #annualPrintSheet .annual-print-month h2 {
@@ -6259,8 +6275,13 @@ if (home) {
     }).join('');
 
     sheet.innerHTML = `
-      <h1>BRF Umeälven – Årshjul ${new Date().getFullYear()}</h1>
-      <p class="annual-print-subtitle">Årets aktiviteter och viktiga datum · Utskriftsdatum: ${new Date().toLocaleDateString('sv-SE')}</p>
+      <div class="annual-print-header">
+        <img src="brf-umealven-logotyp.png" alt="BRF Umeälvens logotyp" class="annual-print-logo">
+        <div class="annual-print-heading">
+          <h1>Årshjul ${new Date().getFullYear()}</h1>
+          <p class="annual-print-subtitle">Årets aktiviteter och viktiga datum · Utskriftsdatum: ${new Date().toLocaleDateString('sv-SE')}</p>
+        </div>
+      </div>
       ${groups}
     `;
   }
