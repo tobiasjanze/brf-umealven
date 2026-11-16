@@ -5263,8 +5263,10 @@ $('cancelEditMinutesAction').addEventListener('click',resetMinutesActionForm);
 $('minutesActionsList').addEventListener('change',e=>{const i=e.target.dataset.minuteActionStatus;if(i===undefined||!isAdminUser)return;currentMinutes.__actions[Number(i)].status=e.target.value;renderMinutesActions()});
 $('minutesActionsList').addEventListener('click',async e=>{
   if(!isAdminUser)return;
-  const editIndex=e.target.dataset.minuteActionEdit;
-  if(editIndex!==undefined){
+  const editButton=e.target.closest('[data-minute-action-edit]');
+  const deleteButton=e.target.closest('[data-minute-action-delete]');
+  if(editButton){
+    const editIndex=editButton.dataset.minuteActionEdit;
     const i=Number(editIndex),a=currentMinutes.__actions[i];if(!a)return;
     editingMinutesActionIndex=i;
     $('minutesActionTitle').value=a.title||'';
@@ -5279,8 +5281,33 @@ $('minutesActionsList').addEventListener('click',async e=>{
     $('minutesActionTitle').focus();
     return;
   }
-  const deleteIndex=e.target.dataset.minuteActionDelete;
-  if(deleteIndex!==undefined){currentMinutes.__actions.splice(Number(deleteIndex),1);renderMinutesActions()}
+  if(deleteButton){
+    const deleteIndex=Number(deleteButton.dataset.minuteActionDelete);
+    const actions=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[];
+    const item=actions[deleteIndex];
+    if(!item)return;
+    if(!confirm('Vill du ta bort uppgiften "'+(item.title||'Uppgift')+'" permanent från protokollet?'))return;
+    const meetingId=$('minutesMeetingSelect').value;
+    if(!meetingId)return message('Välj ett möte innan uppgiften tas bort.','error');
+    const previousActions=[...actions];
+    actions.splice(deleteIndex,1);
+    currentMinutes.__actions=actions;
+    const content=minutesContentFromEditor();
+    const {data,error}=await db.from('meeting_minutes')
+      .update({content,updated_by:currentUser.id,updated_at:new Date().toISOString()})
+      .eq('meeting_id',meetingId)
+      .select('meeting_id')
+      .maybeSingle();
+    if(error||!data){
+      currentMinutes.__actions=previousActions;
+      renderMinutesActions();
+      return message('Uppgiften kunde inte raderas i databasen. '+(error?.message||'Protokollet hittades inte.'),'error');
+    }
+    currentMinutes=content;
+    renderMinutesActions();
+    await renderHomeDashboard();
+    message('Uppgiften har raderats permanent från protokollet.','ok');
+  }
 });
 $('minutesPreviousActions').addEventListener('click',e=>{
   const i=e.target.dataset.minuteActionCarry;if(i===undefined||!isAdminUser)return;
