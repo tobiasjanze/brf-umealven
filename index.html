@@ -3381,8 +3381,8 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
             <button type="button" class="home-stat home-stat--green" data-home-open="contracts">
               <strong id="homeContractAlertCount">–</strong><span>Avtalsbevakning</span><small id="homeContractStatusText">Kommande omförhandlingar</small>
             </button>
-            <button type="button" class="home-stat home-stat--purple" data-home-open="annual">
-              <strong id="homeUpcomingCount">–</strong><span>Kommande aktiviteter</span><small>Från föreningens årshjul</small>
+            <button type="button" class="home-stat home-stat--green" data-home-open="annual">
+              <strong id="homeUpcomingCount">–</strong><span>Kommande aktiviteter</span><small id="homeAnnualStatusText">Från föreningens årshjul</small>
             </button>
           </div>
           <details class="home-overview-details">
@@ -3861,6 +3861,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   let currentUser = null;
   let meetings = [];
   let annualEvents = [];
+  let annualEventsLoadError = false;
   let selectedAnnualMonth = null;
   let selectedMeetingId = null;
   let agendaItems = [];
@@ -6908,14 +6909,17 @@ if (home) {
       .order('event_date', { ascending: true, nullsFirst: false });
 
     if (error) {
+      annualEventsLoadError = true;
       console.error('Kunde inte läsa årshjulet:', error);
       $('annualEventsList').innerHTML =
         '<p class="muted">Årshjulet kunde inte hämtas. Kontrollera att tabellen annual_events finns och att läsbehörigheten är aktiv.</p>';
       return;
     }
 
+    annualEventsLoadError = false;
     annualEvents = data || [];
     renderAnnualWheel();
+    if (currentUser) renderHomeDashboard();
   }
 
   function annualEventMonth(item) {
@@ -7340,6 +7344,7 @@ async function renderHomeDashboard() {
   const taskStatusText = $('homeTaskStatusText');
   const contractStatusText = $('homeContractStatusText');
   const upcomingNode = $('homeUpcomingCount');
+  const annualStatusText = $('homeAnnualStatusText');
   if (!unreadNode) return;
 
   const [docsResult, readsResult, minutesResult] = await Promise.all([
@@ -7407,6 +7412,21 @@ async function renderHomeDashboard() {
   const overdueTaskCount = taskDueDays.filter(days => days < 0).length;
   const dueSoonTaskCount = taskDueDays.filter(days => days >= 0 && days <= 7).length;
 
+  // Årshjulet använder samma tidsgränser som Uppgifter: grönt >7 dagar,
+  // gult 0–7 dagar och rött när slutdatumet har passerat.
+  const annualDueDays = annualEvents
+    .filter(item => item.status !== 'Genomförd' && item.status !== 'Ej aktuell' && item.end_date)
+    .map(item => {
+      const parts = String(item.end_date).slice(0, 10).split('-').map(Number);
+      if (parts.length !== 3 || parts.some(value => !Number.isFinite(value))) return null;
+      const due = new Date(parts[0], parts[1] - 1, parts[2]);
+      const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      return Math.round((due - current) / 86400000);
+    })
+    .filter(days => days !== null);
+  const overdueAnnualCount = annualDueDays.filter(days => days < 0).length;
+  const dueSoonAnnualCount = annualDueDays.filter(days => days >= 0 && days <= 7).length;
+
   const activeContracts = contracts.filter(contract => contract.status === 'active');
   const contractDueDays = activeContracts.map(contract => contractDaysLeft(contractActionDate(contract)));
   const overdueContractCount = contractDueDays.filter(days => days !== null && days < 0).length;
@@ -7434,7 +7454,14 @@ async function renderHomeDashboard() {
     card.classList.add('home-stat--' + color);
   };
   setHomeStatColor(unreadNode, 'blue');
-  setHomeStatColor(upcomingNode, 'purple');
+  setHomeStatColor(upcomingNode, annualEventsLoadError ? 'amber' : overdueAnnualCount ? 'red' : dueSoonAnnualCount ? 'amber' : 'green');
+  if (annualStatusText) annualStatusText.textContent = annualEventsLoadError
+    ? 'Kunde inte läsa årshjulet'
+    : overdueAnnualCount
+      ? overdueAnnualCount + ' försenade · ' + dueSoonAnnualCount + ' inom 7 dagar'
+      : dueSoonAnnualCount
+        ? dueSoonAnnualCount + ' aktiviteter inom 7 dagar'
+        : 'Inga nära slutdatum';
 
   if (minutesResult.error) {
     setHomeStatColor(openTaskNode, 'green');
