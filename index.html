@@ -3148,6 +3148,23 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 .document-admin-reader small{display:block;color:#6b7c8c;margin-top:2px}
 .document-read-loading{color:#687b8d;font-size:.9rem}
 @media(max-width:650px){.document-read-summary{grid-template-columns:1fr}.document-admin-readers-list{grid-template-columns:1fr}}
+
+.document-read-summary{grid-template-columns:repeat(3,minmax(0,1fr));}
+.document-read-filters{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 18px}
+.document-read-filters button{border:1px solid #cfdeeb;background:#fff;color:#244765;border-radius:999px;padding:8px 14px;font-weight:650}
+.document-read-filters button.active{background:#e6f2fb;border-color:#76acd2;box-shadow:inset 0 0 0 1px #76acd2}
+.document-document-row{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin:10px 0;padding:16px;border:1px solid #d9e4ed;border-radius:12px;background:#fff}
+.document-document-row.is-new{border-left:5px solid #3687bd}
+.document-document-row.is-unread{background:#fffdf8}
+.document-document-meta{font-size:.88rem;color:#687b8d;margin-top:5px;line-height:1.5}
+.document-document-badges{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:8px}
+.document-new-badge{display:inline-flex;padding:4px 8px;border-radius:999px;background:#e5f2fb;color:#1e6594;font-size:.78rem;font-weight:750}
+.document-read-summary{margin:16px 0}
+.document-read-action{margin-top:8px}
+.document-admin-reader{align-items:flex-start}
+.document-admin-reader .document-read-state{display:flex;flex-direction:column;align-items:flex-end}
+.document-document-actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end;min-width:145px}
+@media(max-width:700px){.document-document-row{flex-direction:column}.document-document-actions{justify-content:flex-start;min-width:0;width:100%}.document-document-actions button{flex:1}}
 </style>
 </head>
 
@@ -3483,6 +3500,11 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
         </form>
 
         <div id="documentReadSummary" class="document-read-summary hidden" aria-live="polite"></div>
+        <div id="documentFilters" class="document-read-filters hidden" aria-label="Filtrera mötesdokument">
+          <button type="button" data-document-filter="all" class="active">Alla dokument</button>
+          <button type="button" data-document-filter="new">Nya</button>
+          <button type="button" data-document-filter="unread">Olästa</button>
+        </div>
         <div id="documentsList"></div>
       </div>
     </section>
@@ -5339,12 +5361,16 @@ $('documentAgendaSection').addEventListener(
   loadDocumentAgendaSubpoints
 );
 
+  let documentFilter = 'all';
+
   async function loadDocuments() {
     const meetingId = $('documentsMeetingSelect').value;
     const root = $('documentsList');
     const summary = $('documentReadSummary');
+    const filters = $('documentFilters');
     root.innerHTML = '';
     summary.classList.add('hidden');
+    filters.classList.add('hidden');
     summary.innerHTML = '';
 
     if (!meetingId) return;
@@ -5360,7 +5386,8 @@ $('documentAgendaSection').addEventListener(
       return;
     }
 
-    const { data: meetingAgendaItemsData, error: agendaError } = await db
+    const docs = data || [];
+    const { data: agendaItemsData, error: agendaError } = await db
       .from('agenda_items')
       .select('*')
       .eq('meeting_id', meetingId)
@@ -5370,9 +5397,6 @@ $('documentAgendaSection').addEventListener(
       message('Kunde inte läsa dagordningspunkterna: ' + agendaError.message, 'error');
       return;
     }
-
-    const docs = data || [];
-    const meetingAgendaItems = meetingAgendaItemsData || [];
 
     const readResult = docs.length
       ? await db.from('meeting_document_reads')
@@ -5391,19 +5415,26 @@ $('documentAgendaSection').addEventListener(
         .map(row => String(row.document_id))
     );
 
+    // Hämta aktiva ledamöter för administratörens personöversikt och uppladdarnamn.
     let activeMembers = [];
-    if (isAdminUser) {
-      const { data: members, error: membersError } = await db.rpc('get_active_board_members');
-      if (membersError) {
-        message('Kunde inte hämta styrelsemedlemmarna för läsöversikten: ' + membersError.message, 'error');
-        return;
-      }
-      activeMembers = members || [];
+    const { data: memberData, error: membersError } = await db.rpc('get_active_board_members');
+    if (!membersError) activeMembers = memberData || [];
+    else if (isAdminUser) {
+      message('Kunde inte hämta styrelsemedlemmarna för läsöversikten: ' + membersError.message, 'error');
+      return;
     }
+    const memberNames = new Map(activeMembers.map(member =>
+      [String(member.user_id), member.display_name || 'Namnlös ledamot']
+    ));
 
+    const now = Date.now();
+    const recentCutoff = now - 7 * 24 * 60 * 60 * 1000;
+    const isNewDocument = doc => {
+      const created = doc.created_at ? new Date(doc.created_at).getTime() : 0;
+      return created > 0 && created >= recentCutoff;
+    };
     const unreadCount = docs.filter(doc => !myReadIds.has(String(doc.id))).length;
-    const recentCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const newCount = docs.filter(doc => doc.created_at && new Date(doc.created_at).getTime() >= recentCutoff).length;
+    const newCount = docs.filter(isNewDocument).length;
 
     summary.classList.remove('hidden');
     summary.innerHTML = `
@@ -5411,28 +5442,51 @@ $('documentAgendaSection').addEventListener(
       <div class="document-read-stat"><strong>${newCount}</strong><span>Nya senaste 7 dagarna</span></div>
       <div class="document-read-stat"><strong>${docs.length}</strong><span>Dokument för mötet</span></div>
     `;
+    filters.classList.toggle('hidden', !docs.length);
+    filters.querySelectorAll('[data-document-filter]').forEach(button => {
+      button.classList.toggle('active', button.dataset.documentFilter === documentFilter);
+    });
 
     if (!docs.length) {
       root.textContent = 'Inga dokument uppladdade för mötet.';
       return;
     }
 
-    docs.forEach(doc => {
+    const visibleDocs = docs.filter(doc => {
+      if (documentFilter === 'new') return isNewDocument(doc);
+      if (documentFilter === 'unread') return !myReadIds.has(String(doc.id));
+      return true;
+    });
+
+    if (!visibleDocs.length) {
+      root.textContent = documentFilter === 'new'
+        ? 'Det finns inga dokument som laddats upp de senaste 7 dagarna.'
+        : documentFilter === 'unread'
+          ? 'Du har läst alla dokument för det här mötet.'
+          : 'Inga dokument att visa.';
+      return;
+    }
+
+    visibleDocs.forEach(doc => {
       const row = document.createElement('div');
-      row.className = 'file-row';
+      const isRead = myReadIds.has(String(doc.id));
+      const isNew = isNewDocument(doc);
+      row.className = 'document-document-row' +
+        (isNew ? ' is-new' : '') + (!isRead ? ' is-unread' : '');
 
       const info = document.createElement('div');
+      info.className = 'document-document-info';
       const sectionNumber = doc.section_number
         ? String(doc.section_number).replace(/^§\\s*/, '')
         : '';
 
       let subpointLetter = '';
       if (doc.agenda_item_id) {
-        const linkedItem = meetingAgendaItems.find(item =>
+        const linkedItem = (agendaItemsData || []).find(item =>
           String(item.id) === String(doc.agenda_item_id)
         );
         if (linkedItem) {
-          const sectionItems = meetingAgendaItems.filter(item =>
+          const sectionItems = (agendaItemsData || []).filter(item =>
             String(item.section_number ?? item.section ?? item.paragraph ?? '') === sectionNumber
           );
           const subpointIndex = sectionItems.findIndex(item =>
@@ -5443,15 +5497,24 @@ $('documentAgendaSection').addEventListener(
       }
 
       const sectionPrefix = sectionNumber
-        ? '§' + sectionNumber + (subpointLetter ? ' ' + subpointLetter : '') + ' - '
+        ? '§' + sectionNumber + (subpointLetter ? ' ' + subpointLetter : '') + ' – '
         : '';
       const displayName = doc.display_name || doc.file_name || doc.name || 'Dokument';
-      const isRead = myReadIds.has(String(doc.id));
+      const uploaderName = doc.uploaded_by
+        ? (memberNames.get(String(doc.uploaded_by)) || 'Styrelsemedlem')
+        : 'Okänd uppladdare';
 
       info.innerHTML = `
         <strong>${esc(sectionPrefix + displayName)}</strong>
-        <div class="muted">${esc(doc.description || '')} · ${esc(dateText(doc.created_at))}</div>
-        <span class="document-read-state ${isRead ? 'is-read' : 'is-unread'}">${isRead ? '✓ Läst av dig' : '● Oläst för dig'}</span>
+        <div class="document-document-meta">
+          ${esc(doc.description || '')}
+          ${doc.description ? ' · ' : ''}
+          Uppladdat ${esc(dateText(doc.created_at))} av ${esc(uploaderName)}
+        </div>
+        <div class="document-document-badges">
+          ${isNew ? '<span class="document-new-badge">NYTT</span>' : ''}
+          <span class="document-read-state ${isRead ? 'is-read' : 'is-unread'}">${isRead ? '✓ Läst av dig' : '● Oläst för dig'}</span>
+        </div>
         ${!isRead ? '<div><button type="button" class="small document-read-action" data-document-mark-read="' + esc(doc.id) + '">Markera som läst</button></div>' : ''}
       `;
 
@@ -5483,7 +5546,7 @@ $('documentAgendaSection').addEventListener(
       }
 
       const actions = document.createElement('div');
-      actions.className = 'right';
+      actions.className = 'document-document-actions';
 
       const openButton = document.createElement('button');
       openButton.className = 'small';
@@ -5529,6 +5592,13 @@ $('documentAgendaSection').addEventListener(
     const button = event.target.closest('[data-document-mark-read]');
     if (!button) return;
     markMeetingDocumentRead(button.dataset.documentMarkRead);
+  });
+
+  $('documentFilters').addEventListener('click', event => {
+    const button = event.target.closest('[data-document-filter]');
+    if (!button) return;
+    documentFilter = button.dataset.documentFilter;
+    loadDocuments();
   });
 
 
