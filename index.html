@@ -5522,7 +5522,6 @@ $('documentAgendaSection').addEventListener(
           ${isNew ? '<span class="document-new-badge">NYTT</span>' : ''}
           <span class="document-read-state ${isRead ? 'is-read' : 'is-unread'}">${isRead ? '✓ Läst av dig' : '● Oläst för dig'}</span>
         </div>
-        ${!isRead ? '<div><button type="button" class="small document-read-action" data-document-mark-read="' + esc(doc.id) + '">Markera som läst</button></div>' : ''}
       `;
 
       if (isAdminUser) {
@@ -5826,7 +5825,15 @@ async function editDocument(doc) {
       return;
     }
 
-    window.open(data.signedUrl, '_blank', 'noopener');
+    const openedWindow = window.open(data.signedUrl, '_blank', 'noopener');
+    if (!openedWindow) {
+      message('Dokumentet kunde inte öppnas. Tillåt popup-fönster i Safari och försök igen. Lässtatus har inte ändrats.', 'error');
+      return;
+    }
+
+    // Registrera lässtatus först när den signerade dokumentlänken har skapats
+    // och webbläsaren har accepterat att öppna dokumentet.
+    await markMeetingDocumentRead(doc.id);
   }
 
   async function deleteDocument(doc) {
