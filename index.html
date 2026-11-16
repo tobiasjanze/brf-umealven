@@ -3392,8 +3392,8 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
             <button type="button" class="home-stat home-stat--red" data-home-open="minutes">
               <strong id="homeOverdueTaskCount">–</strong><span>Kräver åtgärd</span><small>Försenade uppgifter</small>
             </button>
-            <button type="button" class="home-stat home-stat--purple" data-home-open="meetings">
-              <strong id="homeUpcomingCount">–</strong><span>Kommande möten</span><small>Närmast i kalendern</small>
+            <button type="button" class="home-stat home-stat--purple" data-home-open="annual">
+              <strong id="homeUpcomingCount">–</strong><span>Kommande aktiviteter</span><small>Från föreningens årshjul</small>
             </button>
           </div>
           <details class="home-overview-details">
@@ -3414,11 +3414,6 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
                   <div id="homeOutstandingTasks"><p class="muted">Hämtar uppgifter ...</p></div>
                 </section>
               </div>
-              <section class="home-overview-box home-upcoming-activities home-details-wide">
-                <h3>Kommande aktiviteter</h3>
-                <p class="muted">Planerade aktiviteter från föreningens årshjul.</p>
-                <div id="homeUpcomingActivities"><p class="muted">Hämtar aktiviteter ...</p></div>
-              </section>
               <div class="home-recent-activity">
                 <h3>Senaste händelser</h3>
                 <div id="homeRecentActivity"><p class="muted">Hämtar senaste händelser ...</p></div>
@@ -7286,7 +7281,6 @@ if (home) {
 
 function renderHomeUpcomingActivities() {
   const root = $('homeUpcomingActivities');
-  if (!root) return;
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const upcoming = (annualEvents || []).map(item => {
@@ -7318,6 +7312,9 @@ function renderHomeUpcomingActivities() {
     if (!nextDate || monthIndex === null) return null;
     return { item, nextDate, dateLabel, monthIndex };
   }).filter(Boolean).sort((a,b) => a.nextDate - b.nextDate || String(a.item.title || '').localeCompare(String(b.item.title || ''), 'sv'));
+  const countNode = $('homeUpcomingCount');
+  if (countNode) countNode.textContent = upcoming.length;
+  if (!root) return;
   const activeMonths = new Set(upcoming.map(entry => entry.monthIndex));
   const monthNames = ['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
   const slices = monthNames.map((month, i) => {
