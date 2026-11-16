@@ -425,14 +425,24 @@
 .home-stat strong { font-size: 1.7rem; line-height: 1.2; margin-bottom: 8px; }
 .home-stat span { font-weight: 700; color: #24313c; }
 .home-stat small { margin-top: 3px; color: #687783; }
-.home-stat--blue { background: #eaf4fc; border-color: #c5dff2; border-top-color: #3288bd; }
-.home-stat--blue strong { color: #3288bd; }
-.home-stat--amber { background: #fff5e3; border-color: #f1dfb9; border-top-color: #d99a27; }
-.home-stat--amber strong { color: #b77b17; }
-.home-stat--red { background: #fff0ef; border-color: #f0d0cd; border-top-color: #d65b55; }
-.home-stat--red strong { color: #c34e48; }
-.home-stat--green { background: #eaf5ee; border-color: #c9e0d0; border-top-color: #4d9b69; }
-.home-stat--green strong { color: #398457; }
+.home-stat--blue { background: #e4f0fa; border-color: #b9d4e9; border-top-color: #3288bd; }
+.home-stat--blue strong { color: #2876ad; }
+.home-stat--amber { background: #fff0cf; border-color: #edcf8f; border-top-color: #d99a27; }
+.home-stat--amber strong { color: #a96800; }
+.home-stat--red { background: #fbe2df; border-color: #eab8b3; border-top-color: #d65b55; }
+.home-stat--red strong { color: #bd3933; }
+.home-stat--green { background: #e0f0e5; border-color: #b6d6c0; border-top-color: #4d9b69; }
+.home-stat--green strong { color: #287747; }
+.home-overview-details { margin-top: 14px; border: 1px solid #d4e2ed; border-radius: 12px; background: #fff; overflow: hidden; }
+.home-overview-details > summary { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:14px 16px; cursor:pointer; color:#17324d; font-weight:700; list-style:none; }
+.home-overview-details > summary::-webkit-details-marker { display:none; }
+.home-overview-details > summary::after { content:'⌄'; margin-left:auto; font-size:1.25rem; transition:transform .18s ease; }
+.home-overview-details[open] > summary::after { transform:rotate(180deg); }
+.home-overview-details > summary small { color:#687783; font-weight:400; }
+.home-overview-details[open] > summary { border-bottom:1px solid #e3ebf1; background:#f7fafc; }
+.home-overview-details-content { padding:0 12px 12px; }
+.home-overview-details-content .home-overview-columns { margin-top:12px; }
+.home-overview-details-content .home-recent-activity { margin-top:12px; }
 .home-overview-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 14px; }
 .home-overview-box { min-width: 0; padding: 15px; background: #fff; border: 1px solid #dce6ee; border-radius: 12px; }
 .home-overview-box h3,.home-recent-activity h3 { margin: 0 0 5px; color: #17324d; }
@@ -3338,22 +3348,30 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
               <strong id="homeUpcomingCount">–</strong><span>Kommande möten</span><small>Närmast i kalendern</small>
             </button>
           </div>
-          <div class="home-overview-columns">
-            <section class="home-overview-box">
-              <h3>Nyligen uppladdade dokument</h3>
-              <p class="muted">Nya handlingar från de senaste 7 dagarna.</p>
-              <div id="homeRecentDocuments"><p class="muted">Hämtar dokument ...</p></div>
-            </section>
-            <section class="home-overview-box">
-              <h3>Uppgifter att följa upp</h3>
-              <p class="muted">Beslut och uppgifter som ännu inte är klara.</p>
-              <div id="homeOutstandingTasks"><p class="muted">Hämtar uppgifter ...</p></div>
-            </section>
-          </div>
-          <div class="home-recent-activity">
-            <h3>Senaste händelser</h3>
-            <div id="homeRecentActivity"><p class="muted">Hämtar senaste händelser ...</p></div>
-          </div>
+          <details class="home-overview-details">
+            <summary>
+              <span>Visa detaljer och listor</span>
+              <small>Senaste dokument, uppgifter och händelser</small>
+            </summary>
+            <div class="home-overview-details-content">
+              <div class="home-overview-columns">
+                <section class="home-overview-box">
+                  <h3>Nyligen uppladdade dokument</h3>
+                  <p class="muted">Nya handlingar från de senaste 7 dagarna.</p>
+                  <div id="homeRecentDocuments"><p class="muted">Hämtar dokument ...</p></div>
+                </section>
+                <section class="home-overview-box">
+                  <h3>Uppgifter att följa upp</h3>
+                  <p class="muted">Beslut och uppgifter som ännu inte är klara.</p>
+                  <div id="homeOutstandingTasks"><p class="muted">Hämtar uppgifter ...</p></div>
+                </section>
+              </div>
+              <div class="home-recent-activity">
+                <h3>Senaste händelser</h3>
+                <div id="homeRecentActivity"><p class="muted">Hämtar senaste händelser ...</p></div>
+              </div>
+            </div>
+          </details>
         </section>
 
         <h2>Vad vill du göra?</h2>
