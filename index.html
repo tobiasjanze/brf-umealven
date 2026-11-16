@@ -7320,12 +7320,15 @@ async function renderHomeDashboard() {
       meta: meeting ? meetingTitle(meeting) : 'Mötesdokument'
     });
   });
-  allTasks.filter(task => task.updatedAt || task.createdAt).forEach(task => {
+  // Visa inte öppna uppgifter även här: de finns redan i rutan
+  // "Uppgifter att följa upp". I händelselistan visas bara avslutade
+  // uppgifter, så att en pågående uppgift inte förekommer två gånger.
+  allTasks.filter(task => task.status === 'Klar' && (task.updatedAt || task.createdAt)).forEach(task => {
     const stamp = task.updatedAt || task.createdAt;
     const time = new Date(stamp).getTime();
     if (time >= cutoff) activity.push({
       time,
-      text: (task.status === 'Klar' ? 'Uppföljningsuppgift avslutad: ' : 'Uppföljningsuppgift uppdaterad: ') + (task.title || 'Uppgift'),
+      text: 'Uppföljningsuppgift avslutad: ' + (task.title || 'Uppgift'),
       meta: task.responsible || 'Ingen ansvarig angiven'
     });
   });
