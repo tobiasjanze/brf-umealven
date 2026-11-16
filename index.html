@@ -4957,18 +4957,29 @@ async function loadMinutesActionSubpoints(){
   const {data,error}=await db.from('agenda_items').select('*').eq('meeting_id',meetingId).order('created_at',{ascending:true});
   if(error){message('Kunde inte läsa mötets underpunkter: '+error.message,'error');return;}
   if(String($('minutesMeetingSelect').value)!==String(meetingId))return;
+
   const items=data||[];
-  const counts={};
-  items.forEach(item=>{
-    const number=String(item.section_number??item.section??item.paragraph??'');
-    if(!number)return;
-    counts[number]=(counts[number]||0)+1;
-    const letter=String.fromCharCode(96+counts[number]);
-    const option=document.createElement('option');
-    option.value=number+letter;
-    option.textContent='　§'+number+letter+' '+(item.title||'Underpunkt');
-    option.dataset.sectionLabel=option.textContent.trim();
-    select.appendChild(option);
+  select.innerHTML='<option value="">Välj paragraf</option>';
+  sections.forEach(([number,title])=>{
+    const group=document.createElement('optgroup');
+    group.label='§'+number+' '+title;
+
+    const mainOption=document.createElement('option');
+    mainOption.value=number;
+    mainOption.textContent='Hela paragrafen';
+    mainOption.dataset.sectionLabel='§'+number+' '+title;
+    group.appendChild(mainOption);
+
+    const children=items.filter(item=>String(item.section_number??item.section??item.paragraph??'')===String(number));
+    children.forEach((item,index)=>{
+      const letter=String.fromCharCode(97+index);
+      const option=document.createElement('option');
+      option.value=number+letter;
+      option.textContent=letter+') '+(item.title||'Underpunkt');
+      option.dataset.sectionLabel='§'+number+letter+' '+(item.title||'Underpunkt');
+      group.appendChild(option);
+    });
+    select.appendChild(group);
   });
 }
 function collectMinutesWorkflow(){return {writer:minutesPersonValue('Writer'),chair:minutesPersonValue('Chair'),reviewer:minutesPersonValue('Reviewer'),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked,reopenHistory:Array.isArray(currentMinutes.__workflow?.reopenHistory)?currentMinutes.__workflow.reopenHistory:[]};}
