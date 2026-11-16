@@ -456,6 +456,9 @@
   background: #eee7fa !important; border-color: #d8c8f0 !important;
 }
 #homeOverview .home-overview-stats > .home-stat:nth-child(4) strong { color: #7045a5 !important; }
+.home-upcoming-activities { margin-top:14px; }
+.home-upcoming-activities .home-dashboard-row { align-items:center; }
+.home-upcoming-activities .home-dashboard-meta { margin-top:2px; }
 .home-overview-details { margin-top: 14px; border: 1px solid #d4e2ed; border-radius: 12px; background: #fff; overflow: hidden; }
 .home-overview-details > summary { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:14px 16px; cursor:pointer; color:#17324d; font-weight:700; list-style:none; }
 .home-overview-details > summary::-webkit-details-marker { display:none; }
@@ -3371,6 +3374,11 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
               <strong id="homeUpcomingCount">–</strong><span>Kommande möten</span><small>Närmast i kalendern</small>
             </button>
           </div>
+          <section class="home-overview-box home-upcoming-activities">
+            <h3>Kommande aktiviteter</h3>
+            <p class="muted">Planerade aktiviteter från föreningens årshjul.</p>
+            <div id="homeUpcomingActivities"><p class="muted">Hämtar aktiviteter ...</p></div>
+          </section>
           <details class="home-overview-details">
             <summary>
               <span>Visa detaljer och listor</span>
@@ -4093,6 +4101,7 @@ function showLogin() {
     await loadContractResponsibleOptions();
     await loadContracts();
     await loadAnnualEvents();
+    renderHomeUpcomingActivities();
   } finally {
     loading = false;
   }
@@ -7253,8 +7262,49 @@ if (home) {
 
   // ===== NAVIGERING =====
 
+function renderHomeUpcomingActivities() {
+  const root = $('homeUpcomingActivities');
+  if (!root) return;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const upcoming = (annualEvents || []).map(item => {
+    if (item.status === 'Genomförd' || item.status === 'Ej aktuell') return null;
+    let nextDate = null;
+    let dateLabel = '';
+    if (item.recurring_month) {
+      const month = Number(item.recurring_month);
+      if (month < 1 || month > 12) return null;
+      nextDate = new Date(now.getFullYear(), month - 1, 1);
+      if (nextDate < today) nextDate = new Date(now.getFullYear() + 1, month - 1, 1);
+      dateLabel = 'Återkommer i ' + annualMonths[month - 1].toLowerCase() + ' ' + nextDate.getFullYear();
+    } else if (item.event_date) {
+      const raw = String(item.event_date).slice(0, 10).split('-').map(Number);
+      if (raw.length !== 3 || raw.some(value => !Number.isFinite(value))) return null;
+      nextDate = new Date(raw[0], raw[1] - 1, raw[2]);
+      if (nextDate < today) return null;
+      dateLabel = dateText(item.event_date);
+    } else if (item.start_date || item.end_date) {
+      const raw = String(item.start_date || item.end_date).slice(0, 10).split('-').map(Number);
+      if (raw.length !== 3 || raw.some(value => !Number.isFinite(value))) return null;
+      nextDate = new Date(raw[0], raw[1] - 1, raw[2]);
+      if (item.end_date && String(item.end_date).slice(0, 10) < today.toISOString().slice(0, 10)) return null;
+      dateLabel = dateText(item.start_date || item.end_date);
+    }
+    if (!nextDate) return null;
+    return { item, nextDate, dateLabel };
+  }).filter(Boolean).sort((a,b) => a.nextDate - b.nextDate || String(a.item.title || '').localeCompare(String(b.item.title || ''), 'sv'));
+  root.innerHTML = upcoming.length
+    ? upcoming.slice(0, 5).map(({item,dateLabel}) =>
+      '<div class="home-dashboard-row"><div class="home-dashboard-main"><strong>' + esc(item.title || 'Aktivitet utan namn') + '</strong><div class="home-dashboard-meta">' +
+      esc(dateLabel) + (item.responsible ? ' · Ansvarig: ' + esc(annualResponsibleLabel(item.responsible)) : '') +
+      '</div></div><button type="button" class="home-dashboard-link" data-home-open="annual">Årshjul</button></div>'
+    ).join('')
+    : '<p class="home-empty">Det finns inga kommande aktiviteter registrerade i årshjulet.</p>';
+}
+
 async function renderHomeDashboard() {
   if (!currentUser) return;
+  renderHomeUpcomingActivities();
   const unreadNode = $('homeUnreadCount');
   const openTaskNode = $('homeOpenTaskCount');
   const overdueNode = $('homeOverdueTaskCount');
