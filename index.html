@@ -3135,6 +3135,13 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 /* Personlig lässtatus för mötesdokument */
 .document-read-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0;padding:14px;border:1px solid #d7e4ef;border-radius:14px;background:#f7fbff}
 .document-read-stat{padding:12px;border-radius:10px;background:#fff;border:1px solid #e1eaf2}
+.document-read-stat--unread{background:#fff5e5;border-color:#f2c77d;border-top:4px solid #e5a02c}
+.document-read-stat--new{background:#eaf5fd;border-color:#a8cfe9;border-top:4px solid #398bc2}
+.document-read-stat--total{background:#edf6ef;border-color:#b9d9c1;border-top:4px solid #4b9a65}
+.document-read-stat--unread strong{color:#965b08}
+.document-read-stat--new strong{color:#216b9c}
+.document-read-stat--total strong{color:#287044}
+
 .document-read-stat strong{display:block;font-size:1.45rem;color:#173b5e}
 .document-read-stat span{font-size:.88rem;color:#617487}
 .document-read-state{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:5px 9px;border-radius:999px;font-size:.82rem;font-weight:650}
@@ -5438,9 +5445,9 @@ $('documentAgendaSection').addEventListener(
 
     summary.classList.remove('hidden');
     summary.innerHTML = `
-      <div class="document-read-stat"><strong>${unreadCount}</strong><span>Olästa för dig</span></div>
-      <div class="document-read-stat"><strong>${newCount}</strong><span>Nya senaste 7 dagarna</span></div>
-      <div class="document-read-stat"><strong>${docs.length}</strong><span>Dokument för mötet</span></div>
+      <div class="document-read-stat document-read-stat--unread"><strong>${unreadCount}</strong><span>Olästa för dig</span></div>
+      <div class="document-read-stat document-read-stat--new"><strong>${newCount}</strong><span>Nya senaste 7 dagarna</span></div>
+      <div class="document-read-stat document-read-stat--total"><strong>${docs.length}</strong><span>Dokument för mötet</span></div>
     `;
     filters.classList.toggle('hidden', !docs.length);
     filters.querySelectorAll('[data-document-filter]').forEach(button => {
