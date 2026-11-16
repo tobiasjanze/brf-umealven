@@ -6112,6 +6112,7 @@ description: $('documentDescription').value.trim(),
 
   
 let contracts = [];
+let contractsLoadError = false;
 let boardMemberNames = {};
 
 let contractFilters = {
@@ -6702,16 +6703,20 @@ if (home) {
       });
 
     if (error) {
+      contractsLoadError = true;
       message('Kunde inte läsa avtalen: ' + error.message, 'error');
 
       $('contractsOverview').innerHTML =
         '<p class="muted">Avtalen kunde inte hämtas.</p>';
 
+      if (currentUser) renderHomeDashboard();
       return;
     }
 
+    contractsLoadError = false;
     contracts = data || [];
     renderContracts();
+    if (currentUser) renderHomeDashboard();
   }
 
   
@@ -7418,7 +7423,7 @@ async function renderHomeDashboard() {
 
   unreadNode.textContent = docsResult.error || readsResult.error ? '–' : unreadDocs.length;
   openTaskNode.textContent = minutesResult.error ? '–' : openTasks.length;
-  contractAlertNode.textContent = contracts.length ? contractAlertCount : '0';
+  contractAlertNode.textContent = contractsLoadError ? '–' : contractAlertCount;
   upcomingNode.textContent = upcomingMeetings.length;
 
   // Färglogik: mest brådskande datum styr respektive ruta.
@@ -7444,13 +7449,15 @@ async function renderHomeDashboard() {
         : 'Inga nära förfallodatum';
   }
 
-  const contractColor = overdueContractCount ? 'red' : dueSoonContractCount ? 'amber' : 'green';
+  const contractColor = contractsLoadError ? 'amber' : overdueContractCount ? 'red' : dueSoonContractCount ? 'amber' : 'green';
   setHomeStatColor(contractAlertNode, contractColor);
-  if (contractStatusText) contractStatusText.textContent = overdueContractCount
-    ? overdueContractCount + ' passerade · ' + dueSoonContractCount + ' inom 90 dagar'
-    : dueSoonContractCount
-      ? dueSoonContractCount + ' inom 90 dagar'
-      : 'Inga nära omförhandlingar';
+  if (contractStatusText) contractStatusText.textContent = contractsLoadError
+    ? 'Kunde inte läsa avtalen'
+    : overdueContractCount
+      ? overdueContractCount + ' passerade · ' + dueSoonContractCount + ' inom 90 dagar'
+      : dueSoonContractCount
+        ? dueSoonContractCount + ' inom 90 dagar'
+        : 'Inga nära omförhandlingar';
 
   const recentRoot = $('homeRecentDocuments');
   if (!docsResult.error && !readsResult.error) {
