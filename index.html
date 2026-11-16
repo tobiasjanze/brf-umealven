@@ -489,6 +489,26 @@
 .home-activity-item:first-of-type { border-top:0; }
 .home-activity-dot { width:9px; height:9px; flex:0 0 9px; margin-top:7px; border-radius:50%; background:#3288bd; }
 .home-empty { color:#687783; font-size:.92rem; padding:8px 0; }
+.home-annual-preview { display:grid; grid-template-columns:minmax(150px, .8fr) minmax(0,2fr); gap:18px; align-items:center; }
+.home-annual-wheel-link { border:0; background:transparent; color:#17324d; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; padding:8px; }
+.home-annual-wheel-link svg { width:min(100%,190px); height:auto; overflow:visible; }
+.home-annual-wheel-caption { font-size:.88rem; font-weight:700; color:#1769aa; }
+.home-annual-upcoming h4 { margin:0 0 7px; color:#17324d; }
+.home-annual-event,.home-document-card,.home-event-card { width:100%; display:flex; align-items:center; gap:11px; text-align:left; padding:10px; border:0; border-top:1px solid #edf1f4; background:#fff; color:#24313c; cursor:pointer; border-radius:8px; }
+.home-annual-event:first-of-type { border-top:0; }
+.home-annual-event > span:nth-child(2),.home-document-copy,.home-event-copy { min-width:0; flex:1; display:flex; flex-direction:column; gap:3px; }
+.home-annual-event strong,.home-document-copy strong,.home-event-copy strong { overflow-wrap:anywhere; }
+.home-annual-event small,.home-document-copy small,.home-event-copy small { color:#687783; font-size:.84rem; }
+.home-annual-event-dot { width:9px; height:9px; flex:0 0 9px; border-radius:50%; background:#e69a25; }
+.home-annual-arrow,.home-card-arrow { color:#1769aa; font-size:1.45rem; }
+.home-document-card,.home-event-card { border:1px solid #e1eaf1; margin-top:8px; padding:12px; }
+.home-document-card:first-child,.home-event-card:first-child { margin-top:0; }
+.home-document-icon,.home-event-icon { display:grid; place-items:center; width:38px; height:38px; flex:0 0 38px; border-radius:10px; background:#e7f2fb; color:#1769aa; font-size:1.3rem; font-weight:800; }
+.home-event-icon { background:#edf5ed; color:#25845b; }
+.home-document-copy em { width:max-content; font-size:.75rem; font-style:normal; color:#25845b; background:#eaf6ef; padding:2px 7px; border-radius:12px; }
+.home-document-copy em.unread { color:#95600b; background:#fff1d8; }
+.home-document-card:hover,.home-event-card:hover,.home-annual-event:hover { background:#f7fafc; }
+@media(max-width:600px) { .home-annual-preview { grid-template-columns:1fr; gap:8px; } .home-annual-wheel-link svg { width:150px; } }
 @media(max-width:850px) {
   .home-overview-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
@@ -7273,35 +7293,55 @@ function renderHomeUpcomingActivities() {
     if (item.status === 'Genomförd' || item.status === 'Ej aktuell') return null;
     let nextDate = null;
     let dateLabel = '';
+    let monthIndex = null;
     if (item.recurring_month) {
-      const month = Number(item.recurring_month);
-      if (month < 1 || month > 12) return null;
-      nextDate = new Date(now.getFullYear(), month - 1, 1);
-      if (nextDate < today) nextDate = new Date(now.getFullYear() + 1, month - 1, 1);
-      dateLabel = 'Återkommer i ' + annualMonths[month - 1].toLowerCase() + ' ' + nextDate.getFullYear();
+      monthIndex = Number(item.recurring_month) - 1;
+      if (monthIndex < 0 || monthIndex > 11) return null;
+      nextDate = new Date(now.getFullYear(), monthIndex, 1);
+      if (nextDate < today) nextDate = new Date(now.getFullYear() + 1, monthIndex, 1);
+      dateLabel = 'Återkommer i ' + annualMonths[monthIndex].toLowerCase() + ' ' + nextDate.getFullYear();
     } else if (item.event_date) {
       const raw = String(item.event_date).slice(0, 10).split('-').map(Number);
       if (raw.length !== 3 || raw.some(value => !Number.isFinite(value))) return null;
       nextDate = new Date(raw[0], raw[1] - 1, raw[2]);
+      monthIndex = raw[1] - 1;
       if (nextDate < today) return null;
       dateLabel = dateText(item.event_date);
     } else if (item.start_date || item.end_date) {
       const raw = String(item.start_date || item.end_date).slice(0, 10).split('-').map(Number);
       if (raw.length !== 3 || raw.some(value => !Number.isFinite(value))) return null;
       nextDate = new Date(raw[0], raw[1] - 1, raw[2]);
+      monthIndex = raw[1] - 1;
       if (item.end_date && String(item.end_date).slice(0, 10) < today.toISOString().slice(0, 10)) return null;
       dateLabel = dateText(item.start_date || item.end_date);
     }
-    if (!nextDate) return null;
-    return { item, nextDate, dateLabel };
+    if (!nextDate || monthIndex === null) return null;
+    return { item, nextDate, dateLabel, monthIndex };
   }).filter(Boolean).sort((a,b) => a.nextDate - b.nextDate || String(a.item.title || '').localeCompare(String(b.item.title || ''), 'sv'));
-  root.innerHTML = upcoming.length
-    ? upcoming.slice(0, 5).map(({item,dateLabel}) =>
-      '<div class="home-dashboard-row"><div class="home-dashboard-main"><strong>' + esc(item.title || 'Aktivitet utan namn') + '</strong><div class="home-dashboard-meta">' +
-      esc(dateLabel) + (item.responsible ? ' · Ansvarig: ' + esc(annualResponsibleLabel(item.responsible)) : '') +
-      '</div></div><button type="button" class="home-dashboard-link" data-home-open="annual">Årshjul</button></div>'
-    ).join('')
-    : '<p class="home-empty">Det finns inga kommande aktiviteter registrerade i årshjulet.</p>';
+  const activeMonths = new Set(upcoming.map(entry => entry.monthIndex));
+  const monthNames = ['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  const slices = monthNames.map((month, i) => {
+    const a = -Math.PI/2 + i * Math.PI/6;
+    const b = a + Math.PI/6 - 0.025;
+    const x1 = 60 + 43*Math.cos(a), y1 = 60 + 43*Math.sin(a);
+    const x2 = 60 + 43*Math.cos(b), y2 = 60 + 43*Math.sin(b);
+    const active = activeMonths.has(i);
+    const mid = (a+b)/2;
+    const tx = 60 + 53*Math.cos(mid), ty = 60 + 53*Math.sin(mid);
+    return '<path d="M '+x1.toFixed(2)+' '+y1.toFixed(2)+' A 43 43 0 0 1 '+x2.toFixed(2)+' '+y2.toFixed(2)+'" fill="none" stroke="'+(active?'#2589c7':'#dce7ef')+'" stroke-width="12" stroke-linecap="round"/>' +
+      (active ? '<circle cx="'+(60+43*Math.cos(mid)).toFixed(2)+'" cy="'+(60+43*Math.sin(mid)).toFixed(2)+'" r="3.2" fill="#e69a25" stroke="#fff" stroke-width="1.2"/>' : '') +
+      '<text x="'+tx.toFixed(1)+'" y="'+(ty+2.8).toFixed(1)+'" text-anchor="middle" font-size="6.5" font-weight="'+(active?'700':'500')+'" fill="'+(active?'#1769aa':'#74889a')+'">'+month+'</text>';
+  }).join('');
+  root.innerHTML = '<div class="home-annual-preview">' +
+    '<button type="button" class="home-annual-wheel-link" data-home-open="annual" aria-label="Öppna hela årshjulet">' +
+      '<svg viewBox="0 0 120 120" role="img" aria-label="Årshjul med markeringar för månader med aktiviteter">'+slices+
+      '<circle cx="60" cy="60" r="29" fill="#fff" stroke="#dce7ef"/><text x="60" y="56" text-anchor="middle" font-size="9" font-weight="800" fill="#17324d">ÅRSHJUL</text><text x="60" y="68" text-anchor="middle" font-size="8" fill="#687783">'+now.getFullYear()+'</text></svg>' +
+      '<span class="home-annual-wheel-caption">Öppna årshjulet <span aria-hidden="true">↗</span></span></button>' +
+    '<div class="home-annual-upcoming"><h4>Tre närmaste aktiviteter</h4>' +
+      (upcoming.length ? upcoming.slice(0,3).map(({item,dateLabel}) =>
+        '<button type="button" class="home-annual-event" data-home-open="annual"><span class="home-annual-event-dot"></span><span><strong>'+esc(item.title || 'Aktivitet utan namn')+'</strong><small>'+esc(dateLabel)+(item.responsible?' · '+esc(annualResponsibleLabel(item.responsible)):'')+'</small></span><span class="home-annual-arrow">›</span></button>'
+      ).join('') : '<p class="home-empty">Det finns inga kommande aktiviteter registrerade i årshjulet.</p>') +
+    '</div></div>';
 }
 
 async function renderHomeDashboard() {
@@ -7402,10 +7442,10 @@ async function renderHomeDashboard() {
         const meeting = meetingById.get(String(doc.meeting_id));
         const name = doc.display_name || doc.file_name || doc.name || 'Dokument';
         const read = readIds.has(String(doc.id));
-        return '<div class="home-dashboard-row"><div class="home-dashboard-main"><strong>' + esc(name) + '</strong><div class="home-dashboard-meta">' +
-          esc(meeting ? meetingTitle(meeting) : 'Möte') + ' · ' + esc(dateText(doc.created_at)) +
-          '</div><span class="home-dashboard-tag ' + (read ? '' : 'unread') + '">' + (read ? 'Läst av dig' : 'Oläst för dig') + '</span></div>' +
-          '<button type="button" class="home-dashboard-link" data-home-document="' + esc(doc.meeting_id) + '">Visa</button></div>';
+        return '<button type="button" class="home-document-card" data-home-document="' + esc(doc.meeting_id) + '">' +
+          '<span class="home-document-icon" aria-hidden="true">▤</span><span class="home-document-copy"><strong>' + esc(name) + '</strong>' +
+          '<small>' + esc(meeting ? meetingTitle(meeting) : 'Mötesdokument') + ' · ' + esc(dateText(doc.created_at)) + '</small>' +
+          '<em class="' + (read ? '' : 'unread') + '">' + (read ? 'Läst av dig' : 'Oläst för dig') + '</em></span><span class="home-card-arrow">›</span></button>';
       }).join('');
     }
   }
@@ -7437,24 +7477,25 @@ async function renderHomeDashboard() {
     activity.push({
       time: new Date(doc.created_at).getTime(),
       text: 'Nytt mötesdokument uppladdat: ' + (doc.display_name || doc.file_name || doc.name || 'Dokument'),
-      meta: meeting ? meetingTitle(meeting) : 'Mötesdokument'
+      meta: meeting ? meetingTitle(meeting) : 'Mötesdokument',
+      kind: 'document',
+      meetingId: doc.meeting_id
     });
   });
-  // Visa inte öppna uppgifter även här: de finns redan i rutan
-  // "Uppgifter att följa upp". I händelselistan visas bara avslutade
-  // uppgifter, så att en pågående uppgift inte förekommer två gånger.
   allTasks.filter(task => task.status === 'Klar' && (task.updatedAt || task.createdAt)).forEach(task => {
     const stamp = task.updatedAt || task.createdAt;
     const time = new Date(stamp).getTime();
     if (time >= cutoff) activity.push({
       time,
       text: 'Uppföljningsuppgift avslutad: ' + (task.title || 'Uppgift'),
-      meta: task.responsible || 'Ingen ansvarig angiven'
+      meta: task.responsible || 'Ingen ansvarig angiven',
+      kind: 'task',
+      meetingId: task.meetingId
     });
   });
   activity.sort((a,b) => b.time-a.time);
   activityRoot.innerHTML = activity.length
-    ? activity.slice(0, 3).map(item => '<div class="home-activity-item"><span class="home-activity-dot"></span><div><strong>' + esc(item.text) + '</strong><div class="home-dashboard-meta">' + esc(item.meta) + ' · ' + esc(new Date(item.time).toLocaleString('sv-SE', { dateStyle:'short', timeStyle:'short' })) + '</div></div></div>').join('')
+    ? activity.slice(0, 3).map(item => '<button type="button" class="home-event-card" '+(item.kind === 'document' ? 'data-home-document="'+esc(item.meetingId)+'"' : 'data-home-task="'+esc(item.meetingId)+'"')+'><span class="home-event-icon" aria-hidden="true">'+(item.kind === 'document'?'▤':'✓')+'</span><span class="home-event-copy"><strong>'+esc(item.text)+'</strong><small>'+esc(item.meta)+' · '+esc(new Date(item.time).toLocaleString('sv-SE', { dateStyle:'short', timeStyle:'short' }))+'</small></span><span class="home-card-arrow">›</span></button>').join('')
     : '<p class="home-empty">Inga nya händelser de senaste 7 dagarna.</p>';
 }
 
