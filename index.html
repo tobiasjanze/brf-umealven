@@ -7195,7 +7195,7 @@ async function renderHomeDashboard() {
 
   const [docsResult, readsResult, minutesResult] = await Promise.all([
     db.from('meeting_documents')
-      .select('id,meeting_id,display_name,file_name,name,created_at,section_number,description')
+      .select('id,meeting_id,display_name,file_name,created_at')
       .order('created_at', { ascending: false }),
     db.from('meeting_document_reads')
       .select('document_id')
@@ -7205,10 +7205,12 @@ async function renderHomeDashboard() {
   ]);
 
   if (docsResult.error) {
-    $('homeRecentDocuments').innerHTML = '<p class="home-empty">Kunde inte hämta dokumentöversikten.</p>';
+    console.error('Kunde inte hämta dokumentöversikten på startsidan:', docsResult.error);
+    $('homeRecentDocuments').innerHTML = '<p class="home-empty">Kunde inte hämta dokumentöversikten. Kontrollera behörighet eller dokumenttabellens fält.</p>';
     unreadNode.textContent = '–';
   }
   if (readsResult.error) {
+    console.error('Kunde inte hämta lässtatus på startsidan:', readsResult.error);
     $('homeRecentDocuments').innerHTML = '<p class="home-empty">Kunde inte hämta lässtatus för dokumenten.</p>';
     unreadNode.textContent = '–';
   }
@@ -7258,6 +7260,19 @@ async function renderHomeDashboard() {
   overdueNode.textContent = minutesResult.error ? '–' : overdueTasks.length;
   upcomingNode.textContent = upcomingMeetings.length;
 
+  // Färgkoda efter faktisk status: grönt = inget att åtgärda,
+  // gult = oläst/pågående, rött = försenat, blått = neutral information.
+  const setHomeStatState = (node, state) => {
+    const card = node && node.closest('.home-stat');
+    if (!card) return;
+    card.classList.remove('home-stat--blue','home-stat--amber','home-stat--red','home-stat--green');
+    card.classList.add('home-stat--' + state);
+  };
+  setHomeStatState(unreadNode, docsResult.error || readsResult.error ? 'blue' : unreadDocs.length > 0 ? 'amber' : 'green');
+  setHomeStatState(openTaskNode, minutesResult.error ? 'blue' : openTasks.length > 0 ? 'amber' : 'green');
+  setHomeStatState(overdueNode, minutesResult.error ? 'blue' : overdueTasks.length > 0 ? 'red' : 'green');
+  setHomeStatState(upcomingNode, 'blue');
+
   const recentRoot = $('homeRecentDocuments');
   if (!docsResult.error && !readsResult.error) {
     if (!recentDocs.length) {
@@ -7305,12 +7320,15 @@ async function renderHomeDashboard() {
       meta: meeting ? meetingTitle(meeting) : 'Mötesdokument'
     });
   });
-  allTasks.filter(task => task.updatedAt || task.createdAt).forEach(task => {
+  // Visa inte öppna uppgifter även här: de finns redan i rutan
+  // "Uppgifter att följa upp". I händelselistan visas bara avslutade
+  // uppgifter, så att en pågående uppgift inte förekommer två gånger.
+  allTasks.filter(task => task.status === 'Klar' && (task.updatedAt || task.createdAt)).forEach(task => {
     const stamp = task.updatedAt || task.createdAt;
     const time = new Date(stamp).getTime();
     if (time >= cutoff) activity.push({
       time,
-      text: (task.status === 'Klar' ? 'Uppföljningsuppgift avslutad: ' : 'Uppföljningsuppgift uppdaterad: ') + (task.title || 'Uppgift'),
+      text: 'Uppföljningsuppgift avslutad: ' + (task.title || 'Uppgift'),
       meta: task.responsible || 'Ingen ansvarig angiven'
     });
   });
