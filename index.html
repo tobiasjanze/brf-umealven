@@ -428,14 +428,15 @@
 .home-stat strong { font-size: 1.7rem; line-height: 1.2; margin-bottom: 8px; }
 .home-stat span { font-weight: 700; color: #24313c; }
 .home-stat small { margin-top: 3px; color: #687783; }
-.home-stat--blue { background: #edf4fc !important; border-color: #d5e2ed !important; }
-.home-stat--blue strong { color: #176da8; }
-.home-stat--amber { background: #fff5df !important; border-color: #f0dfb2 !important; }
-.home-stat--amber strong { color: #986400; }
-.home-stat--red { background: #fbecec !important; border-color: #efcccc !important; }
-.home-stat--red strong { color: #a73535; }
-.home-stat--green { background: #e8f5ed !important; border-color: #c6e5d0 !important; }
-.home-stat--green strong { color: #27734b; }
+/* Färgerna beskriver rutornas betydelse och ändras inte med räknarvärdet. */
+.home-stat--blue { background: #dceeff !important; border-color: #b9d9f5 !important; }
+.home-stat--blue strong { color: #1769aa; }
+.home-stat--amber { background: #fff1d2 !important; border-color: #f2d99d !important; }
+.home-stat--amber strong { color: #a76500; }
+.home-stat--red { background: #fce2e2 !important; border-color: #f1bcbc !important; }
+.home-stat--red strong { color: #b42318; }
+.home-stat--purple { background: #eee7fa !important; border-color: #d8c8f0 !important; }
+.home-stat--purple strong { color: #7045a5; }
 .home-overview-details { margin-top: 14px; border: 1px solid #d4e2ed; border-radius: 12px; background: #fff; overflow: hidden; }
 .home-overview-details > summary { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:14px 16px; cursor:pointer; color:#17324d; font-weight:700; list-style:none; }
 .home-overview-details > summary::-webkit-details-marker { display:none; }
@@ -3347,7 +3348,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
             <button type="button" class="home-stat home-stat--red" data-home-open="minutes">
               <strong id="homeOverdueTaskCount">–</strong><span>Kräver åtgärd</span><small>Försenade uppgifter</small>
             </button>
-            <button type="button" class="home-stat home-stat--green" data-home-open="meetings">
+            <button type="button" class="home-stat home-stat--purple" data-home-open="meetings">
               <strong id="homeUpcomingCount">–</strong><span>Kommande möten</span><small>Närmast i kalendern</small>
             </button>
           </div>
@@ -7281,18 +7282,18 @@ async function renderHomeDashboard() {
   overdueNode.textContent = minutesResult.error ? '–' : overdueTasks.length;
   upcomingNode.textContent = upcomingMeetings.length;
 
-  // Färgkoda efter faktisk status: grönt = inget att åtgärda,
-  // gult = oläst/pågående, rött = försenat, blått = neutral information.
-  const setHomeStatState = (node, state) => {
+  // Fasta semantiska färger: olästa dokument = blå, uppgifter = orange,
+  // åtgärd krävs = röd, kommande möten = lila. Färgen styrs inte av antalet.
+  const setHomeStatColor = (node, color) => {
     const card = node && node.closest('.home-stat');
     if (!card) return;
-    card.classList.remove('home-stat--blue','home-stat--amber','home-stat--red','home-stat--green');
-    card.classList.add('home-stat--' + state);
+    card.classList.remove('home-stat--blue','home-stat--amber','home-stat--red','home-stat--purple','home-stat--green');
+    card.classList.add('home-stat--' + color);
   };
-  setHomeStatState(unreadNode, docsResult.error || readsResult.error ? 'blue' : unreadDocs.length > 0 ? 'amber' : 'green');
-  setHomeStatState(openTaskNode, minutesResult.error ? 'blue' : openTasks.length > 0 ? 'amber' : 'green');
-  setHomeStatState(overdueNode, minutesResult.error ? 'blue' : overdueTasks.length > 0 ? 'red' : 'green');
-  setHomeStatState(upcomingNode, 'blue');
+  setHomeStatColor(unreadNode, 'blue');
+  setHomeStatColor(openTaskNode, 'amber');
+  setHomeStatColor(overdueNode, 'red');
+  setHomeStatColor(upcomingNode, 'purple');
 
   const recentRoot = $('homeRecentDocuments');
   if (!docsResult.error && !readsResult.error) {
