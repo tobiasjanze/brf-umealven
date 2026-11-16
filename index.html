@@ -457,6 +457,8 @@
 }
 #homeOverview .home-overview-stats > .home-stat:nth-child(4) strong { color: #7045a5 !important; }
 .home-upcoming-activities { margin-top:14px; }
+.home-details-wide { grid-column:1 / -1; }
+.home-overview-details-content { display:block; }
 .home-upcoming-activities .home-dashboard-row { align-items:center; }
 .home-upcoming-activities .home-dashboard-meta { margin-top:2px; }
 .home-overview-details { margin-top: 14px; border: 1px solid #d4e2ed; border-radius: 12px; background: #fff; overflow: hidden; }
@@ -3374,11 +3376,6 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
               <strong id="homeUpcomingCount">–</strong><span>Kommande möten</span><small>Närmast i kalendern</small>
             </button>
           </div>
-          <section class="home-overview-box home-upcoming-activities">
-            <h3>Kommande aktiviteter</h3>
-            <p class="muted">Planerade aktiviteter från föreningens årshjul.</p>
-            <div id="homeUpcomingActivities"><p class="muted">Hämtar aktiviteter ...</p></div>
-          </section>
           <details class="home-overview-details">
             <summary>
               <span>Visa detaljer och listor</span>
@@ -3397,6 +3394,11 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
                   <div id="homeOutstandingTasks"><p class="muted">Hämtar uppgifter ...</p></div>
                 </section>
               </div>
+              <section class="home-overview-box home-upcoming-activities home-details-wide">
+                <h3>Kommande aktiviteter</h3>
+                <p class="muted">Planerade aktiviteter från föreningens årshjul.</p>
+                <div id="homeUpcomingActivities"><p class="muted">Hämtar aktiviteter ...</p></div>
+              </section>
               <div class="home-recent-activity">
                 <h3>Senaste händelser</h3>
                 <div id="homeRecentActivity"><p class="muted">Hämtar senaste händelser ...</p></div>
@@ -7396,7 +7398,7 @@ async function renderHomeDashboard() {
     if (!recentDocs.length) {
       recentRoot.innerHTML = '<p class="home-empty">Inga dokument har laddats upp de senaste 7 dagarna.</p>';
     } else {
-      recentRoot.innerHTML = recentDocs.slice(0, 5).map(doc => {
+      recentRoot.innerHTML = recentDocs.slice(0, 3).map(doc => {
         const meeting = meetingById.get(String(doc.meeting_id));
         const name = doc.display_name || doc.file_name || doc.name || 'Dokument';
         const read = readIds.has(String(doc.id));
@@ -7430,7 +7432,7 @@ async function renderHomeDashboard() {
 
   const activityRoot = $('homeRecentActivity');
   const activity = [];
-  recentDocs.slice(0, 4).forEach(doc => {
+  recentDocs.slice(0, 3).forEach(doc => {
     const meeting = meetingById.get(String(doc.meeting_id));
     activity.push({
       time: new Date(doc.created_at).getTime(),
@@ -7452,7 +7454,7 @@ async function renderHomeDashboard() {
   });
   activity.sort((a,b) => b.time-a.time);
   activityRoot.innerHTML = activity.length
-    ? activity.slice(0, 6).map(item => '<div class="home-activity-item"><span class="home-activity-dot"></span><div><strong>' + esc(item.text) + '</strong><div class="home-dashboard-meta">' + esc(item.meta) + ' · ' + esc(new Date(item.time).toLocaleString('sv-SE', { dateStyle:'short', timeStyle:'short' })) + '</div></div></div>').join('')
+    ? activity.slice(0, 3).map(item => '<div class="home-activity-item"><span class="home-activity-dot"></span><div><strong>' + esc(item.text) + '</strong><div class="home-dashboard-meta">' + esc(item.meta) + ' · ' + esc(new Date(item.time).toLocaleString('sv-SE', { dateStyle:'short', timeStyle:'short' })) + '</div></div></div>').join('')
     : '<p class="home-empty">Inga nya händelser de senaste 7 dagarna.</p>';
 }
 
