@@ -398,11 +398,26 @@
 
 /* ===== STARTSIDANS STYRELSEÖVERBLICK ===== */
 .home-overview {
+  position: relative;
   margin: 22px 0 28px;
-  padding: 18px;
+  padding: 18px 18px 18px 26px;
   border: 1px solid #d4e2ed;
+  border-left: 7px solid #2589c7;
   border-radius: 16px;
   background: #f8fbfe;
+}
+.home-overview::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 17px;
+  bottom: 17px;
+  width: 13px;
+  border-left: 3px solid #2589c7;
+  border-top: 3px solid #2589c7;
+  border-bottom: 3px solid #2589c7;
+  border-radius: 3px 0 0 3px;
+  pointer-events: none;
 }
 .home-overview > h2 { margin: 0 0 14px; color: #17324d; }
 .home-overview-stats {
@@ -425,14 +440,14 @@
 .home-stat strong { font-size: 1.7rem; line-height: 1.2; margin-bottom: 8px; }
 .home-stat span { font-weight: 700; color: #24313c; }
 .home-stat small { margin-top: 3px; color: #687783; }
-.home-stat--blue { background: #e4f0fa; border-color: #b9d4e9; border-top-color: #3288bd; }
-.home-stat--blue strong { color: #2876ad; }
-.home-stat--amber { background: #fff0cf; border-color: #edcf8f; border-top-color: #d99a27; }
-.home-stat--amber strong { color: #a96800; }
-.home-stat--red { background: #fbe2df; border-color: #eab8b3; border-top-color: #d65b55; }
-.home-stat--red strong { color: #bd3933; }
-.home-stat--green { background: #e0f0e5; border-color: #b6d6c0; border-top-color: #4d9b69; }
-.home-stat--green strong { color: #287747; }
+.home-stat--blue { background-color: #d9ebfa !important; border-color: #9fc9e8; border-top-color: #2589c7; }
+.home-stat--blue strong { color: #176da8; }
+.home-stat--amber { background-color: #ffebbd !important; border-color: #e8c46f; border-top-color: #d58b12; }
+.home-stat--amber strong { color: #9a5d00; }
+.home-stat--red { background-color: #f8d9d6 !important; border-color: #e5aaa5; border-top-color: #cc4942; }
+.home-stat--red strong { color: #b5322c; }
+.home-stat--green { background-color: #d8eddf !important; border-color: #a9d0b6; border-top-color: #398958; }
+.home-stat--green strong { color: #267344; }
 .home-overview-details { margin-top: 14px; border: 1px solid #d4e2ed; border-radius: 12px; background: #fff; overflow: hidden; }
 .home-overview-details > summary { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:14px 16px; cursor:pointer; color:#17324d; font-weight:700; list-style:none; }
 .home-overview-details > summary::-webkit-details-marker { display:none; }
