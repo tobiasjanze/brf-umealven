@@ -3404,7 +3404,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
               <div><label for="minutesActionSection">Huvudpunkt</label><select id="minutesActionSection"><option value="">Välj huvudpunkt</option></select></div><div><label for="minutesActionSubpoint">Underpunkt</label><select id="minutesActionSubpoint" disabled><option value="">Ingen underpunkt vald</option></select></div>
               <div><label for="minutesActionResponsible">Ansvarig</label><select id="minutesActionResponsible"><option value="">Välj ansvarig ledamot</option></select><input id="minutesActionResponsibleCustom" class="hidden" maxlength="120" placeholder="Skriv namn på annan ansvarig" style="margin-top:8px"></div>
               <div><label for="minutesActionDue">Klart senast</label><input id="minutesActionDue" type="date"></div>
-            </div><button id="addMinutesAction" type="button" class="secondary">Lägg till uppgift</button></div>
+            </div><div class="minutes-action-form-buttons"><button id="addMinutesAction" type="button" class="secondary">Lägg till uppgift</button><button id="cancelEditMinutesAction" type="button" class="secondary hidden">Avbryt ändring</button></div></div>
           </section>
           <div id="minutesFields"></div>
           <div class="toolbar minutes-toolbar"><button id="saveMinutes" class="primary" type="button">Spara protokoll</button><button id="downloadMinutes" type="button" class="secondary">Skriv ut / spara som PDF</button></div>
@@ -5016,7 +5016,7 @@ function renderMinutesActions(){
     const sec=sections.find(x=>String(x[0])===String(a.section));
     const opts=['Ej påbörjad','Pågående','Klar'].map(v=>'<option '+(a.status===v?'selected':'')+'>'+v+'</option>').join('');
     const actionId=String(a.id||i);
-    return '<details class="minutes-action-card '+(done?'is-done':late?'is-overdue':dueSoon?'is-due-soon':'is-on-track')+'" data-action-id="'+esc(actionId)+'" '+(openIds.has(actionId)?'open':'')+'><summary><span class="minutes-action-title">'+esc(a.title||'Uppgift')+'</span><span class="minutes-action-summary-meta">'+esc(a.status||'Ej påbörjad')+'</span></summary><div class="minutes-action-expanded"><div class="minutes-action-meta"><span>'+esc(a.sectionLabel||(sec?'§'+sec[0]+' '+sec[1]:(a.section||'Ingen paragraf')))+'</span><span>Ansvarig: '+esc(a.responsible||'Ej utsedd')+'</span><span>Klart senast: '+esc(a.dueDate?dateText(a.dueDate):'Ej angivet')+'</span></div><div class="minutes-action-controls">'+(isAdminUser?'<select data-minute-action-status="'+i+'">'+opts+'</select><button type="button" class="secondary" data-minute-action-delete="'+i+'">Ta bort</button>':'<span class="muted">Status: '+esc(a.status||'Ej påbörjad')+'</span>')+'</div></div></details>';
+    return '<details class="minutes-action-card '+(done?'is-done':late?'is-overdue':dueSoon?'is-due-soon':'is-on-track')+'" data-action-id="'+esc(actionId)+'" '+(openIds.has(actionId)?'open':'')+'><summary><span class="minutes-action-title">'+esc(a.title||'Uppgift')+'</span><span class="minutes-action-summary-meta">'+esc(a.status||'Ej påbörjad')+'</span></summary><div class="minutes-action-expanded"><div class="minutes-action-meta"><span>'+esc(a.sectionLabel||(sec?'§'+sec[0]+' '+sec[1]:(a.section||'Ingen paragraf')))+'</span><span>Ansvarig: '+esc(a.responsible||'Ej utsedd')+'</span><span>Klart senast: '+esc(a.dueDate?dateText(a.dueDate):'Ej angivet')+'</span></div><div class="minutes-action-controls">'+(isAdminUser?'<select data-minute-action-status="'+i+'">'+opts+'</select><button type="button" class="secondary" data-minute-action-edit="'+i+'">Ändra</button><button type="button" class="secondary" data-minute-action-delete="'+i+'">Ta bort</button>':'<span class="muted">Status: '+esc(a.status||'Ej påbörjad')+'</span>')+'</div></div></details>';
   }).join('');
 }
 async function loadPreviousMinutesActions(currentMeetingId){
@@ -5036,6 +5036,18 @@ async function loadPreviousMinutesActions(currentMeetingId){
     return '<div class="minutes-previous-item"><span><strong>'+esc(a.title||'Uppgift')+'</strong><br><span class="muted small">'+esc(m?meetingTitle(m):'Tidigare möte')+' · '+esc(a.responsible||'Ej utsedd')+'</span></span>'+(isAdminUser?'<button type="button" class="secondary" data-minute-action-carry="'+i+'">Lägg till</button>':'')+'</div>';
   }).join('');root.classList.remove('hidden');
 }
+let editingMinutesActionIndex=null;
+function resetMinutesActionForm(){
+  editingMinutesActionIndex=null;
+  $('minutesActionTitle').value='';
+  $('minutesActionSection').value='';
+  $('minutesActionSubpoint').innerHTML='<option value="">Ingen underpunkt vald</option>';
+  $('minutesActionSubpoint').disabled=true;
+  renderMinutesActionResponsibleOptions();
+  $('minutesActionDue').value='';
+  $('addMinutesAction').textContent='Lägg till uppgift';
+  $('cancelEditMinutesAction').classList.add('hidden');
+}
 $('addMinutesAction').addEventListener('click',()=>{
   if(!isAdminUser)return message('Endast administratör kan ändra protokollet.','error');
   const title=$('minutesActionTitle').value.trim();if(!title)return message('Skriv vad uppgiften gäller.','error');
@@ -5044,11 +5056,42 @@ $('addMinutesAction').addEventListener('click',()=>{
   if(!section)return message('Välj en huvudpunkt.','error');
   const main=sections.find(x=>String(x[0])===String(section));
   const sectionLabel=selectedSub&&selectedSub.value?selectedSub.dataset.sectionLabel:'§'+section+' '+(main?main[1]:'');
-  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title,section,agendaItemId:selectedSub&&selectedSub.value?selectedSub.value:null,sectionLabel,responsible:minutesActionResponsibleValue(),dueDate:$('minutesActionDue').value,status:'Ej påbörjad',createdAt:new Date().toISOString()});
-  $('minutesActionTitle').value='';renderMinutesActionResponsibleOptions();$('minutesActionDue').value='';$('minutesActionSection').value='';$('minutesActionSubpoint').innerHTML='<option value="">Ingen underpunkt vald</option>';$('minutesActionSubpoint').disabled=true;renderMinutesActions();
+  const changes={title,section,agendaItemId:selectedSub&&selectedSub.value?selectedSub.value:null,sectionLabel,responsible:minutesActionResponsibleValue(),dueDate:$('minutesActionDue').value};
+  if(editingMinutesActionIndex!==null){
+    currentMinutes.__actions[editingMinutesActionIndex]={...currentMinutes.__actions[editingMinutesActionIndex],...changes,updatedAt:new Date().toISOString()};
+    resetMinutesActionForm();
+    renderMinutesActions();
+    message('Uppgiften har uppdaterats. Spara protokollet för att behålla ändringen.','ok');
+    return;
+  }
+  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),...changes,status:'Ej påbörjad',createdAt:new Date().toISOString()});
+  resetMinutesActionForm();
+  renderMinutesActions();
 });
+$('cancelEditMinutesAction').addEventListener('click',resetMinutesActionForm);
+
 $('minutesActionsList').addEventListener('change',e=>{const i=e.target.dataset.minuteActionStatus;if(i===undefined||!isAdminUser)return;currentMinutes.__actions[Number(i)].status=e.target.value;renderMinutesActions()});
-$('minutesActionsList').addEventListener('click',e=>{const i=e.target.dataset.minuteActionDelete;if(i===undefined||!isAdminUser)return;currentMinutes.__actions.splice(Number(i),1);renderMinutesActions()});
+$('minutesActionsList').addEventListener('click',async e=>{
+  if(!isAdminUser)return;
+  const editIndex=e.target.dataset.minuteActionEdit;
+  if(editIndex!==undefined){
+    const i=Number(editIndex),a=currentMinutes.__actions[i];if(!a)return;
+    editingMinutesActionIndex=i;
+    $('minutesActionTitle').value=a.title||'';
+    $('minutesActionSection').value=a.section||'';
+    await loadMinutesActionSubpoints();
+    if(a.agendaItemId)$('minutesActionSubpoint').value=String(a.agendaItemId);
+    renderMinutesActionResponsibleOptions(a.responsible||'');
+    $('minutesActionDue').value=a.dueDate||'';
+    $('addMinutesAction').textContent='Spara ändringar';
+    $('cancelEditMinutesAction').classList.remove('hidden');
+    $('minutesActionTitle').scrollIntoView({behavior:'smooth',block:'center'});
+    $('minutesActionTitle').focus();
+    return;
+  }
+  const deleteIndex=e.target.dataset.minuteActionDelete;
+  if(deleteIndex!==undefined){currentMinutes.__actions.splice(Number(deleteIndex),1);renderMinutesActions()}
+});
 $('minutesPreviousActions').addEventListener('click',e=>{
   const i=e.target.dataset.minuteActionCarry;if(i===undefined||!isAdminUser)return;
   const a=$('minutesPreviousActions')._outstanding&&$('minutesPreviousActions')._outstanding[Number(i)];if(!a)return;
