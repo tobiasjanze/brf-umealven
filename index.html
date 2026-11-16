@@ -3392,7 +3392,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
             <div class="minutes-action-form minutes-admin-only"><div class="minutes-action-grid">
               <div><label for="minutesActionTitle">Uppgift / beslut</label><input id="minutesActionTitle" maxlength="240" placeholder="Vad ska göras?"></div>
               <div><label for="minutesActionSection">Huvudpunkt</label><select id="minutesActionSection"><option value="">Välj huvudpunkt</option></select></div><div><label for="minutesActionSubpoint">Underpunkt</label><select id="minutesActionSubpoint" disabled><option value="">Ingen underpunkt vald</option></select></div>
-              <div><label for="minutesActionResponsible">Ansvarig</label><input id="minutesActionResponsible" maxlength="120" placeholder="Ansvarig person"></div>
+              <div><label for="minutesActionResponsible">Ansvarig</label><select id="minutesActionResponsible"><option value="">Välj ansvarig ledamot</option></select><input id="minutesActionResponsibleCustom" class="hidden" maxlength="120" placeholder="Skriv namn på annan ansvarig" style="margin-top:8px"></div>
               <div><label for="minutesActionDue">Klart senast</label><input id="minutesActionDue" type="date"></div>
             </div><button id="addMinutesAction" type="button" class="secondary">Lägg till uppgift</button></div>
           </section>
@@ -4792,6 +4792,7 @@ async function loadMinutes(meetingId) {
 
   currentMinutes = minutesTemplate();
   await loadMinutesActivePeople();
+  renderMinutesActionResponsibleOptions();
 
   const { data, error } = await db
     .from('meeting_minutes')
@@ -4882,6 +4883,24 @@ function protocolDisplayName(meeting,number){
   return 'Protokoll brf Umeälven '+protocolPeriod(meeting)+'('+(number??'Löpnummer tilldelas vid första sparning')+')';
 }
 let minutesActivePeople = [];
+function renderMinutesActionResponsibleOptions(savedName=''){
+  const select=$('minutesActionResponsible'),custom=$('minutesActionResponsibleCustom');
+  const name=String(savedName||'').trim();
+  select.innerHTML='<option value="">Välj ansvarig ledamot</option>'+
+    minutesActivePeople.map(person=>'<option value="'+esc(person)+'">'+esc(person)+'</option>').join('')+
+    '<option value="__custom__">Annan person – skriv eget namn</option>';
+  if(name&&minutesActivePeople.includes(name)){
+    select.value=name;custom.value='';custom.classList.add('hidden');
+  }else if(name){
+    select.value='__custom__';custom.value=name;custom.classList.remove('hidden');
+  }else{
+    select.value='';custom.value='';custom.classList.add('hidden');
+  }
+}
+function minutesActionResponsibleValue(){
+  const select=$('minutesActionResponsible');
+  return select.value==='__custom__'?$ ('minutesActionResponsibleCustom').value.trim():select.value.trim();
+}
 async function loadMinutesActivePeople() {
   const { data, error } = await db.rpc('get_active_board_members');
   if (error) {
@@ -4972,6 +4991,7 @@ async function loadMinutesActionSubpoints(){
   select.disabled=items.length===0;
 }
 $('minutesActionSection').addEventListener('change',loadMinutesActionSubpoints);
+$('minutesActionResponsible').addEventListener('change',()=>{const custom=$('minutesActionResponsibleCustom');const show=$('minutesActionResponsible').value==='__custom__';custom.classList.toggle('hidden',!show);if(show)custom.focus();});
 function collectMinutesWorkflow(){return {writer:minutesPersonValue('Writer'),chair:minutesPersonValue('Chair'),reviewer:minutesPersonValue('Reviewer'),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked,reopenHistory:Array.isArray(currentMinutes.__workflow?.reopenHistory)?currentMinutes.__workflow.reopenHistory:[]};}
 function renderMinutesActions(){
   const list=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[],root=$('minutesActionsList'),today=new Date().toISOString().slice(0,10);
@@ -5008,8 +5028,8 @@ $('addMinutesAction').addEventListener('click',()=>{
   if(!section)return message('Välj en huvudpunkt.','error');
   const main=sections.find(x=>String(x[0])===String(section));
   const sectionLabel=selectedSub&&selectedSub.value?selectedSub.dataset.sectionLabel:'§'+section+' '+(main?main[1]:'');
-  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title,section,agendaItemId:selectedSub&&selectedSub.value?selectedSub.value:null,sectionLabel,responsible:$('minutesActionResponsible').value.trim(),dueDate:$('minutesActionDue').value,status:'Ej påbörjad',createdAt:new Date().toISOString()});
-  $('minutesActionTitle').value='';$('minutesActionResponsible').value='';$('minutesActionDue').value='';$('minutesActionSection').value='';$('minutesActionSubpoint').innerHTML='<option value="">Ingen underpunkt vald</option>';$('minutesActionSubpoint').disabled=true;renderMinutesActions();
+  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title,section,agendaItemId:selectedSub&&selectedSub.value?selectedSub.value:null,sectionLabel,responsible:minutesActionResponsibleValue(),dueDate:$('minutesActionDue').value,status:'Ej påbörjad',createdAt:new Date().toISOString()});
+  $('minutesActionTitle').value='';renderMinutesActionResponsibleOptions();$('minutesActionDue').value='';$('minutesActionSection').value='';$('minutesActionSubpoint').innerHTML='<option value="">Ingen underpunkt vald</option>';$('minutesActionSubpoint').disabled=true;renderMinutesActions();
 });
 $('minutesActionsList').addEventListener('change',e=>{const i=e.target.dataset.minuteActionStatus;if(i===undefined||!isAdminUser)return;currentMinutes.__actions[Number(i)].status=e.target.value;renderMinutesActions()});
 $('minutesActionsList').addEventListener('click',e=>{const i=e.target.dataset.minuteActionDelete;if(i===undefined||!isAdminUser)return;currentMinutes.__actions.splice(Number(i),1);renderMinutesActions()});
