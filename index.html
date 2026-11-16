@@ -437,6 +437,25 @@
 .home-stat--red strong { color: #b42318; }
 .home-stat--purple { background: #eee7fa !important; border-color: #d8c8f0 !important; }
 .home-stat--purple strong { color: #7045a5; }
+
+/* Tvinga fasta färger på översiktens fyra rutor även om äldre JS
+   försöker byta statusklass efter att sidan har laddats. */
+#homeOverview .home-overview-stats > .home-stat:nth-child(1) {
+  background: #dceeff !important; border-color: #b9d9f5 !important;
+}
+#homeOverview .home-overview-stats > .home-stat:nth-child(1) strong { color: #1769aa !important; }
+#homeOverview .home-overview-stats > .home-stat:nth-child(2) {
+  background: #fff1d2 !important; border-color: #f2d99d !important;
+}
+#homeOverview .home-overview-stats > .home-stat:nth-child(2) strong { color: #a76500 !important; }
+#homeOverview .home-overview-stats > .home-stat:nth-child(3) {
+  background: #fce2e2 !important; border-color: #f1bcbc !important;
+}
+#homeOverview .home-overview-stats > .home-stat:nth-child(3) strong { color: #b42318 !important; }
+#homeOverview .home-overview-stats > .home-stat:nth-child(4) {
+  background: #eee7fa !important; border-color: #d8c8f0 !important;
+}
+#homeOverview .home-overview-stats > .home-stat:nth-child(4) strong { color: #7045a5 !important; }
 .home-overview-details { margin-top: 14px; border: 1px solid #d4e2ed; border-radius: 12px; background: #fff; overflow: hidden; }
 .home-overview-details > summary { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:14px 16px; cursor:pointer; color:#17324d; font-weight:700; list-style:none; }
 .home-overview-details > summary::-webkit-details-marker { display:none; }
