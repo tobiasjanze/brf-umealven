@@ -5825,14 +5825,19 @@ async function editDocument(doc) {
       return;
     }
 
-    const openedWindow = window.open(data.signedUrl, '_blank', 'noopener');
+    // Öppna i en ny flik. Safari returnerar normalt ett fönsterhandtag
+    // när noopener inte anges; med noopener kan returvärdet alltid bli null,
+    // även när fliken faktiskt öppnats.
+    const openedWindow = window.open(data.signedUrl, '_blank');
     if (!openedWindow) {
-      message('Dokumentet kunde inte öppnas. Tillåt popup-fönster i Safari och försök igen. Lässtatus har inte ändrats.', 'error');
+      message('Safari blockerade öppningen av dokumentet. Tillåt popup-fönster och försök igen. Lässtatus har inte ändrats.', 'error');
       return;
     }
 
-    // Registrera lässtatus först när den signerade dokumentlänken har skapats
-    // och webbläsaren har accepterat att öppna dokumentet.
+    // Förhindra att den öppnade fliken kan navigera tillbaka till portalen.
+    try { openedWindow.opener = null; } catch (_) {}
+
+    // Dokumentlänken har öppnats från användarens klick: registrera lässtatus.
     await markMeetingDocumentRead(doc.id);
   }
 
