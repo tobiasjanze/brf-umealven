@@ -396,6 +396,73 @@
       }
     }
 
+/* ===== STARTSIDANS STYRELSEÖVERBLICK ===== */
+.home-overview {
+  margin: 22px 0 28px;
+  padding: 18px;
+  border: 1px solid #d4e2ed;
+  border-radius: 16px;
+  background: #f8fbfe;
+}
+.home-overview > h2 { margin: 0 0 14px; color: #17324d; }
+.home-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.home-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-height: 112px;
+  padding: 14px;
+  border: 1px solid transparent;
+  border-top: 5px solid;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.home-stat strong { font-size: 1.7rem; line-height: 1.2; margin-bottom: 8px; }
+.home-stat span { font-weight: 700; color: #24313c; }
+.home-stat small { margin-top: 3px; color: #687783; }
+.home-stat--blue { background: #eaf4fc; border-color: #c5dff2; border-top-color: #3288bd; }
+.home-stat--blue strong { color: #3288bd; }
+.home-stat--amber { background: #fff5e3; border-color: #f1dfb9; border-top-color: #d99a27; }
+.home-stat--amber strong { color: #b77b17; }
+.home-stat--red { background: #fff0ef; border-color: #f0d0cd; border-top-color: #d65b55; }
+.home-stat--red strong { color: #c34e48; }
+.home-stat--green { background: #eaf5ee; border-color: #c9e0d0; border-top-color: #4d9b69; }
+.home-stat--green strong { color: #398457; }
+.home-overview-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 14px; }
+.home-overview-box { min-width: 0; padding: 15px; background: #fff; border: 1px solid #dce6ee; border-radius: 12px; }
+.home-overview-box h3,.home-recent-activity h3 { margin: 0 0 5px; color: #17324d; }
+.home-overview-box > p { margin: 0 0 10px; }
+.home-dashboard-row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:10px 0; border-top:1px solid #edf1f4; }
+.home-dashboard-row:first-child { border-top:0; }
+.home-dashboard-main { min-width:0; }
+.home-dashboard-main strong { display:block; overflow-wrap:anywhere; }
+.home-dashboard-meta { color:#687783; font-size:.88rem; }
+.home-dashboard-tag { display:inline-block; margin-top:4px; padding:3px 8px; border-radius:20px; font-size:.78rem; font-weight:700; background:#eaf4fc; color:#286b98; }
+.home-dashboard-tag.unread { background:#fff1d8; color:#95600b; }
+.home-dashboard-tag.overdue { background:#fde8e6; color:#ad3934; }
+.home-dashboard-link { flex:0 0 auto; padding:6px 9px; font-size:.85rem; }
+.home-recent-activity { margin-top:14px; padding:15px; background:#fff; border:1px solid #dce6ee; border-radius:12px; }
+.home-activity-item { display:flex; gap:9px; align-items:flex-start; padding:7px 0; border-top:1px solid #edf1f4; }
+.home-activity-item:first-of-type { border-top:0; }
+.home-activity-dot { width:9px; height:9px; flex:0 0 9px; margin-top:7px; border-radius:50%; background:#3288bd; }
+.home-empty { color:#687783; font-size:.92rem; padding:8px 0; }
+@media(max-width:850px) {
+  .home-overview-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:600px) {
+  .home-overview { padding:12px; }
+  .home-overview-columns { grid-template-columns:1fr; }
+  .home-stat { min-height:100px; padding:11px; }
+  .home-stat strong { font-size:1.5rem; }
+  .home-dashboard-row { flex-direction:column; }
+}
+
+/* Existing print rules */
     @media print {
 
   body {
@@ -3254,6 +3321,40 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
         <div id="nextMeeting" class="next-meeting">
           <p class="muted">Hämtar nästa möte ...</p>
         </div>
+
+        <section id="homeOverview" class="home-overview" aria-live="polite">
+          <h2>Styrelsens överblick</h2>
+          <div class="home-overview-stats">
+            <button type="button" class="home-stat home-stat--blue" data-home-open="documents">
+              <strong id="homeUnreadCount">–</strong><span>Olästa dokument</span><small>Handlingar att läsa</small>
+            </button>
+            <button type="button" class="home-stat home-stat--amber" data-home-open="minutes">
+              <strong id="homeOpenTaskCount">–</strong><span>Uppgifter</span><small>Pågående uppföljningar</small>
+            </button>
+            <button type="button" class="home-stat home-stat--red" data-home-open="minutes">
+              <strong id="homeOverdueTaskCount">–</strong><span>Kräver åtgärd</span><small>Försenade uppgifter</small>
+            </button>
+            <button type="button" class="home-stat home-stat--green" data-home-open="meetings">
+              <strong id="homeUpcomingCount">–</strong><span>Kommande möten</span><small>Närmast i kalendern</small>
+            </button>
+          </div>
+          <div class="home-overview-columns">
+            <section class="home-overview-box">
+              <h3>Nyligen uppladdade dokument</h3>
+              <p class="muted">Nya handlingar från de senaste 7 dagarna.</p>
+              <div id="homeRecentDocuments"><p class="muted">Hämtar dokument ...</p></div>
+            </section>
+            <section class="home-overview-box">
+              <h3>Uppgifter att följa upp</h3>
+              <p class="muted">Beslut och uppgifter som ännu inte är klara.</p>
+              <div id="homeOutstandingTasks"><p class="muted">Hämtar uppgifter ...</p></div>
+            </section>
+          </div>
+          <div class="home-recent-activity">
+            <h3>Senaste händelser</h3>
+            <div id="homeRecentActivity"><p class="muted">Hämtar senaste händelser ...</p></div>
+          </div>
+        </section>
 
         <h2>Vad vill du göra?</h2>
 
@@ -7084,8 +7185,165 @@ if (home) {
 
   // ===== NAVIGERING =====
 
+async function renderHomeDashboard() {
+  if (!currentUser) return;
+  const unreadNode = $('homeUnreadCount');
+  const openTaskNode = $('homeOpenTaskCount');
+  const overdueNode = $('homeOverdueTaskCount');
+  const upcomingNode = $('homeUpcomingCount');
+  if (!unreadNode) return;
+
+  const [docsResult, readsResult, minutesResult] = await Promise.all([
+    db.from('meeting_documents')
+      .select('id,meeting_id,display_name,file_name,name,created_at,section_number,description')
+      .order('created_at', { ascending: false }),
+    db.from('meeting_document_reads')
+      .select('document_id')
+      .eq('user_id', currentUser.id),
+    db.from('meeting_minutes')
+      .select('meeting_id,content')
+  ]);
+
+  if (docsResult.error) {
+    $('homeRecentDocuments').innerHTML = '<p class="home-empty">Kunde inte hämta dokumentöversikten.</p>';
+    unreadNode.textContent = '–';
+  }
+  if (readsResult.error) {
+    $('homeRecentDocuments').innerHTML = '<p class="home-empty">Kunde inte hämta lässtatus för dokumenten.</p>';
+    unreadNode.textContent = '–';
+  }
+
+  const docs = docsResult.data || [];
+  const readIds = new Set((readsResult.data || []).map(row => String(row.document_id)));
+  const meetingById = new Map(meetings.map(meeting => [String(meeting.id), meeting]));
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const cutoff = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+  const recentDocs = docs.filter(doc => {
+    const created = doc.created_at ? new Date(doc.created_at).getTime() : 0;
+    return created && created >= cutoff;
+  });
+  const unreadDocs = docs.filter(doc => !readIds.has(String(doc.id)));
+
+  const openTasks = [];
+  const allTasks = [];
+  if (!minutesResult.error) {
+    (minutesResult.data || []).forEach(row => {
+      let content = row.content;
+      if (typeof content === 'string') {
+        try { content = JSON.parse(content); } catch (error) { content = null; }
+      }
+      (Array.isArray(content && content.__actions) ? content.__actions : []).forEach(action => {
+        const meeting = meetingById.get(String(row.meeting_id));
+        const due = action.dueDate ? new Date(action.dueDate + 'T00:00:00') : null;
+        const overdue = (action.status || 'Ej påbörjad') !== 'Klar' && due && !Number.isNaN(due.getTime()) && due < today;
+        const item = { ...action, meetingId: row.meeting_id, meetingTitle: meeting ? meetingTitle(meeting) : 'Tidigare möte', overdue };
+        allTasks.push(item);
+        if ((action.status || 'Ej påbörjad') !== 'Klar') openTasks.push(item);
+      });
+    });
+  }
+
+  const overdueTasks = openTasks.filter(task => task.overdue);
+  const upcomingMeetings = meetings.filter(meeting => {
+    const raw = meetingDate(meeting);
+    if (!raw) return false;
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return false;
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate()) >= today;
+  });
+
+  unreadNode.textContent = docsResult.error || readsResult.error ? '–' : unreadDocs.length;
+  openTaskNode.textContent = minutesResult.error ? '–' : openTasks.length;
+  overdueNode.textContent = minutesResult.error ? '–' : overdueTasks.length;
+  upcomingNode.textContent = upcomingMeetings.length;
+
+  const recentRoot = $('homeRecentDocuments');
+  if (!docsResult.error && !readsResult.error) {
+    if (!recentDocs.length) {
+      recentRoot.innerHTML = '<p class="home-empty">Inga dokument har laddats upp de senaste 7 dagarna.</p>';
+    } else {
+      recentRoot.innerHTML = recentDocs.slice(0, 5).map(doc => {
+        const meeting = meetingById.get(String(doc.meeting_id));
+        const name = doc.display_name || doc.file_name || doc.name || 'Dokument';
+        const read = readIds.has(String(doc.id));
+        return '<div class="home-dashboard-row"><div class="home-dashboard-main"><strong>' + esc(name) + '</strong><div class="home-dashboard-meta">' +
+          esc(meeting ? meetingTitle(meeting) : 'Möte') + ' · ' + esc(dateText(doc.created_at)) +
+          '</div><span class="home-dashboard-tag ' + (read ? '' : 'unread') + '">' + (read ? 'Läst av dig' : 'Oläst för dig') + '</span></div>' +
+          '<button type="button" class="home-dashboard-link" data-home-document="' + esc(doc.meeting_id) + '">Visa</button></div>';
+      }).join('');
+    }
+  }
+
+  const taskRoot = $('homeOutstandingTasks');
+  if (minutesResult.error) {
+    taskRoot.innerHTML = '<p class="home-empty">Kunde inte hämta uppföljningsuppgifterna.</p>';
+  } else if (!openTasks.length) {
+    taskRoot.innerHTML = '<p class="home-empty">Alla registrerade uppgifter är klara. Inget återstår att följa upp.</p>';
+  } else {
+    const orderedTasks = [...openTasks].sort((a,b) => {
+      if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+      return String(a.dueDate || '9999-12-31').localeCompare(String(b.dueDate || '9999-12-31'));
+    });
+    taskRoot.innerHTML = orderedTasks.slice(0, 6).map(task =>
+      '<div class="home-dashboard-row"><div class="home-dashboard-main"><strong>' + esc(task.title || 'Uppgift') + '</strong><div class="home-dashboard-meta">' +
+      esc(task.responsible || 'Ej utsedd') + ' · ' + esc(task.meetingTitle) +
+      (task.dueDate ? ' · Klart senast ' + esc(dateText(task.dueDate)) : ' · Inget slutdatum') +
+      '</div><span class="home-dashboard-tag ' + (task.overdue ? 'overdue' : '') + '">' +
+      (task.overdue ? 'Försenad' : esc(task.status || 'Ej påbörjad')) + '</span></div>' +
+      '<button type="button" class="home-dashboard-link" data-home-task="' + esc(task.meetingId) + '">Visa</button></div>'
+    ).join('');
+  }
+
+  const activityRoot = $('homeRecentActivity');
+  const activity = [];
+  recentDocs.slice(0, 4).forEach(doc => {
+    const meeting = meetingById.get(String(doc.meeting_id));
+    activity.push({
+      time: new Date(doc.created_at).getTime(),
+      text: 'Nytt mötesdokument uppladdat: ' + (doc.display_name || doc.file_name || doc.name || 'Dokument'),
+      meta: meeting ? meetingTitle(meeting) : 'Mötesdokument'
+    });
+  });
+  allTasks.filter(task => task.updatedAt || task.createdAt).forEach(task => {
+    const stamp = task.updatedAt || task.createdAt;
+    const time = new Date(stamp).getTime();
+    if (time >= cutoff) activity.push({
+      time,
+      text: (task.status === 'Klar' ? 'Uppföljningsuppgift avslutad: ' : 'Uppföljningsuppgift uppdaterad: ') + (task.title || 'Uppgift'),
+      meta: task.responsible || 'Ingen ansvarig angiven'
+    });
+  });
+  activity.sort((a,b) => b.time-a.time);
+  activityRoot.innerHTML = activity.length
+    ? activity.slice(0, 6).map(item => '<div class="home-activity-item"><span class="home-activity-dot"></span><div><strong>' + esc(item.text) + '</strong><div class="home-dashboard-meta">' + esc(item.meta) + ' · ' + esc(new Date(item.time).toLocaleString('sv-SE', { dateStyle:'short', timeStyle:'short' })) + '</div></div></div>').join('')
+    : '<p class="home-empty">Inga nya händelser de senaste 7 dagarna.</p>';
+}
+
+document.addEventListener('click', event => {
+  const docButton = event.target.closest('[data-home-document]');
+  if (docButton) {
+    showTab('documents');
+    $('documentsMeetingSelect').value = docButton.dataset.homeDocument;
+    $('documentsMeetingSelect').dispatchEvent(new Event('change'));
+    return;
+  }
+  const taskButton = event.target.closest('[data-home-task]');
+  if (taskButton) {
+    showTab('minutes');
+    $('minutesMeetingSelect').value = taskButton.dataset.homeTask;
+    $('minutesMeetingSelect').dispatchEvent(new Event('change'));
+    return;
+  }
+  const statButton = event.target.closest('[data-home-open]');
+  if (statButton) {
+    showTab(statButton.dataset.homeOpen);
+  }
+});
+
 function showHome() {
   $('homeView').classList.remove('hidden');
+  renderHomeDashboard();
   $('appNav').classList.add('hidden');
 
   document.querySelectorAll('.tabcontent').forEach(section => {
