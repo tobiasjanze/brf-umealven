@@ -7226,6 +7226,7 @@ async function renderHomeDashboard() {
   const unreadDocs = docs.filter(doc => !readIds.has(String(doc.id)));
 
   const openTasks = [];
+  const allTasks = [];
   if (!minutesResult.error) {
     (minutesResult.data || []).forEach(row => {
       let content = row.content;
@@ -7233,11 +7234,12 @@ async function renderHomeDashboard() {
         try { content = JSON.parse(content); } catch (error) { content = null; }
       }
       (Array.isArray(content && content.__actions) ? content.__actions : []).forEach(action => {
-        if ((action.status || 'Ej påbörjad') === 'Klar') return;
         const meeting = meetingById.get(String(row.meeting_id));
         const due = action.dueDate ? new Date(action.dueDate + 'T00:00:00') : null;
-        const overdue = due && !Number.isNaN(due.getTime()) && due < today;
-        openTasks.push({ ...action, meetingId: row.meeting_id, meetingTitle: meeting ? meetingTitle(meeting) : 'Tidigare möte', overdue });
+        const overdue = (action.status || 'Ej påbörjad') !== 'Klar' && due && !Number.isNaN(due.getTime()) && due < today;
+        const item = { ...action, meetingId: row.meeting_id, meetingTitle: meeting ? meetingTitle(meeting) : 'Tidigare möte', overdue };
+        allTasks.push(item);
+        if ((action.status || 'Ej påbörjad') !== 'Klar') openTasks.push(item);
       });
     });
   }
@@ -7303,7 +7305,7 @@ async function renderHomeDashboard() {
       meta: meeting ? meetingTitle(meeting) : 'Mötesdokument'
     });
   });
-  openTasks.filter(task => task.updatedAt || task.createdAt).forEach(task => {
+  allTasks.filter(task => task.updatedAt || task.createdAt).forEach(task => {
     const stamp = task.updatedAt || task.createdAt;
     const time = new Date(stamp).getTime();
     if (time >= cutoff) activity.push({
