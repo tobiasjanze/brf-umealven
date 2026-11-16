@@ -5374,17 +5374,18 @@ $('documentAgendaSection').addEventListener(
     const docs = data || [];
     const meetingAgendaItems = meetingAgendaItemsData || [];
 
-    const { data: readRows, error: readError } = await db
-      .from('meeting_document_reads')
-      .select('document_id,user_id,read_at')
-      .in('document_id', docs.map(doc => doc.id));
+    const readResult = docs.length
+      ? await db.from('meeting_document_reads')
+          .select('document_id,user_id,read_at')
+          .in('document_id', docs.map(doc => doc.id))
+      : { data: [], error: null };
 
-    if (readError && docs.length) {
-      message('Kunde inte hämta dokumentens lässtatus: ' + readError.message, 'error');
+    if (readResult.error) {
+      message('Kunde inte hämta dokumentens lässtatus: ' + readResult.error.message, 'error');
       return;
     }
 
-    const reads = readRows || [];
+    const reads = readResult.data || [];
     const myReadIds = new Set(
       reads.filter(row => String(row.user_id) === String(currentUser.id))
         .map(row => String(row.document_id))
