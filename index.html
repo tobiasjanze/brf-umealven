@@ -438,24 +438,13 @@
 .home-stat--purple { background: #eee7fa !important; border-color: #d8c8f0 !important; }
 .home-stat--purple strong { color: #7045a5; }
 
-/* Tvinga fasta färger på översiktens fyra rutor även om äldre JS
-   försöker byta statusklass efter att sidan har laddats. */
-#homeOverview .home-overview-stats > .home-stat:nth-child(1) {
-  background: #dceeff !important; border-color: #b9d9f5 !important;
-}
-#homeOverview .home-overview-stats > .home-stat:nth-child(1) strong { color: #1769aa !important; }
-#homeOverview .home-overview-stats > .home-stat:nth-child(2) {
-  background: #fff1d2 !important; border-color: #f2d99d !important;
-}
-#homeOverview .home-overview-stats > .home-stat:nth-child(2) strong { color: #a76500 !important; }
-#homeOverview .home-overview-stats > .home-stat:nth-child(3) {
-  background: #fce2e2 !important; border-color: #f1bcbc !important;
-}
-#homeOverview .home-overview-stats > .home-stat:nth-child(3) strong { color: #b42318 !important; }
-#homeOverview .home-overview-stats > .home-stat:nth-child(4) {
-  background: #eee7fa !important; border-color: #d8c8f0 !important;
-}
-#homeOverview .home-overview-stats > .home-stat:nth-child(4) strong { color: #7045a5 !important; }
+/* Statusfärger för uppgifter och avtalsbevakning styrs av datumen. */
+.home-stat--green { background:#e5f4eb !important; border-color:#b9dfc8 !important; }
+.home-stat--green strong { color:#23764b !important; }
+.home-stat--amber { background:#fff1d2 !important; border-color:#f2d99d !important; }
+.home-stat--amber strong { color:#a76500 !important; }
+.home-stat--red { background:#fce2e2 !important; border-color:#f1bcbc !important; }
+.home-stat--red strong { color:#b42318 !important; }
 .home-upcoming-activities { margin-top:14px; }
 .home-details-wide { grid-column:1 / -1; }
 .home-overview-details-content { display:block; }
@@ -3386,11 +3375,11 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
             <button type="button" class="home-stat home-stat--blue" data-home-open="documents">
               <strong id="homeUnreadCount">–</strong><span>Olästa dokument</span><small>Handlingar att läsa</small>
             </button>
-            <button type="button" class="home-stat home-stat--amber" data-home-open="minutes">
-              <strong id="homeOpenTaskCount">–</strong><span>Uppgifter</span><small>Pågående uppföljningar</small>
+            <button type="button" class="home-stat home-stat--green" data-home-open="minutes">
+              <strong id="homeOpenTaskCount">–</strong><span>Uppgifter</span><small id="homeTaskStatusText">Pågående uppföljningar</small>
             </button>
-            <button type="button" class="home-stat home-stat--red" data-home-open="minutes">
-              <strong id="homeOverdueTaskCount">–</strong><span>Kräver åtgärd</span><small>Försenade uppgifter</small>
+            <button type="button" class="home-stat home-stat--green" data-home-open="contracts">
+              <strong id="homeContractAlertCount">–</strong><span>Avtalsbevakning</span><small id="homeContractStatusText">Kommande omförhandlingar</small>
             </button>
             <button type="button" class="home-stat home-stat--purple" data-home-open="annual">
               <strong id="homeUpcomingCount">–</strong><span>Kommande aktiviteter</span><small>Från föreningens årshjul</small>
@@ -3478,10 +3467,6 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   <span>Återkommande aktiviteter och viktiga datum</span>
 </button>
         </div>
-        <div id="homeContractsSummary" class="contract-summary">
-          Hämtar avtalsöversikt ...
-        </div>
-
       </div>
     </section>
       
@@ -7346,7 +7331,9 @@ async function renderHomeDashboard() {
   renderHomeUpcomingActivities();
   const unreadNode = $('homeUnreadCount');
   const openTaskNode = $('homeOpenTaskCount');
-  const overdueNode = $('homeOverdueTaskCount');
+  const contractAlertNode = $('homeContractAlertCount');
+  const taskStatusText = $('homeTaskStatusText');
+  const contractStatusText = $('homeContractStatusText');
   const upcomingNode = $('homeUpcomingCount');
   if (!unreadNode) return;
 
@@ -7404,6 +7391,23 @@ async function renderHomeDashboard() {
   }
 
   const overdueTasks = openTasks.filter(task => task.overdue);
+  const taskDueDays = openTasks.map(task => {
+    if (!task.dueDate) return null;
+    const parts = String(task.dueDate).slice(0, 10).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(value => !Number.isFinite(value))) return null;
+    const due = new Date(parts[0], parts[1] - 1, parts[2]);
+    const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.round((due - current) / 86400000);
+  }).filter(days => days !== null);
+  const overdueTaskCount = taskDueDays.filter(days => days < 0).length;
+  const dueSoonTaskCount = taskDueDays.filter(days => days >= 0 && days <= 7).length;
+
+  const activeContracts = contracts.filter(contract => contract.status === 'active');
+  const contractDueDays = activeContracts.map(contract => contractDaysLeft(contractActionDate(contract)));
+  const overdueContractCount = contractDueDays.filter(days => days !== null && days < 0).length;
+  const dueSoonContractCount = contractDueDays.filter(days => days !== null && days >= 0 && days <= 90).length;
+  const contractAlertCount = overdueContractCount + dueSoonContractCount;
+
   const upcomingMeetings = meetings.filter(meeting => {
     const raw = meetingDate(meeting);
     if (!raw) return false;
@@ -7414,11 +7418,10 @@ async function renderHomeDashboard() {
 
   unreadNode.textContent = docsResult.error || readsResult.error ? '–' : unreadDocs.length;
   openTaskNode.textContent = minutesResult.error ? '–' : openTasks.length;
-  overdueNode.textContent = minutesResult.error ? '–' : overdueTasks.length;
+  contractAlertNode.textContent = contracts.length ? contractAlertCount : '0';
   upcomingNode.textContent = upcomingMeetings.length;
 
-  // Fasta semantiska färger: olästa dokument = blå, uppgifter = orange,
-  // åtgärd krävs = röd, kommande möten = lila. Färgen styrs inte av antalet.
+  // Färglogik: mest brådskande datum styr respektive ruta.
   const setHomeStatColor = (node, color) => {
     const card = node && node.closest('.home-stat');
     if (!card) return;
@@ -7426,9 +7429,28 @@ async function renderHomeDashboard() {
     card.classList.add('home-stat--' + color);
   };
   setHomeStatColor(unreadNode, 'blue');
-  setHomeStatColor(openTaskNode, 'amber');
-  setHomeStatColor(overdueNode, 'red');
   setHomeStatColor(upcomingNode, 'purple');
+
+  if (minutesResult.error) {
+    setHomeStatColor(openTaskNode, 'green');
+    if (taskStatusText) taskStatusText.textContent = 'Kunde inte läsa uppgifternas datum';
+  } else {
+    const taskColor = overdueTaskCount ? 'red' : dueSoonTaskCount ? 'amber' : 'green';
+    setHomeStatColor(openTaskNode, taskColor);
+    if (taskStatusText) taskStatusText.textContent = overdueTaskCount
+      ? overdueTaskCount + ' försenade · ' + dueSoonTaskCount + ' inom 7 dagar'
+      : dueSoonTaskCount
+        ? dueSoonTaskCount + ' uppgifter inom 7 dagar'
+        : 'Inga nära förfallodatum';
+  }
+
+  const contractColor = overdueContractCount ? 'red' : dueSoonContractCount ? 'amber' : 'green';
+  setHomeStatColor(contractAlertNode, contractColor);
+  if (contractStatusText) contractStatusText.textContent = overdueContractCount
+    ? overdueContractCount + ' passerade · ' + dueSoonContractCount + ' inom 90 dagar'
+    : dueSoonContractCount
+      ? dueSoonContractCount + ' inom 90 dagar'
+      : 'Inga nära omförhandlingar';
 
   const recentRoot = $('homeRecentDocuments');
   if (!docsResult.error && !readsResult.error) {
