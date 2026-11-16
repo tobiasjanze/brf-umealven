@@ -3113,9 +3113,16 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 .minutes-signature-item{display:flex;align-items:flex-start;gap:8px;padding:10px;border:1px solid var(--border);border-radius:9px;background:white;font-size:.9rem}
 .minutes-signature-item input{width:auto;margin:3px 0 0}.minutes-signature-disclaimer{font-size:.8rem;color:var(--muted);margin:12px 0 0}
 .minutes-action-form{margin-top:14px;padding:14px;background:#f0f5f9;border-radius:10px}.minutes-action-form button{margin-top:12px}
-.minutes-action-card{border:1px solid var(--border);border-left:4px solid #8bb9d6;background:white;border-radius:10px;padding:13px 15px;margin:10px 0}
-.minutes-action-card.is-done{border-left-color:#55a477;opacity:.8}.minutes-action-card.is-overdue{border-left-color:#d9534f}
-.minutes-action-card h4{margin:0 0 6px;color:var(--navy)}.minutes-action-meta{display:flex;gap:8px 16px;flex-wrap:wrap;color:var(--muted);font-size:.86rem}
+.minutes-action-card{border:1px solid var(--border);border-left:4px solid #8bb9d6;background:white;border-radius:10px;margin:10px 0;overflow:hidden}
+.minutes-action-card.is-done{border-left-color:#55a477;opacity:.85}.minutes-action-card.is-overdue{border-left-color:#d9534f}
+.minutes-action-card>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;cursor:pointer;list-style:none;color:var(--navy);font-weight:650}
+.minutes-action-card>summary::-webkit-details-marker{display:none}
+.minutes-action-card>summary:after{content:'＋';color:var(--muted);font-size:1rem;flex:0 0 auto}
+.minutes-action-card[open]>summary:after{content:'−'}
+.minutes-action-title{min-width:0;overflow-wrap:anywhere}
+.minutes-action-summary-meta{font-size:.78rem;font-weight:500;color:var(--muted);white-space:nowrap}
+.minutes-action-expanded{padding:0 15px 14px}
+.minutes-action-meta{display:flex;gap:8px 16px;flex-wrap:wrap;color:var(--muted);font-size:.86rem}
 .minutes-action-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.minutes-action-controls select{max-width:180px}
 .minutes-previous-actions{padding:13px;border-radius:10px;background:#fff8e9;border:1px solid #ecd7a9;margin:12px 0}
 .minutes-previous-actions h4{margin:0 0 8px}.minutes-previous-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #eadfca}
@@ -4995,12 +5002,14 @@ $('minutesActionResponsible').addEventListener('change',()=>{const custom=$('min
 function collectMinutesWorkflow(){return {writer:minutesPersonValue('Writer'),chair:minutesPersonValue('Chair'),reviewer:minutesPersonValue('Reviewer'),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked,reopenHistory:Array.isArray(currentMinutes.__workflow?.reopenHistory)?currentMinutes.__workflow.reopenHistory:[]};}
 function renderMinutesActions(){
   const list=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[],root=$('minutesActionsList'),today=new Date().toISOString().slice(0,10);
+  const openIds=new Set([...root.querySelectorAll('details.minutes-action-card[open]')].map(node=>node.dataset.actionId));
   $('minutesActionCount').textContent=list.length+(list.length===1?' uppgift':' uppgifter');
   if(!list.length){root.innerHTML='<p class="muted">Inga uppföljningsuppgifter registrerade för detta möte.</p>';return;}
   root.innerHTML=list.map((a,i)=>{
     const done=a.status==='Klar',late=!done&&a.dueDate&&a.dueDate<today,sec=sections.find(x=>String(x[0])===String(a.section));
     const opts=['Ej påbörjad','Pågående','Klar'].map(v=>'<option '+(a.status===v?'selected':'')+'>'+v+'</option>').join('');
-    return '<article class="minutes-action-card '+(done?'is-done':late?'is-overdue':'')+'"><h4>'+esc(a.title||'Uppgift')+'</h4><div class="minutes-action-meta"><span>'+esc(a.sectionLabel||(sec?'§'+sec[0]+' '+sec[1]:(a.section||'Ingen paragraf')))+'</span><span>Ansvarig: '+esc(a.responsible||'Ej utsedd')+'</span><span>Klart senast: '+esc(a.dueDate?dateText(a.dueDate):'Ej angivet')+'</span></div><div class="minutes-action-controls">'+(isAdminUser?'<select data-minute-action-status="'+i+'">'+opts+'</select><button type="button" class="secondary" data-minute-action-delete="'+i+'">Ta bort</button>':'<span class="muted">Status: '+esc(a.status||'Ej påbörjad')+'</span>')+'</div></article>';
+    const actionId=String(a.id||i);
+    return '<details class="minutes-action-card '+(done?'is-done':late?'is-overdue':'')+'" data-action-id="'+esc(actionId)+'" '+(openIds.has(actionId)?'open':'')+'><summary><span class="minutes-action-title">'+esc(a.title||'Uppgift')+'</span><span class="minutes-action-summary-meta">'+esc(a.status||'Ej påbörjad')+'</span></summary><div class="minutes-action-expanded"><div class="minutes-action-meta"><span>'+esc(a.sectionLabel||(sec?'§'+sec[0]+' '+sec[1]:(a.section||'Ingen paragraf')))+'</span><span>Ansvarig: '+esc(a.responsible||'Ej utsedd')+'</span><span>Klart senast: '+esc(a.dueDate?dateText(a.dueDate):'Ej angivet')+'</span></div><div class="minutes-action-controls">'+(isAdminUser?'<select data-minute-action-status="'+i+'">'+opts+'</select><button type="button" class="secondary" data-minute-action-delete="'+i+'">Ta bort</button>':'<span class="muted">Status: '+esc(a.status||'Ej påbörjad')+'</span>')+'</div></div></details>';
   }).join('');
 }
 async function loadPreviousMinutesActions(currentMeetingId){
