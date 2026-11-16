@@ -4635,9 +4635,10 @@ const agendaDocuments = linkedDocuments || [];
 
       if (number === '6') {
         reportHeadings.forEach(heading => {
+          const headingIndex = reportHeadings.indexOf(heading);
           const headingNode = document.createElement('div');
           headingNode.className = 'subhead';
-          headingNode.textContent = heading;
+          headingNode.textContent = String.fromCharCode(97 + headingIndex) + ') ' + heading;
           body.append(headingNode);
 
           items
@@ -5113,7 +5114,7 @@ function printMinutesPdf(){
   const br=v=>esc(v||'').replace(/\n/g,'<br>');let body='';
   sections.forEach(([n,t])=>{
     const d=c[n];body+='<section><h2>§'+esc(n)+' '+esc(t)+'</h2>';
-    if(n==='6')reportHeadings.forEach(h=>{body+='<h3>'+esc(h)+'</h3><p>'+br(d&&d[h])+'</p>'});
+    if(n==='6')reportHeadings.forEach((h,i)=>{body+='<h3>'+String.fromCharCode(97+i)+') '+esc(h)+'</h3><p>'+br(d&&d[h])+'</p>'});
     else if(['7','8','9','10','11'].includes(String(n))){body+='<p>'+br(d&&d.__sectionText)+'</p>';minuteAgendaItems.filter(x=>String(x.section_number)===String(n)).forEach((x,i)=>{body+='<h3>'+String.fromCharCode(97+i)+') '+esc(x.title)+'</h3><p>'+br(d&&d['item_'+x.id])+'</p>'})}
     else body+='<p>'+br(typeof d==='string'?d:'')+'</p>';body+='</section>';
   });
@@ -5137,9 +5138,9 @@ function renderMinutesFields() {
       body.className = 'agenda-body';
 
       if (number === '6') {
-        reportHeadings.forEach(heading => {
+        reportHeadings.forEach((heading, index) => {
           const label = document.createElement('label');
-          label.textContent = heading;
+          label.textContent = String.fromCharCode(97 + index) + ') ' + heading;
 
           const textarea = document.createElement('textarea');
           textarea.dataset.minuteSection = number;
