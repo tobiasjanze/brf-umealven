@@ -5560,10 +5560,13 @@ $('documentAgendaSection').addEventListener(
       openButton.textContent = 'Öppna/ladda ner';
       openButton.addEventListener('click', () => openDocument(doc));
 
-      const deleteButton = document.createElement('button');
-      deleteButton.className = 'small danger';
-      deleteButton.textContent = 'Ta bort';
-      deleteButton.addEventListener('click', () => deleteDocument(doc));
+      if (isAdminUser) {
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'small danger';
+        deleteButton.textContent = 'Ta bort';
+        deleteButton.addEventListener('click', () => deleteDocument(doc));
+        actions.appendChild(deleteButton);
+      }
 
       const editButton = document.createElement('button');
       editButton.className = 'small';
@@ -5571,7 +5574,7 @@ $('documentAgendaSection').addEventListener(
       editButton.classList.toggle('hidden', !isAdminUser);
       editButton.addEventListener('click', () => editDocument(doc));
 
-      actions.append(openButton, editButton, deleteButton);
+      actions.append(openButton, editButton);
       row.append(info, actions);
       root.append(row);
     });
@@ -5827,6 +5830,10 @@ async function editDocument(doc) {
   }
 
   async function deleteDocument(doc) {
+    if (!isAdminUser) {
+      message('Endast administratör kan ta bort mötesdokument.', 'error');
+      return;
+    }
     if (!confirm('Ta bort dokumentet?')) return;
 
     const path = storagePath(doc);
