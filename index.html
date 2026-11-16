@@ -4947,7 +4947,29 @@ function renderMinutesWorkflow() {
   $('minutesReopenInfo').classList.toggle('hidden', !isFinalized);
   $('minutesWriterSigned').checked=!!w.writerSigned; $('minutesChairSigned').checked=!!w.chairSigned; $('minutesReviewerSigned').checked=!!w.reviewerSigned;
   $('minutesActionSection').innerHTML='<option value="">Välj paragraf</option>'+sections.map(x=>'<option value="'+esc(x[0])+'">§'+esc(x[0])+' '+esc(x[1])+'</option>').join('');
+  loadMinutesActionSubpoints();
   applyRolePermissions();
+}
+async function loadMinutesActionSubpoints(){
+  const meetingId=$('minutesMeetingSelect').value;
+  const select=$('minutesActionSection');
+  if(!meetingId)return;
+  const {data,error}=await db.from('agenda_items').select('*').eq('meeting_id',meetingId).order('created_at',{ascending:true});
+  if(error){message('Kunde inte läsa mötets underpunkter: '+error.message,'error');return;}
+  if(String($('minutesMeetingSelect').value)!==String(meetingId))return;
+  const items=data||[];
+  const counts={};
+  items.forEach(item=>{
+    const number=String(item.section_number??item.section??item.paragraph??'');
+    if(!number)return;
+    counts[number]=(counts[number]||0)+1;
+    const letter=String.fromCharCode(96+counts[number]);
+    const option=document.createElement('option');
+    option.value=number+letter;
+    option.textContent='　§'+number+letter+' '+(item.title||'Underpunkt');
+    option.dataset.sectionLabel=option.textContent.trim();
+    select.appendChild(option);
+  });
 }
 function collectMinutesWorkflow(){return {writer:minutesPersonValue('Writer'),chair:minutesPersonValue('Chair'),reviewer:minutesPersonValue('Reviewer'),status:$('minutesWorkflowStatus').value,writerSigned:$('minutesWriterSigned').checked,chairSigned:$('minutesChairSigned').checked,reviewerSigned:$('minutesReviewerSigned').checked,reopenHistory:Array.isArray(currentMinutes.__workflow?.reopenHistory)?currentMinutes.__workflow.reopenHistory:[]};}
 function renderMinutesActions(){
@@ -4957,7 +4979,7 @@ function renderMinutesActions(){
   root.innerHTML=list.map((a,i)=>{
     const done=a.status==='Klar',late=!done&&a.dueDate&&a.dueDate<today,sec=sections.find(x=>String(x[0])===String(a.section));
     const opts=['Ej påbörjad','Pågående','Klar'].map(v=>'<option '+(a.status===v?'selected':'')+'>'+v+'</option>').join('');
-    return '<article class="minutes-action-card '+(done?'is-done':late?'is-overdue':'')+'"><h4>'+esc(a.title||'Uppgift')+'</h4><div class="minutes-action-meta"><span>'+esc(sec?'§'+sec[0]+' '+sec[1]:'Ingen paragraf')+'</span><span>Ansvarig: '+esc(a.responsible||'Ej utsedd')+'</span><span>Klart senast: '+esc(a.dueDate?dateText(a.dueDate):'Ej angivet')+'</span></div><div class="minutes-action-controls">'+(isAdminUser?'<select data-minute-action-status="'+i+'">'+opts+'</select><button type="button" class="secondary" data-minute-action-delete="'+i+'">Ta bort</button>':'<span class="muted">Status: '+esc(a.status||'Ej påbörjad')+'</span>')+'</div></article>';
+    return '<article class="minutes-action-card '+(done?'is-done':late?'is-overdue':'')+'"><h4>'+esc(a.title||'Uppgift')+'</h4><div class="minutes-action-meta"><span>'+esc(a.sectionLabel||(sec?'§'+sec[0]+' '+sec[1]:(a.section||'Ingen paragraf')))+'</span><span>Ansvarig: '+esc(a.responsible||'Ej utsedd')+'</span><span>Klart senast: '+esc(a.dueDate?dateText(a.dueDate):'Ej angivet')+'</span></div><div class="minutes-action-controls">'+(isAdminUser?'<select data-minute-action-status="'+i+'">'+opts+'</select><button type="button" class="secondary" data-minute-action-delete="'+i+'">Ta bort</button>':'<span class="muted">Status: '+esc(a.status||'Ej påbörjad')+'</span>')+'</div></article>';
   }).join('');
 }
 async function loadPreviousMinutesActions(currentMeetingId){
@@ -4981,7 +5003,7 @@ $('addMinutesAction').addEventListener('click',()=>{
   if(!isAdminUser)return message('Endast administratör kan ändra protokollet.','error');
   const title=$('minutesActionTitle').value.trim();if(!title)return message('Skriv vad uppgiften gäller.','error');
   currentMinutes.__actions=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[];
-  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title,section:$('minutesActionSection').value,responsible:$('minutesActionResponsible').value.trim(),dueDate:$('minutesActionDue').value,status:'Ej påbörjad',createdAt:new Date().toISOString()});
+  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title,section:$('minutesActionSection').value,sectionLabel:$('minutesActionSection').selectedOptions[0]?.textContent?.trim()||'',responsible:$('minutesActionResponsible').value.trim(),dueDate:$('minutesActionDue').value,status:'Ej påbörjad',createdAt:new Date().toISOString()});
   $('minutesActionTitle').value='';$('minutesActionResponsible').value='';$('minutesActionDue').value='';$('minutesActionSection').value='';renderMinutesActions();
 });
 $('minutesActionsList').addEventListener('change',e=>{const i=e.target.dataset.minuteActionStatus;if(i===undefined||!isAdminUser)return;currentMinutes.__actions[Number(i)].status=e.target.value;renderMinutesActions()});
@@ -4990,7 +5012,7 @@ $('minutesPreviousActions').addEventListener('click',e=>{
   const i=e.target.dataset.minuteActionCarry;if(i===undefined||!isAdminUser)return;
   const a=$('minutesPreviousActions')._outstanding&&$('minutesPreviousActions')._outstanding[Number(i)];if(!a)return;
   currentMinutes.__actions=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[];
-  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title:a.title,section:a.section||'',responsible:a.responsible||'',dueDate:a.dueDate||'',status:a.status||'Ej påbörjad',carriedFrom:a.sourceMeetingId});
+  currentMinutes.__actions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title:a.title,section:a.section||'',sectionLabel:a.sectionLabel||'',responsible:a.responsible||'',dueDate:a.dueDate||'',status:a.status||'Ej påbörjad',carriedFrom:a.sourceMeetingId});
   renderMinutesActions();message('Uppgiften har lagts till. Spara protokollet för att behålla ändringen.','ok');
 });
 function minutesContentFromEditor(){
