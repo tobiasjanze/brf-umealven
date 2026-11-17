@@ -8135,6 +8135,33 @@ function createMeetingNotice() {
           line-height: 1.5;
         }
 
+        .notice-toolbar {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+          padding: 12px;
+          margin: -35px -35px 28px;
+          background: #f5f9fc;
+          border-bottom: 1px solid #cbdbea;
+        }
+
+        .notice-toolbar button {
+          border: 1px solid #b9d1e4;
+          border-radius: 9px;
+          background: #fff;
+          color: #173b5e;
+          padding: 11px 18px;
+          font-weight: 700;
+          font-size: 15px;
+        }
+
+        .notice-toolbar .primary {
+          background: #e7f2fa;
+        }
+
         .page {
           max-width: 720px;
           margin: auto;
@@ -8191,6 +8218,10 @@ function createMeetingNotice() {
             padding: 0;
           }
 
+          .notice-toolbar {
+            display: none !important;
+          }
+
           .page {
             max-width: none;
           }
@@ -8199,6 +8230,10 @@ function createMeetingNotice() {
     </head>
 
     <body>
+      <div class="notice-toolbar">
+        <button class="primary" type="button" onclick="window.print()">Skriv ut / Spara som PDF</button>
+        <button type="button" onclick="window.close()">Stäng kallelsen</button>
+      </div>
       <div class="page">
 
         <img class="logo" src="${logo}"
@@ -8264,11 +8299,6 @@ ${meeting.notes ? `
 
       </div>
 
-      <script>
-        window.onload = function() {
-          window.print();
-        };
-      <\/script>
     </body>
     </html>
   `);
