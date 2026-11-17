@@ -7457,8 +7457,21 @@ async function renderHomeDashboard() {
   };
 
   const documentsLoadError = Boolean(docsResult.error || readsResult.error);
-  setHomeStatColor(unreadNode, documentsLoadError ? 'amber' : 'blue');
-  if (unreadStatusText) unreadStatusText.textContent = documentsLoadError ? 'Kan inte läsa data' : 'Handlingar att läsa';
+  const readCount = docs.length - unreadDocs.length;
+  const readRatio = docs.length ? readCount / docs.length : 1;
+  const documentsColor = documentsLoadError
+    ? 'amber'
+    : docs.length === 0 || unreadDocs.length === 0
+      ? 'green'
+      : readRatio >= 0.5
+        ? 'amber'
+        : 'red';
+  setHomeStatColor(unreadNode, documentsColor);
+  if (unreadStatusText) unreadStatusText.textContent = documentsLoadError
+    ? 'Kan inte läsa data'
+    : docs.length === 0
+      ? 'Inga dokument att läsa'
+      : readCount + ' av ' + docs.length + ' dokument lästa';
 
   setHomeStatColor(openTaskNode, minutesResult.error ? 'amber' : overdueTaskCount ? 'red' : dueSoonTaskCount ? 'amber' : 'green');
   if (taskStatusText) taskStatusText.textContent = minutesResult.error
