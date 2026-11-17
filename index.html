@@ -7854,7 +7854,7 @@ $('homeBtn').addEventListener('click', showHome);
         console.warn('Logotypen kunde inte läsas in till PDF:', logoError);
       }
 
-      page.drawText(title, {
+      page.drawText(cleanText(title), {
         x: margin + 166, y: y - 23, size: 18, font: bold, color: navy,
         maxWidth: contentWidth - 166
       });
@@ -7867,19 +7867,28 @@ $('homeBtn').addEventListener('click', showHome);
           addPage();
         }
       };
-      const cleanText = value => String(value || '')
-        .replace(/\u00a0/g, ' ')
-        .replace(/[–—]/g, '-')
-        .replace(/[“”]/g, '"')
-        .replace(/[‘’]/g, "'")
-        .replace(/…/g, '...')
-        // Standardteckensnitten i PDF-lib saknar stöd för emoji och
-        // vissa symboler. Ta bort dem så att exporten inte avbryts.
-        .replace(/\p{Extended_Pictographic}/gu, '')
-        .replace(/[\u2000-\u206F]/g, ' ')
-        .replace(/[^\u0020-\u00FF]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const cleanText = value => {
+        const normalized = String(value || '')
+          .replace(/\u00a0/g, ' ')
+          .replace(/[–—]/g, '-')
+          .replace(/[“”]/g, '"')
+          .replace(/[‘’]/g, "'")
+          .replace(/…/g, '...')
+          .replace(/[\u2000-\u206F]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        // Kontrollera varje tecken mot PDF-lib-fonten. Detta fångar även
+        // emoji, symboler och ovanliga tecken som standardfonten saknar.
+        return Array.from(normalized, character => {
+          try {
+            regular.encodeText(character);
+            return character;
+          } catch (_) {
+            return ' ';
+          }
+        }).join('').replace(/\s+/g, ' ').trim();
+      };
 
       const drawParagraph = (value, opts = {}) => {
         const textValue = cleanText(value);
