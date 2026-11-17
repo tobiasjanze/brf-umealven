@@ -7854,7 +7854,7 @@ $('homeBtn').addEventListener('click', showHome);
         console.warn('Logotypen kunde inte läsas in till PDF:', logoError);
       }
 
-      const cleanText = value => {
+      function cleanText(value) {
         const normalized = String(value || '')
           .replace(/\u00a0/g, ' ')
           .replace(/[–—]/g, '-')
@@ -7875,7 +7875,7 @@ $('homeBtn').addEventListener('click', showHome);
             return ' ';
           }
         }).join('').replace(/\s+/g, ' ').trim();
-      };
+      }
 
       page.drawText(cleanText(title), {
         x: margin + 166, y: y - 23, size: 18, font: bold, color: navy,
@@ -8093,217 +8093,55 @@ $('homeBtn').addEventListener('click', showHome);
 // ===== SKAPA KALLELSE – BRF UMEÄLVEN =====
 
 function createMeetingNotice() {
-  if (!isAdminUser) {
-    message('Du saknar behörighet.', 'error');
-    return;
-  }
-
-  const meeting = meetings.find(
-    item => String(item.id) === String(selectedMeetingId)
-  );
-
-  if (!meeting) {
-    message('Välj ett möte först.', 'error');
-    return;
-  }
-
-  const logo = new URL(
-    'brf-umealven-logotyp.png',
-    window.location.href
-  ).href;
-
-  const noticeWindow = window.open('', '_blank');
-
-  if (!noticeWindow) {
-    message('Tillåt popup-fönster för att skapa kallelsen.', 'error');
-    return;
-  }
-
-  noticeWindow.document.write(`
-    <!DOCTYPE html>
-    <html lang="sv">
-    <head>
-      <meta charset="UTF-8">
-      <title>Kallelse – ${esc(meetingTitle(meeting))}</title>
-
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          color: #24313c;
-          margin: 0;
-          padding: 35px;
-          line-height: 1.5;
-        }
-
-        .notice-toolbar {
-          position: sticky;
-          top: 0;
-          z-index: 20;
-          display: flex;
-          justify-content: center;
-          gap: 12px;
-          padding: 12px;
-          margin: -35px -35px 28px;
-          background: #f5f9fc;
-          border-bottom: 1px solid #cbdbea;
-        }
-
-        .notice-toolbar button {
-          border: 1px solid #b9d1e4;
-          border-radius: 9px;
-          background: #fff;
-          color: #173b5e;
-          padding: 11px 18px;
-          font-weight: 700;
-          font-size: 15px;
-        }
-
-        .notice-toolbar .primary {
-          background: #e7f2fa;
-        }
-
-        .page {
-          max-width: 720px;
-          margin: auto;
-        }
-
-        .logo {
-          width: 230px;
-          height: auto;
-          margin-bottom: 35px;
-        }
-
-        h1 {
-          color: #17324d;
-          font-size: 28px;
-          border-bottom: 3px solid #245b83;
-          padding-bottom: 12px;
-        }
-
-        h2 {
-          color: #17324d;
-          margin-top: 35px;
-        }
-
-        .meeting-info {
-          background: #eef4f8;
-          border-left: 5px solid #245b83;
-          padding: 18px;
-          margin: 25px 0;
-        }
-
-        .meeting-info p {
-          margin: 7px 0;
-        }
-
-        .notes {
-          white-space: pre-wrap;
-        }
-
-        .footer {
-          margin-top: 55px;
-          border-top: 1px solid #ccd6df;
-          padding-top: 15px;
-          color: #687783;
-          font-size: 12px;
-        }
-
-        @page {
-          size: A4;
-          margin: 20mm;
-        }
-
-        @media print {
-          body {
-            padding: 0;
-          }
-
-          .notice-toolbar {
-            display: none !important;
-          }
-
-          .page {
-            max-width: none;
-          }
-        }
-      </style>
-    </head>
-
-    <body>
-      <div class="notice-toolbar">
-        <button class="primary" type="button" onclick="window.print()">Skriv ut / Spara som PDF</button>
-        <button type="button" onclick="window.close()">Stäng kallelsen</button>
+  if (!isAdminUser) { message('Du saknar behörighet.', 'error'); return; }
+  const meeting = meetings.find(item => String(item.id) === String(selectedMeetingId));
+  if (!meeting) { message('Välj ett möte först.', 'error'); return; }
+  const title = 'Kallelse – ' + meetingTitle(meeting);
+  const logo = new URL('brf-umealven-logotyp.png', window.location.href).href;
+  const noticeContent = `
+    <div class="page">
+      <img class="logo" src="${logo}" alt="BRF Umeälven">
+      <h1>Kallelse till styrelsemöte</h1>
+      <p>Härmed kallas styrelsens ledamöter till följande möte.</p>
+      <div class="meeting-info">
+        <p><strong>Möte:</strong> ${esc(meetingTitle(meeting))}</p>
+        <p><strong>Datum:</strong> ${esc(dateText(meetingDate(meeting)))}</p>
+        <p><strong>Tid:</strong> ${esc(meeting.meeting_time || 'Ej angiven')}</p>
+        <p><strong>Plats:</strong> ${esc(meeting.location || 'Ej angiven')}</p>
       </div>
-      <div class="page">
-
-        <img class="logo" src="${logo}"
-             alt="BRF Umeälven">
-
-        <h1>Kallelse till styrelsemöte</h1>
-
-        <p>
-          Härmed kallas styrelsens ledamöter
-          till följande möte.
-        </p>
-
-        <div class="meeting-info">
-          <p><strong>Möte:</strong>
-            ${esc(meetingTitle(meeting))}</p>
-
-          <p><strong>Datum:</strong>
-            ${esc(dateText(meetingDate(meeting)))}</p>
-
-          <p><strong>Tid:</strong>
-            ${esc(meeting.meeting_time || 'Ej angiven')}</p>
-
-          <p><strong>Plats:</strong>
-            ${esc(meeting.location || 'Ej angiven')}</p>
-        </div>
-
-        <h2>Övrig information inför mötet</h2>
-
-${meeting.notes ? `
-<div class="notes">
-  ${esc(meeting.notes)}
-</div>
-` : ''}
-
-<h2>Dagordning</h2>
-
-<p>
-  Dagordningen finns tillgänglig i föreningens styrelseportal.
-  Där kan du även ta del av möteshandlingar och övriga dokument inför mötet.
-</p>
-
-<p>
-  Vi ser gärna att samtliga ledamöter tar del av underlaget i förväg
-  för att mötet ska kunna genomföras på ett så effektivt och bra sätt
-  som möjligt.
-</p>
-
-<p>
-  Vänligen registrera din närvaro i styrelseportalen genom att välja
-  Kommer, Kommer inte eller Inte bestämt.
-</p>
-
-<p style="margin-top: 28px;">
-  <strong>Välkomna!</strong><br><br>
-  Tobias Janze<br>
-  Ordförande, BRF Umeälven
-</p>
-
-        <div class="footer">
-          Bostadsrättsföreningen Umeälven<br>
-          Styrelsen
-        </div>
-
-      </div>
-
-    </body>
-    </html>
-  `);
-
-  noticeWindow.document.close();
+      <h2>Övrig information inför mötet</h2>
+      ${meeting.notes ? '<div class="notes">' + esc(meeting.notes) + '</div>' : ''}
+      <h2>Dagordning</h2>
+      <p>Dagordningen finns tillgänglig i föreningens styrelseportal. Där kan du även ta del av möteshandlingar och övriga dokument inför mötet.</p>
+      <p>Vi ser gärna att samtliga ledamöter tar del av underlaget i förväg för att mötet ska kunna genomföras på ett så effektivt och bra sätt som möjligt.</p>
+      <p>Vänligen registrera din närvaro i styrelseportalen genom att välja Kommer, Kommer inte eller Inte bestämt.</p>
+      <p style="margin-top:28px"><strong>Välkomna!</strong><br><br>Tobias Janze<br>Ordförande, BRF Umeälven</p>
+      <div class="footer">Bostadsrättsföreningen Umeälven<br>Styrelsen</div>
+    </div>`;
+  const existing = document.getElementById('meetingNoticeOverlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'meetingNoticeOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#f3f6f9;overflow:auto;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom);';
+  overlay.innerHTML = `
+    <div style="position:sticky;top:0;z-index:2;display:flex;gap:10px;padding:12px 0;background:#f3f6f9">
+      <button type="button" id="meetingNoticePrint" class="primary" style="flex:1">Skriv ut / Spara som PDF</button>
+      <button type="button" id="meetingNoticeClose" style="flex:1">Stäng kallelsen</button>
+    </div>
+    <style>
+      #meetingNoticeOverlay .page{max-width:720px;margin:10px auto 30px;background:white;padding:28px;color:#24313c;font-family:Arial,sans-serif;line-height:1.5}
+      #meetingNoticeOverlay .logo{width:230px;height:auto;margin-bottom:35px}
+      #meetingNoticeOverlay h1{color:#17324d;font-size:28px;border-bottom:3px solid #245b83;padding-bottom:12px}
+      #meetingNoticeOverlay h2{color:#17324d;margin-top:35px}
+      #meetingNoticeOverlay .meeting-info{background:#eef4f8;border-left:5px solid #245b83;padding:18px;margin:25px 0}
+      #meetingNoticeOverlay .meeting-info p{margin:7px 0}
+      #meetingNoticeOverlay .notes{white-space:pre-wrap}
+      #meetingNoticeOverlay .footer{margin-top:55px;border-top:1px solid #ccd6df;padding-top:15px;color:#687783;font-size:12px}
+    </style>
+    ${noticeContent}`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#meetingNoticeClose').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#meetingNoticePrint').addEventListener('click', () => openPrintableDocument(title, noticeContent));
 }
 
 // ===== SLUT SKAPA KALLELSE =====
