@@ -3859,6 +3859,8 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   const $ = id => document.getElementById(id);
 
   let currentUser = null;
+  let authGeneration = 0;
+  let loadQueue = Promise.resolve();
   let meetings = [];
   let annualEvents = [];
   let annualEventsLoadError = false;
@@ -4054,7 +4056,21 @@ $('annualResponsible')?.addEventListener('focus', loadContractResponsibleOptions
   // ===== INLOGGNINGENS VISNING =====
 
   function showApp(user) {
+  // Varje ny inloggning får en egen generation så att äldre,
+  // pågående hämtningar inte kan skriva över den nya användarens vy.
+  authGeneration++;
   currentUser = user;
+
+  // Börja med rena, användarspecifika val när ett konto loggar in.
+  documentFilter = 'all';
+  $('documentsMeetingSelect').value = '';
+  $('documentsList').innerHTML = '';
+  $('documentReadSummary').innerHTML = '';
+  $('documentReadSummary').classList.add('hidden');
+  $('documentFilters').classList.add('hidden');
+  $('minutesMeetingSelect').value = '';
+  currentMinutes = {};
+  selectedMeetingId = null;
 
   $('loginPanel').classList.add('hidden');
   $('appPanel').classList.remove('hidden');
@@ -4074,6 +4090,8 @@ $('annualResponsible')?.addEventListener('focus', loadContractResponsibleOptions
 }
 
 function showLogin() {
+  // Ogiltigförklara hämtningar som startades av föregående konto.
+  authGeneration++;
   currentUser = null;
 
   // Dölj hela portalens innehåll
@@ -4095,19 +4113,35 @@ function showLogin() {
 }
 
   async function loadAll() {
-  if (loading) return;
+  const generation = authGeneration;
+  const userId = currentUser && currentUser.id;
+  if (!userId) return;
 
-  loading = true;
+  // Köa inläsningar i stället för att låta en tidigare användares
+  // pågående inläsning blockera nästa konto.
+  const run = async () => {
+    const isCurrentSession = () =>
+      authGeneration === generation &&
+      currentUser &&
+      currentUser.id === userId;
 
-  try {
+    if (!isCurrentSession()) return;
     await loadMeetings();
+    if (!isCurrentSession()) return;
     await loadContractResponsibleOptions();
+    if (!isCurrentSession()) return;
     await loadContracts();
+    if (!isCurrentSession()) return;
     await loadAnnualEvents();
+    if (!isCurrentSession()) return;
     renderHomeUpcomingActivities();
-  } finally {
-    loading = false;
-  }
+  };
+
+  const nextLoad = loadQueue.then(run, run);
+  loadQueue = nextLoad.catch(error => {
+    console.error('Kunde inte läsa in portalens uppgifter:', error);
+  });
+  return nextLoad;
 }
 
   // ===== MÖTEN =====
@@ -8087,8 +8121,13 @@ async function loadUserRole(user) {
   applyRolePermissions();
 
   if (!user) return;
+  const generation = authGeneration;
+  const userId = user.id;
 
   const { data, error } = await db.rpc('current_user_is_admin');
+
+  // Ignorera ett behörighetssvar som tillhör ett tidigare konto.
+  if (authGeneration !== generation || !currentUser || currentUser.id !== userId) return;
 
   if (error) {
     isAdminUser = false;
@@ -8111,6 +8150,12 @@ async function loadUserRole(user) {
     applyRolePermissions();
     renderAnnualWheel();
     // Vanlig medlem – inget felmeddelande ska visas.
+  }
+
+  // Rollen kan ha ändrats efter att dokumentvyn redan öppnats.
+  // Läs därför om listan så att administratörens läsöversikt visas direkt.
+  if (!$('tab-documents').classList.contains('hidden')) {
+    await loadDocuments();
   }
 }
 
