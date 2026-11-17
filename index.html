@@ -7854,19 +7854,6 @@ $('homeBtn').addEventListener('click', showHome);
         console.warn('Logotypen kunde inte läsas in till PDF:', logoError);
       }
 
-      page.drawText(cleanText(title), {
-        x: margin + 166, y: y - 23, size: 18, font: bold, color: navy,
-        maxWidth: contentWidth - 166
-      });
-      y -= 76;
-      page.drawLine({ start: { x: margin, y }, end: { x: pageWidth - margin, y }, thickness: 4, color: pale });
-      y -= 26;
-
-      const ensureSpace = (height) => {
-        if (y - height < margin + 24) {
-          addPage();
-        }
-      };
       const cleanText = value => {
         const normalized = String(value || '')
           .replace(/\u00a0/g, ' ')
@@ -7889,6 +7876,21 @@ $('homeBtn').addEventListener('click', showHome);
           }
         }).join('').replace(/\s+/g, ' ').trim();
       };
+
+      page.drawText(cleanText(title), {
+        x: margin + 166, y: y - 23, size: 18, font: bold, color: navy,
+        maxWidth: contentWidth - 166
+      });
+      y -= 76;
+      page.drawLine({ start: { x: margin, y }, end: { x: pageWidth - margin, y }, thickness: 4, color: pale });
+      y -= 26;
+
+      const ensureSpace = (height) => {
+        if (y - height < margin + 24) {
+          addPage();
+        }
+      };
+
 
       const drawParagraph = (value, opts = {}) => {
         const textValue = cleanText(value);
