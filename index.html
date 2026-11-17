@@ -3373,7 +3373,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
           <h2>Styrelsens överblick</h2>
           <div class="home-overview-stats">
             <button type="button" class="home-stat home-stat--blue" data-home-open="documents">
-              <strong id="homeUnreadCount">–</strong><span>Olästa dokument</span><small>Handlingar att läsa</small>
+              <strong id="homeUnreadCount">–</strong><span>Olästa dokument</span><small id="homeUnreadStatusText">Handlingar att läsa</small>
             </button>
             <button type="button" class="home-stat home-stat--green" data-home-open="minutes">
               <strong id="homeOpenTaskCount">–</strong><span>Uppgifter</span><small id="homeTaskStatusText">Pågående uppföljningar</small>
@@ -6910,6 +6910,7 @@ if (home) {
 
     if (error) {
       annualEventsLoadError = true;
+      if (currentUser) renderHomeDashboard();
       console.error('Kunde inte läsa årshjulet:', error);
       $('annualEventsList').innerHTML =
         '<p class="muted">Årshjulet kunde inte hämtas. Kontrollera att tabellen annual_events finns och att läsbehörigheten är aktiv.</p>';
@@ -7345,6 +7346,7 @@ async function renderHomeDashboard() {
   const contractStatusText = $('homeContractStatusText');
   const upcomingNode = $('homeUpcomingCount');
   const annualStatusText = $('homeAnnualStatusText');
+  const unreadStatusText = $('homeUnreadStatusText');
   if (!unreadNode) return;
 
   const [docsResult, readsResult, minutesResult] = await Promise.all([
@@ -7444,47 +7446,46 @@ async function renderHomeDashboard() {
   unreadNode.textContent = docsResult.error || readsResult.error ? '–' : unreadDocs.length;
   openTaskNode.textContent = minutesResult.error ? '–' : openTasks.length;
   contractAlertNode.textContent = contractsLoadError ? '–' : contractAlertCount;
-  upcomingNode.textContent = upcomingMeetings.length;
+  upcomingNode.textContent = annualEventsLoadError ? '–' : upcomingMeetings.length;
 
-  // Färglogik: mest brådskande datum styr respektive ruta.
+  // Alla fyra rutor visar gult och ett streck när respektive datakälla inte kan läsas.
   const setHomeStatColor = (node, color) => {
     const card = node && node.closest('.home-stat');
     if (!card) return;
     card.classList.remove('home-stat--blue','home-stat--amber','home-stat--red','home-stat--purple','home-stat--green');
     card.classList.add('home-stat--' + color);
   };
-  setHomeStatColor(unreadNode, 'blue');
-  setHomeStatColor(upcomingNode, annualEventsLoadError ? 'amber' : overdueAnnualCount ? 'red' : dueSoonAnnualCount ? 'amber' : 'green');
-  if (annualStatusText) annualStatusText.textContent = annualEventsLoadError
-    ? 'Kunde inte läsa årshjulet'
-    : overdueAnnualCount
-      ? overdueAnnualCount + ' försenade · ' + dueSoonAnnualCount + ' inom 7 dagar'
-      : dueSoonAnnualCount
-        ? dueSoonAnnualCount + ' aktiviteter inom 7 dagar'
-        : 'Inga nära slutdatum';
 
-  if (minutesResult.error) {
-    setHomeStatColor(openTaskNode, 'green');
-    if (taskStatusText) taskStatusText.textContent = 'Kunde inte läsa uppgifternas datum';
-  } else {
-    const taskColor = overdueTaskCount ? 'red' : dueSoonTaskCount ? 'amber' : 'green';
-    setHomeStatColor(openTaskNode, taskColor);
-    if (taskStatusText) taskStatusText.textContent = overdueTaskCount
+  const documentsLoadError = Boolean(docsResult.error || readsResult.error);
+  setHomeStatColor(unreadNode, documentsLoadError ? 'amber' : 'blue');
+  if (unreadStatusText) unreadStatusText.textContent = documentsLoadError ? 'Kan inte läsa data' : 'Handlingar att läsa';
+
+  setHomeStatColor(openTaskNode, minutesResult.error ? 'amber' : overdueTaskCount ? 'red' : dueSoonTaskCount ? 'amber' : 'green');
+  if (taskStatusText) taskStatusText.textContent = minutesResult.error
+    ? 'Kan inte läsa data'
+    : overdueTaskCount
       ? overdueTaskCount + ' försenade · ' + dueSoonTaskCount + ' inom 7 dagar'
       : dueSoonTaskCount
         ? dueSoonTaskCount + ' uppgifter inom 7 dagar'
         : 'Inga nära förfallodatum';
-  }
 
-  const contractColor = contractsLoadError ? 'amber' : overdueContractCount ? 'red' : dueSoonContractCount ? 'amber' : 'green';
-  setHomeStatColor(contractAlertNode, contractColor);
+  setHomeStatColor(contractAlertNode, contractsLoadError ? 'amber' : overdueContractCount ? 'red' : dueSoonContractCount ? 'amber' : 'green');
   if (contractStatusText) contractStatusText.textContent = contractsLoadError
-    ? 'Kunde inte läsa avtalen'
+    ? 'Kan inte läsa data'
     : overdueContractCount
       ? overdueContractCount + ' passerade · ' + dueSoonContractCount + ' inom 90 dagar'
       : dueSoonContractCount
         ? dueSoonContractCount + ' inom 90 dagar'
         : 'Inga nära omförhandlingar';
+
+  setHomeStatColor(upcomingNode, annualEventsLoadError ? 'amber' : overdueAnnualCount ? 'red' : dueSoonAnnualCount ? 'amber' : 'green');
+  if (annualStatusText) annualStatusText.textContent = annualEventsLoadError
+    ? 'Kan inte läsa data'
+    : overdueAnnualCount
+      ? overdueAnnualCount + ' försenade · ' + dueSoonAnnualCount + ' inom 7 dagar'
+      : dueSoonAnnualCount
+        ? dueSoonAnnualCount + ' aktiviteter inom 7 dagar'
+        : 'Inga nära slutdatum';
 
   const recentRoot = $('homeRecentDocuments');
   if (!docsResult.error && !readsResult.error) {
