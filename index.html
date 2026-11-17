@@ -5038,13 +5038,21 @@ if (!['7', '8', '9', '10', '11'].includes(selectedSection)) {
   });
 
   $('printAgenda').addEventListener('click', () => {
-  if (!selectedMeetingId) {
-    message('Välj ett möte först.', 'error');
-    return;
-  }
-
-  window.print();
-});
+    if (!selectedMeetingId) {
+      message('Välj ett möte först.', 'error');
+      return;
+    }
+    const meeting = meetings.find(item => String(item.id) === String(selectedMeetingId));
+    const heading = meeting ? meetingTitle(meeting) + ' – ' + dateText(meetingDate(meeting)) : 'Styrelsemöte';
+    const agendaHtml = $('agendaSections').innerHTML;
+    if (!agendaHtml.trim()) {
+      message('Dagordningen är tom eller har inte hunnit laddas.', 'error');
+      return;
+    }
+    openPrintableDocument('Dagordning – ' + heading,
+      '<p><strong>' + esc(heading) + '</strong></p>' + agendaHtml,
+      { extraCss: '.agenda-section{margin:0 0 15px;border-bottom:1px solid #dce5ed;padding-bottom:8px}.agenda-section summary{font-size:17px;color:#173b5e;padding:6px 0}.agenda-body{padding:4px 12px}.item{margin:8px 0 12px;padding:7px 0;border-bottom:1px solid #edf1f5}.item h3{font-size:14px;margin:0 0 4px}.item p{margin:3px 0}.subhead{font-weight:700;margin-top:8px}.agenda-linked-documents{color:#52677b;font-size:13px}details>summary{list-style:none}' });
+  });
     // ===== PROTOKOLL =====
 
   function minutesTemplate() {
@@ -5416,8 +5424,10 @@ function printMinutesPdf(){
     else body+='<p>'+br(typeof d==='string'?d:'')+'</p>';body+='</section>';
   });
   if(c.__actions&&c.__actions.length)body+='<section><h2>Beslut och uppföljning</h2><table><tr><th>Uppgift</th><th>Ansvarig</th><th>Klart senast</th><th>Status</th></tr>'+c.__actions.map(a=>'<tr><td>'+esc(a.title)+'</td><td>'+esc(a.responsible||'—')+'</td><td>'+esc(a.dueDate?dateText(a.dueDate):'—')+'</td><td>'+esc(a.status||'Ej påbörjad')+'</td></tr>').join('')+'</table></section>';
-  const doc='<!doctype html><html lang="sv"><head><meta charset="utf-8"><title>'+esc(protocolName)+'</title><style>@page{size:A4;margin:18mm}body{font:11pt Arial,sans-serif;color:#24364b;line-height:1.5}header{display:flex;align-items:center;gap:25px;border-bottom:5px solid #cfe4f4;padding-bottom:18px;margin-bottom:24px}header img{width:180px;max-height:85px;object-fit:contain}h1{font-size:23pt;margin:0 0 5px}h2{font-size:15pt;background:#eaf2f8;border-left:5px solid #438bb9;padding:9px 12px;margin:22px 0 10px}h3{font-size:11pt;margin:12px 0 3px}section{break-inside:avoid}table{width:100%;border-collapse:collapse}th,td{border:1px solid #d5e0e8;padding:7px;text-align:left}th{background:#eaf2f8}.signatures{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}.sig{border-top:1px solid #526477;padding-top:7px;font-size:9pt}footer{margin-top:35px;border-top:1px solid #d5e0e8;padding-top:8px;color:#73808d;font-size:9pt}</style></head><body><header><img src="'+logo+'" alt="BRF Umeälven"><div><h1>Styrelseprotokoll</h1><strong>'+esc(protocolName)+'</strong><div>'+esc(dateText(meetingDate(meeting)))+'</div></div></header><p><strong>Protokollförare:</strong> '+esc(w.writer||'—')+' &nbsp; <strong>Ordförande:</strong> '+esc(w.chair||'—')+' &nbsp; <strong>Justerare:</strong> '+esc(w.reviewer||'—')+'</p>'+body+'<div class="signatures"><div class="sig">Protokollförare<br>'+esc(w.writer||'')+'</div><div class="sig">Mötesordförande<br>'+esc(w.chair||'')+'</div><div class="sig">Justerare<br>'+esc(w.reviewer||'')+'</div></div><footer>BRF Umeälven · Styrelseprotokoll · '+esc(w.status||'Utkast')+'</footer><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
-  const win=window.open('','_blank');if(!win)return message('Popup blockerad. Tillåt popup-fönster och försök igen.','error');win.document.open();win.document.write(doc);win.document.close();
+  const protocolHtml='<p><strong>Protokollförare:</strong> '+esc(w.writer||'—')+' &nbsp; <strong>Ordförande:</strong> '+esc(w.chair||'—')+' &nbsp; <strong>Justerare:</strong> '+esc(w.reviewer||'—')+'</p>'+body+'<div class="signatures"><div class="sig">Protokollförare<br>'+esc(w.writer||'')+'</div><div class="sig">Mötesordförande<br>'+esc(w.chair||'')+'</div><div class="sig">Justerare<br>'+esc(w.reviewer||'')+'</div></div><footer>BRF Umeälven · Styrelseprotokoll · '+esc(w.status||'Utkast')+'</footer>';
+  openPrintableDocument(protocolName + ' – ' + dateText(meetingDate(meeting)),
+    '<p><strong>'+esc(protocolName)+'</strong></p>'+protocolHtml,
+    { extraCss: 'h2{font-size:17px;background:#eaf2f8;border-left:5px solid #438bb9;padding:9px 12px;margin:22px 0 10px}h3{font-size:14px;margin:12px 0 3px}section{break-inside:avoid}table{width:100%;border-collapse:collapse}th,td{border:1px solid #d5e0e8;padding:7px;text-align:left}th{background:#eaf2f8}.signatures{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}.sig{border-top:1px solid #526477;padding-top:7px;font-size:12px}footer{margin-top:35px;border-top:1px solid #d5e0e8;padding-top:8px;color:#73808d;font-size:12px}' });
 }
 function renderMinutesFields() {
     const root = $('minutesFields');
@@ -7171,7 +7181,14 @@ if (home) {
     try {
       await loadAnnualEvents();
       buildAnnualPrintSheet();
-      window.print();
+      const annualContent = $('annualPrintSheet').innerHTML;
+      if (!annualContent.trim()) {
+        message('Årshjulet innehåller inget utskriftsunderlag.', 'error');
+        return;
+      }
+      openPrintableDocument('Årshjul ' + new Date().getFullYear(), annualContent, {
+        extraCss: '.annual-print-header{display:flex;align-items:center;gap:18px;border-bottom:4px solid #d7eaf7;padding-bottom:16px;margin-bottom:20px}.annual-print-logo{width:145px;max-height:65px;object-fit:contain}.annual-print-heading h1{margin:0;color:#173b5e;font-size:24px}.annual-print-subtitle{margin:5px 0;color:#617487;font-size:12px}.annual-print-month{break-inside:avoid;margin:18px 0}.annual-print-month h2{background:#eaf2f8;border-left:5px solid #438bb9;padding:7px 10px;color:#173b5e;font-size:17px}.annual-print-event{padding:8px 10px;border-bottom:1px solid #e3eaf0;break-inside:avoid}.annual-print-event h3{font-size:14px;margin:0 0 4px}.annual-print-meta{font-size:12px;color:#617487;margin:3px 0}.annual-print-notes{font-size:13px;white-space:pre-wrap;margin-top:5px}.annual-print-empty{color:#8492a0;font-style:italic;font-size:12px}'
+      });
     } catch (error) {
       console.error('Kunde inte skapa utskriftsunderlaget:', error);
       message('Kunde inte skapa utskriftsunderlaget. Försök igen.', 'error');
@@ -7780,6 +7797,68 @@ document.addEventListener('click', event => {
 
 
 $('homeBtn').addEventListener('click', showHome);
+
+  // Gemensam utskriftsvy. Öppnas som ett vanligt dokument i en ny flik
+  // med tydliga knappar för utskrift och återgång – ingen automatisk utskrift.
+  function openPrintableDocument(title, content, options = {}) {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      message('Safari blockerade dokumentfönstret. Tillåt popup-fönster och försök igen.', 'error');
+      return false;
+    }
+
+    const logoUrl = new URL('brf-umealven-logotyp.png', window.location.href).href;
+    const extraCss = options.extraCss || '';
+    const html = `<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#eef2f6;color:#24364b;font:15px Arial,sans-serif;line-height:1.5}
+  .print-toolbar{position:sticky;top:0;z-index:10;display:flex;gap:10px;justify-content:center;padding:14px;background:#f7fbff;border-bottom:1px solid #cbdbea}
+  .print-toolbar button{border:1px solid #b9d1e4;border-radius:9px;background:#fff;color:#173b5e;padding:11px 18px;font-weight:700;font-size:15px}
+  .print-toolbar .primary{background:#e7f2fa;border-color:#8fb9d8}
+  .print-hint{text-align:center;color:#617487;font-size:13px;margin:0;padding:8px}
+  .print-page{max-width:900px;margin:24px auto;padding:22px 28px;background:#fff;box-shadow:0 2px 12px #19334a12}
+  .print-header{display:flex;align-items:center;gap:22px;border-bottom:4px solid #d7eaf7;padding-bottom:16px;margin-bottom:22px}
+  .print-header img{width:175px;max-height:75px;object-fit:contain}
+  .print-header h1{margin:0;color:#173b5e;font-size:25px}
+  .print-content{overflow-wrap:anywhere}
+  .print-content details{break-inside:avoid}
+  .print-content summary{font-weight:700}
+  .print-content button,.print-content .item-actions{display:none!important}
+  .print-content .agenda-linked-documents button{display:none!important}
+  @page{size:A4;margin:16mm}
+  @media print{
+    body{background:#fff}
+    .print-toolbar,.print-hint{display:none!important}
+    .print-page{max-width:none;margin:0;padding:0;box-shadow:none}
+    .print-header{break-after:avoid}
+  }
+  ${extraCss}
+</style>
+</head>
+<body>
+<div class="print-toolbar">
+  <button class="primary" type="button" onclick="window.print()">Skriv ut / Spara som PDF</button>
+  <button type="button" onclick="window.close()">Stäng dokumentet</button>
+</div>
+<p class="print-hint">Välj skrivare eller ”Spara som PDF” i utskriftsmenyn.</p>
+<main class="print-page">
+  <div class="print-header"><img src="${logoUrl}" alt="BRF Umeälven"><h1>${esc(title)}</h1></div>
+  <div class="print-content">${content}</div>
+</main>
+</body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    return true;
+  }
 
   // ===== INLOGGNING OCH UTLOGGNING =====
 
