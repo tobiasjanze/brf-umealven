@@ -5846,13 +5846,19 @@ $('documentAgendaSection').addEventListener(
   }
 
   async function markMeetingDocumentRead(documentId) {
+    if (!currentUser) return;
+    const generation = authGeneration;
+    const userId = currentUser.id;
+
     const { error } = await db
       .from('meeting_document_reads')
       .upsert({
         document_id: documentId,
-        user_id: currentUser.id,
+        user_id: userId,
         read_at: new Date().toISOString()
       }, { onConflict: 'document_id,user_id' });
+
+    if (authGeneration !== generation || !currentUser || currentUser.id !== userId) return;
 
     if (error) {
       message('Kunde inte spara lässtatus: ' + error.message, 'error');
@@ -5860,7 +5866,9 @@ $('documentAgendaSection').addEventListener(
     }
 
     await loadDocuments();
-    message('Dokumentet har markerats som läst.', 'ok');
+    if (authGeneration === generation && currentUser && currentUser.id === userId) {
+      message('Dokumentet har markerats som läst.', 'ok');
+    }
   }
 
   $('documentsList').addEventListener('click', event => {
