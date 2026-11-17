@@ -5620,6 +5620,31 @@ $('documentAgendaSection').addEventListener(
 
   let documentFilter = 'all';
 
+  // iOS Safari kan flytta sidan när ett inbyggt <details>-element öppnas.
+  // Spara positionen före klickets standardbeteende och återställ efter att
+  // webbläsaren har expanderat lässtatusen.
+  document.addEventListener('click', event => {
+    const summary = event.target.closest('.document-admin-readers > summary');
+    if (!summary) return;
+
+    const details = summary.parentElement;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+
+    const restoreScroll = () => {
+      if (!details.isConnected) return;
+      if (Math.abs(window.scrollX - scrollX) > 1 ||
+          Math.abs(window.scrollY - scrollY) > 1) {
+        window.scrollTo(scrollX, scrollY);
+      }
+    };
+
+    requestAnimationFrame(() => {
+      restoreScroll();
+      setTimeout(restoreScroll, 80);
+    });
+  }, true);
+
   async function loadDocuments() {
     const generation = authGeneration;
     const userId = currentUser && currentUser.id;
