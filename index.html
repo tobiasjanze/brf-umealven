@@ -7873,6 +7873,11 @@ $('homeBtn').addEventListener('click', showHome);
         .replace(/[“”]/g, '"')
         .replace(/[‘’]/g, "'")
         .replace(/…/g, '...')
+        // Standardteckensnitten i PDF-lib saknar stöd för emoji och
+        // vissa symboler. Ta bort dem så att exporten inte avbryts.
+        .replace(/\p{Extended_Pictographic}/gu, '')
+        .replace(/[\u2000-\u206F]/g, ' ')
+        .replace(/[^\u0020-\u00FF]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
 
@@ -7909,6 +7914,11 @@ $('homeBtn').addEventListener('click', showHome);
       parsed.querySelectorAll('br').forEach(br => br.replaceWith(parsed.createTextNode(' ')));
       const root = parsed.body.firstElementChild;
       const walk = node => {
+        if (node.nodeType === 3) {
+          const textValue = cleanText(node.nodeValue);
+          if (textValue) drawParagraph(textValue, { size: 10.5, after: 3 });
+          return;
+        }
         if (node.nodeType !== 1) return;
         const tag = node.tagName.toLowerCase();
         if (['button','script','style','img'].includes(tag) || node.classList.contains('item-actions')) return;
