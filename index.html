@@ -4712,8 +4712,6 @@ async function loadAdminMeetingResponses(meetingId) {
   $('meetingTime').value = meeting.meeting_time || '';
   $('meetingLocation').value = meeting.location || '';
   $('meetingNotes').value = meeting.notes || '';
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
     if (
@@ -6728,14 +6726,26 @@ if (home) {
 
     const input = event.target;
     const cursor = input.selectionStart;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
 
     contractFilters.search = input.value;
 
     renderContracts();
 
     const newInput = $('contractFilterSearch');
-    newInput.focus();
-    newInput.setSelectionRange(cursor, cursor);
+    if (newInput) {
+      try {
+        newInput.focus({ preventScroll: true });
+      } catch (error) {
+        newInput.focus();
+        window.scrollTo(scrollX, scrollY);
+      }
+      newInput.setSelectionRange(cursor, cursor);
+    }
+    if (window.scrollX !== scrollX || window.scrollY !== scrollY) {
+      window.scrollTo(scrollX, scrollY);
+    }
   });
 
   $('contractsOverview').addEventListener('change', event => {
