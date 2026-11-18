@@ -3562,7 +3562,10 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
             <label for="agendaDescription">Anteckning / underlag</label>
             <textarea id="agendaDescription"></textarea>
 
-            <button class="primary" type="submit">Lägg till punkt</button>
+            <div class="item-actions">
+              <button class="primary" type="submit">Lägg till punkt</button>
+              <button id="cancelAgendaEdit" type="button" class="hidden">Avbryt ändring</button>
+            </div>
           </form>
         </div>
       </div>
@@ -4837,6 +4840,8 @@ function agendaItemNode(item, letter, agendaDocuments = []) {
     <h3>${letter}) ${esc(item.title || 'Dagordningspunkt')}</h3>
     <p>${esc(item.description || item.notes || '')}</p>
     <div class="item-actions">
+      <button class="small"
+        data-edit-agenda="${esc(item.id)}">Ändra punkt</button>
       <button class="small danger"
         data-delete-agenda="${esc(item.id)}">Ta bort punkt</button>
     </div>`;
@@ -4986,8 +4991,30 @@ if (sectionDocuments.length > 0) {
   }
 
   $('agendaSections').addEventListener('click', async event => {
-    const button = event.target.closest('[data-delete-agenda]');
+    const editButton = event.target.closest('[data-edit-agenda]');
+    if (editButton) {
+      if (!isAdminUser) {
+        message('Du har inte behörighet att ändra dagordningspunkter.', 'error');
+        return;
+      }
+      const item = agendaItems.find(entry => String(entry.id) === String(editButton.dataset.editAgenda));
+      if (!item) {
+        message('Dagordningspunkten kunde inte hittas. Ladda om dagordningen.', 'error');
+        return;
+      }
+      editingAgendaItemId = item.id;
+      $('agendaSection').value = String(item.section_number ?? item.section ?? item.paragraph ?? '');
+      $('agendaTitle').value = item.title || '';
+      $('agendaDescription').value = item.description || item.notes || '';
+      const submitButton = $('agendaForm').querySelector('button[type="submit"]');
+      if (submitButton) submitButton.textContent = 'Spara ändringar';
+      $('cancelAgendaEdit').classList.remove('hidden');
+      $('agendaForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('agendaTitle').focus({ preventScroll: true });
+      return;
+    }
 
+    const button = event.target.closest('[data-delete-agenda]');
     if (!button || !confirm('Ta bort dagordningspunkten?')) return;
 
     const { error } = await db
@@ -5002,6 +5029,18 @@ if (sectionDocuments.length > 0) {
     }
   });
 
+    let editingAgendaItemId = null;
+
+  function resetAgendaEditForm() {
+    editingAgendaItemId = null;
+    $('agendaForm').reset();
+    const submitButton = $('agendaForm').querySelector('button[type="submit"]');
+    if (submitButton) submitButton.textContent = 'Lägg till punkt';
+    $('cancelAgendaEdit').classList.add('hidden');
+  }
+
+  $('cancelAgendaEdit').addEventListener('click', resetAgendaEditForm);
+
   $('agendaForm').addEventListener('submit', async event => {
     event.preventDefault();
 
@@ -5009,33 +5048,45 @@ if (sectionDocuments.length > 0) {
       message('Välj först ett möte.', 'error');
       return;
     }
-const selectedSection = String($('agendaSection').value);
+    if (!isAdminUser) {
+      message('Du har inte behörighet att ändra dagordningen.', 'error');
+      return;
+    }
+    const selectedSection = String($('agendaSection').value);
+    if (!['7', '8', '9', '10', '11'].includes(selectedSection)) {
+      message('Egna dagordningspunkter kan endast läggas till under punkt 7–11.', 'error');
+      return;
+    }
 
-if (!['7', '8', '9', '10', '11'].includes(selectedSection)) {
-  message('Egna dagordningspunkter kan endast läggas till under punkt 7–11.', 'error');
-  return;
-}
     const payload = {
       meeting_id: selectedMeetingId,
       section_number: $('agendaSection').value,
       title: $('agendaTitle').value.trim(),
-      description: $('agendaDescription').value.trim(),
-      created_by: currentUser.id
+      description: $('agendaDescription').value.trim()
     };
 
-    const { error } = await db
-      .from('agenda_items')
-      .insert(payload);
+    let result;
+    if (editingAgendaItemId) {
+      result = await db
+        .from('agenda_items')
+        .update(payload)
+        .eq('id', editingAgendaItemId)
+        .eq('meeting_id', selectedMeetingId);
+    } else {
+      result = await db
+        .from('agenda_items')
+        .insert({ ...payload, created_by: currentUser.id });
+    }
 
-    if (error) {
-      message('Kunde inte spara punkten: ' + error.message, 'error');
+    if (result.error) {
+      message('Kunde inte spara dagordningspunkten: ' + result.error.message, 'error');
       return;
     }
 
-    event.target.reset();
+    const wasEditing = Boolean(editingAgendaItemId);
+    resetAgendaEditForm();
     await loadAgenda();
-
-    message('Dagordningspunkten har lagts till.', 'ok');
+    message(wasEditing ? 'Dagordningspunkten har uppdaterats.' : 'Dagordningspunkten har lagts till.', 'ok');
   });
 
   $('printAgenda').addEventListener('click', () => {
@@ -8274,6 +8325,7 @@ $('createNotice').classList.toggle('hidden', !admin);
       '[data-action="edit"],' +
       '[data-action="delete"],' +
       '[data-delete-agenda],' +
+      '[data-edit-agenda],' +
       '[data-contract-edit],' +
       '[data-contract-delete],' +
       '[data-annual-edit],' +
@@ -8395,7 +8447,8 @@ async function loadUserRole(user) {
         '[data-action="edit"],' +
         '[data-action="delete"],' +
         '[data-delete-agenda],' +
-        '[data-contract-edit],' +
+        '[data-edit-agenda],' +
+        '[data-contract-edit], +
         '[data-contract-delete]'
       ) ||
       button.id === 'saveMinutes' ||
