@@ -7207,12 +7207,12 @@ if (home) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const daysLeft = Math.round((due.getTime() - today.getTime()) / 86400000);
-    if (daysLeft <= 2) {
+    if (daysLeft <= 7) {
       if (daysLeft < 0) return { className: 'annual-deadline-overdue', labelClass: 'overdue', label: 'Försenad – ' + Math.abs(daysLeft) + ' dagar' };
       if (daysLeft === 0) return { className: 'annual-deadline-overdue', labelClass: 'overdue', label: 'Sista dagen i dag' };
       return { className: 'annual-deadline-overdue', labelClass: 'overdue', label: daysLeft + ' dagar kvar – åtgärd krävs' };
     }
-    if (daysLeft <= 7) return { className: 'annual-deadline-warning', labelClass: '', label: daysLeft + ' dagar kvar' };
+    if (daysLeft <= 14) return { className: 'annual-deadline-warning', labelClass: '', label: daysLeft + ' dagar kvar' };
     return { className: '', labelClass: '', label: '' };
   }
 
@@ -7700,8 +7700,8 @@ async function renderHomeDashboard() {
     })
     .filter(days => days !== null);
   const overdueAnnualCount = annualDueDays.filter(days => days < 0).length;
-  const urgentAnnualCount = annualDueDays.filter(days => days >= 0 && days <= 2).length;
-  const dueSoonAnnualCount = annualDueDays.filter(days => days >= 3 && days <= 7).length;
+  const urgentAnnualCount = annualDueDays.filter(days => days >= 0 && days <= 7).length;
+  const dueSoonAnnualCount = annualDueDays.filter(days => days >= 8 && days <= 14).length;
   // Visa alla planerade/pågående poster i årshjulet, inte antalet möten.
   const activeAnnualEvents = annualEvents.filter(item =>
     item.status !== 'Genomförd' && item.status !== 'Ej aktuell'
@@ -7773,11 +7773,11 @@ async function renderHomeDashboard() {
   if (annualStatusText) annualStatusText.textContent = annualEventsLoadError
     ? 'Kan inte läsa data'
     : overdueAnnualCount
-      ? overdueAnnualCount + ' försenade · ' + urgentAnnualCount + ' inom 2 dagar'
+      ? overdueAnnualCount + ' försenade · ' + urgentAnnualCount + ' inom 7 dagar'
       : urgentAnnualCount
-        ? urgentAnnualCount + ' aktiviteter inom 2 dagar – åtgärd krävs'
+        ? urgentAnnualCount + ' aktiviteter inom 7 dagar – åtgärd krävs'
         : dueSoonAnnualCount
-          ? dueSoonAnnualCount + ' aktiviteter inom 3–7 dagar'
+          ? dueSoonAnnualCount + ' aktiviteter inom 8–14 dagar'
           : activeAnnualEvents.length
             ? 'Planerade och pågående i årshjulet'
             : 'Inga planerade aktiviteter';
