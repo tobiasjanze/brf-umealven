@@ -8301,8 +8301,16 @@ function createMeetingNotice() {
     hyphens: auto;
   }
 
-  .home-stat .home-stat-title-second-line {
+  .home-stat > span {
     display: block;
+    white-space: normal !important;
+  }
+
+  .home-stat .home-stat-title-second-line {
+    display: block !important;
+    width: 100%;
+    clear: both;
+    white-space: normal !important;
   }
 
   .home-stat small {
