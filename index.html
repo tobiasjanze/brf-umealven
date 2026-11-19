@@ -5376,8 +5376,8 @@ function renderMinutesActions(){
   root.innerHTML=list.map((a,i)=>{
     const done=a.status==='Klar';
     const daysUntilDue=a.dueDate?Math.round((new Date(a.dueDate+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime())/86400000):null;
-    const late=!done&&daysUntilDue!==null&&daysUntilDue<0;
-    const dueSoon=!done&&daysUntilDue!==null&&daysUntilDue>=0&&daysUntilDue<=7;
+    const late=!done&&daysUntilDue!==null&&daysUntilDue<=7;
+    const dueSoon=!done&&daysUntilDue!==null&&daysUntilDue>=8&&daysUntilDue<=14;
     const sec=sections.find(x=>String(x[0])===String(a.section));
     const opts=['Ej påbörjad','Pågående','Klar'].map(v=>'<option '+(a.status===v?'selected':'')+'>'+v+'</option>').join('');
     const actionId=String(a.id||i);
@@ -7691,10 +7691,11 @@ async function renderHomeDashboard() {
     return Math.round((due - current) / 86400000);
   }).filter(days => days !== null);
   const overdueTaskCount = taskDueDays.filter(days => days < 0).length;
-  const dueSoonTaskCount = taskDueDays.filter(days => days >= 0 && days <= 7).length;
+  const urgentTaskCount = taskDueDays.filter(days => days >= 0 && days <= 7).length;
+  const dueSoonTaskCount = taskDueDays.filter(days => days >= 8 && days <= 14).length;
 
-  // Årshjulet använder samma tidsgränser som Uppgifter: grönt >7 dagar,
-  // gult 0–7 dagar och rött när slutdatumet har passerat.
+  // Uppgifter och årshjulet använder samma tidsgränser:
+  // grönt >14 dagar, gult 8–14 dagar och rött 0–7 dagar samt försenat.
   const annualDueDays = annualEvents
     .filter(item => item.status !== 'Genomförd' && item.status !== 'Ej aktuell')
     .map(item => {
@@ -7759,14 +7760,16 @@ async function renderHomeDashboard() {
       ? 'Inga dokument att läsa'
       : readCount + ' av ' + docs.length + ' dokument lästa';
 
-  setHomeStatColor(openTaskNode, minutesResult.error ? 'amber' : overdueTaskCount ? 'red' : dueSoonTaskCount ? 'amber' : 'green');
+  setHomeStatColor(openTaskNode, minutesResult.error ? 'amber' : (overdueTaskCount || urgentTaskCount) ? 'red' : dueSoonTaskCount ? 'amber' : 'green');
   if (taskStatusText) taskStatusText.textContent = minutesResult.error
     ? 'Kan inte läsa data'
     : overdueTaskCount
-      ? overdueTaskCount + ' försenade · ' + dueSoonTaskCount + ' inom 7 dagar'
-      : dueSoonTaskCount
-        ? dueSoonTaskCount + ' uppgifter inom 7 dagar'
-        : 'Inga nära förfallodatum';
+      ? overdueTaskCount + ' försenade · ' + urgentTaskCount + ' inom 7 dagar'
+      : urgentTaskCount
+        ? urgentTaskCount + ' uppgifter inom 7 dagar – åtgärd krävs'
+        : dueSoonTaskCount
+          ? dueSoonTaskCount + ' uppgifter inom 8–14 dagar'
+          : 'Inga nära förfallodatum';
 
   setHomeStatColor(contractAlertNode, contractsLoadError ? 'amber' : overdueContractCount ? 'red' : dueSoonContractCount ? 'amber' : 'green');
   if (contractStatusText) contractStatusText.textContent = contractsLoadError
