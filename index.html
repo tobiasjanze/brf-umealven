@@ -8259,7 +8259,174 @@ function createMeetingNotice() {
       #meetingNoticeOverlay .meeting-info p{margin:7px 0}
       #meetingNoticeOverlay .notes{white-space:pre-wrap}
       #meetingNoticeOverlay .footer{margin-top:55px;border-top:1px solid #ccd6df;padding-top:15px;color:#687783;font-size:12px}
-    </style>
+    
+/* ===== MOBILFINJUSTERING – STARTSIDA OCH PROTOKOLL ===== */
+@media (max-width: 600px) {
+  #homeView,
+  #homeView > .panel,
+  .home-overview,
+  .home-overview-stats,
+  .home-stat {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .home-overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .home-stat {
+    width: 100%;
+    min-height: 104px;
+    padding: 11px 10px;
+    overflow: hidden;
+  }
+
+  .home-stat strong {
+    font-size: 1.45rem;
+    line-height: 1.15;
+    margin-bottom: 7px;
+  }
+
+  .home-stat span {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    font-size: .94rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+  }
+
+  .home-stat small {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    font-size: .78rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .home-overview-details > summary {
+    min-width: 0;
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .home-overview-details > summary > span,
+  .home-overview-details > summary > small {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .home-overview-details > summary::after {
+    flex: 0 0 auto;
+  }
+
+  .home-overview-box,
+  .home-recent-activity,
+  .home-dashboard-main {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .home-dashboard-row {
+    gap: 8px;
+  }
+
+  .next-meeting,
+  .home-meeting-entry,
+  .next-meeting-summary,
+  .next-meeting-title {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .next-meeting-summary {
+    padding-right: 34px;
+  }
+
+  .minutes-panel,
+  .minutes-action-form,
+  .minutes-action-card {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .minutes-action-card > summary {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .minutes-action-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .minutes-action-summary-meta {
+    flex: 0 1 auto;
+    max-width: 42%;
+    white-space: normal;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .minutes-action-expanded {
+    padding: 0 12px 12px;
+    min-width: 0;
+  }
+
+  .minutes-action-meta,
+  .minutes-action-controls {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .minutes-action-controls select {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .minutes-signature-item {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-overview {
+    padding: 10px;
+  }
+
+  .home-overview-stats {
+    gap: 7px;
+  }
+
+  .home-stat {
+    padding: 10px 8px;
+  }
+
+  .home-stat span {
+    font-size: .88rem;
+  }
+
+  .home-stat small {
+    font-size: .74rem;
+  }
+
+  .next-meeting-summary {
+    padding-right: 30px;
+  }
+}
+
+</style>
     ${noticeContent}`;
   document.body.appendChild(overlay);
   overlay.querySelector('#meetingNoticeClose').addEventListener('click', () => overlay.remove());
