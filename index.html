@@ -4784,7 +4784,7 @@ async function loadAdminMeetingResponses(meetingId) {
   resetMeetingForm();
   await loadMeetings();
   if(id && previousMeetingDate && previousMeetingDate!==dateValue){
-    await recordBoardActivity('meeting_date_changed',id,'Mötesdatum ändrat: '+meetingTitle(previousMeeting)+' ('+previousMeetingDate+' → '+dateValue+')','Tidigare datum: '+previousMeetingDate+' · Nytt datum: '+dateValue);
+    void recordBoardActivity('meeting_date_changed',id,'Mötesdatum ändrat: '+meetingTitle(previousMeeting)+' ('+previousMeetingDate+' → '+dateValue+')','Tidigare datum: '+previousMeetingDate+' · Nytt datum: '+dateValue);
   }
   message('Mötet har sparats.', 'ok');
 });
@@ -5056,7 +5056,7 @@ if (sectionDocuments.length > 0) {
     const { error } = await db.from('agenda_items').delete().eq('id',button.dataset.deleteAgenda);
     if (error) message('Kunde inte ta bort punkten: ' + error.message, 'error');
     else {
-      await recordBoardActivity('agenda_deleted',selectedMeetingId,'Dagordningspunkt borttagen: '+deletedSection,deletedSection);
+      void recordBoardActivity('agenda_deleted',selectedMeetingId,'Dagordningspunkt borttagen: '+deletedSection,deletedSection);
       await loadAgenda();
     }
   });
@@ -5117,7 +5117,7 @@ if (sectionDocuments.length > 0) {
 
     const wasEditing = Boolean(editingAgendaItemId);
     const sectionLabel = '§' + payload.section_number + ' – ' + payload.title;
-    await recordBoardActivity(wasEditing?'agenda_updated':'agenda_added',selectedMeetingId,(wasEditing?'Dagordningspunkt ändrad: ':'Dagordningspunkt tillagd: ')+sectionLabel,sectionLabel);
+    void recordBoardActivity(wasEditing?'agenda_updated':'agenda_added',selectedMeetingId,(wasEditing?'Dagordningspunkt ändrad: ':'Dagordningspunkt tillagd: ')+sectionLabel,sectionLabel);
     resetAgendaEditForm();
     await loadAgenda();
     message(wasEditing ? 'Dagordningspunkten har uppdaterats.' : 'Dagordningspunkten har lagts till.', 'ok');
@@ -5643,7 +5643,7 @@ function renderMinutesFields() {
   const meetingId=$('minutesMeetingSelect').value;
   if(!meetingId)return message('Välj ett möte innan du sparar.','error');
   const content=minutesContentFromEditor();
-  const {data:previousMinutesRow}=await db.from('meeting_minutes').select('content').eq('meeting_id',meetingId).maybeSingle();
+  const {data:previousMinutesRow,error:previousMinutesReadError}=await db.from('meeting_minutes').select('content').eq('meeting_id',meetingId).maybeSingle();
   let previousContent=previousMinutesRow?.content||{};
   if(typeof previousContent==='string'){try{previousContent=JSON.parse(previousContent)}catch(error){previousContent={}}}
   const previousActions=Array.isArray(previousContent.__actions)?previousContent.__actions:[];
@@ -5651,15 +5651,17 @@ function renderMinutesFields() {
   const {error}=await db.from('meeting_minutes').upsert({meeting_id:meetingId,content,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:'meeting_id'});
   if(error)return message('Kunde inte spara protokollet: '+error.message,'error');
 
-  (Array.isArray(content.__actions)?content.__actions:[]).forEach(action=>{
-    const previous=previousById.get(String(action.id||''));
-    if(!previous){
-      const decision=action.kind==='decision';
-      void recordBoardActivity(decision?'decision_registered':'task_created',meetingId,(decision?'Nytt beslut registrerat: ':'Uppgift skapad: ')+(action.title||'Utan rubrik'),action.sectionLabel||'');
-    }else if(previous.status!=='Klar' && action.status==='Klar'){
-      void recordBoardActivity('task_completed',meetingId,'Uppgift slutförd: '+(action.title||'Uppgift'),action.sectionLabel||'');
-    }
-  });
+  if(!previousMinutesReadError){
+    (Array.isArray(content.__actions)?content.__actions:[]).forEach(action=>{
+      const previous=previousById.get(String(action.id||''));
+      if(!previous){
+        const decision=action.kind==='decision';
+        void recordBoardActivity(decision?'decision_registered':'task_created',meetingId,(decision?'Nytt beslut registrerat: ':'Uppgift skapad: ')+(action.title||'Utan rubrik'),action.sectionLabel||'');
+      }else if(action.kind!=='decision' && previous.status!=='Klar' && action.status==='Klar'){
+        void recordBoardActivity('task_completed',meetingId,'Uppgift slutförd: '+(action.title||'Uppgift'),action.sectionLabel||'');
+      }
+    });
+  }
 
   // Numret tilldelas först när protokollet sparas första gången.
   const {data:numberData,error:numberError}=await db.rpc('assign_meeting_minutes_number',{p_meeting_id:String(meetingId),p_protocol_year:Number(protocolPeriod(meetings.find(m=>String(m.id)===String(meetingId))).slice(0,4))});
