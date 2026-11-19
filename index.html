@@ -3597,7 +3597,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
           <section class="minutes-panel"><div class="minutes-section-heading"><div><h3>Beslut och uppföljning</h3><p class="muted small">Registrera uppgifter som styrelsen beslutat ska utföras.</p></div><span id="minutesActionCount" class="minutes-count">0 uppgifter</span></div>
             <div id="minutesPreviousActions" class="minutes-previous-actions hidden"></div><div id="minutesActionsList"></div>
             <div class="minutes-action-form minutes-admin-only"><div class="minutes-action-grid">
-              <div><label for="minutesActionTitle">Uppgift / beslut</label><input id="minutesActionTitle" maxlength="240" placeholder="Vad ska göras?"></div>
+              <div><label for="minutesActionTitle">Beslut eller uppgift</label><input id="minutesActionTitle" maxlength="240" placeholder="Beskriv beslutet eller uppgiften"></div><div><label for="minutesActionKind">Typ</label><select id="minutesActionKind"><option value="task">Uppgift</option><option value="decision">Beslut</option></select></div>
               <div><label for="minutesActionSection">Huvudpunkt</label><select id="minutesActionSection"><option value="">Välj huvudpunkt</option></select></div><div><label for="minutesActionSubpoint">Underpunkt</label><select id="minutesActionSubpoint" disabled><option value="">Ingen underpunkt vald</option></select></div>
               <div><label for="minutesActionResponsible">Ansvarig</label><select id="minutesActionResponsible"><option value="">Välj ansvarig ledamot</option></select><input id="minutesActionResponsibleCustom" class="hidden" maxlength="120" placeholder="Skriv namn på annan ansvarig" style="margin-top:8px"></div>
               <div><label for="minutesActionDue">Klart senast</label><input id="minutesActionDue" type="date"></div>
@@ -3974,9 +3974,40 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   }
 
   function meetingTitle(meeting) {
-    return meeting.title ||
-      meeting.name ||
-      'Möte utan titel';
+    return meeting.title || meeting.name || 'Möte utan titel';
+  }
+
+  // Loggfel får aldrig hindra portalens ordinarie sparningar.
+  async function recordBoardActivity(eventType, meetingId, summary, sectionLabel = '') {
+    if (!currentUser || !isAdminUser) return;
+    const meeting = meetings.find(item => String(item.id) === String(meetingId));
+    try {
+      const { error } = await db.from('board_activity_log').insert({
+        event_type:eventType, meeting_id:meetingId == null ? null : String(meetingId),
+        meeting_label:meeting ? meetingTitle(meeting) : 'Möte',
+        summary:String(summary || '').slice(0,500),
+        section_label:String(sectionLabel || '').slice(0,200), created_by:currentUser.id
+      });
+      if(error) console.warn('Aktiviteten kunde inte registreras:',error.message);
+    } catch(error) { console.warn('Aktivitetsloggen är tillfälligt otillgänglig:',error); }
+  }
+
+  async function renderRecentBoardActivity() {
+    const root=$('homeRecentActivity');
+    if(!root || !currentUser)return;
+    root.innerHTML='<p class="muted">Hämtar senaste händelser ...</p>';
+    try {
+      const {data,error}=await db.from('board_activity_log')
+        .select('id,event_type,meeting_id,meeting_label,summary,section_label,created_at')
+        .order('created_at',{ascending:false}).limit(10);
+      if(error)throw error;
+      if(!data || !data.length){root.innerHTML='<p class="home-empty">Inga händelser har registrerats ännu.</p>';return;}
+      const icons={agenda_added:'＋',agenda_updated:'✎',agenda_deleted:'×',meeting_date_changed:'◷',decision_registered:'✓',task_created:'＋',task_completed:'✓'};
+      root.innerHTML=data.map(item=>'<button type="button" class="home-event-card" data-home-activity-meeting="'+esc(item.meeting_id||'')+'" data-home-activity-type="'+esc(item.event_type)+'"><span class="home-event-icon" aria-hidden="true">'+(icons[item.event_type]||'•')+'</span><span class="home-event-copy"><strong>'+esc(item.summary)+'</strong><small>'+esc(item.section_label?item.section_label+' · ':'')+esc(item.meeting_label||'Styrelseportalen')+' · '+esc(new Date(item.created_at).toLocaleString('sv-SE',{dateStyle:'short',timeStyle:'short'}))+'</small></span><span class="home-card-arrow">›</span></button>').join('');
+    } catch(error) {
+      console.warn('Kunde inte hämta aktivitetsloggen:',error);
+      root.innerHTML='<p class="home-empty">Aktivitetsloggen kunde inte hämtas just nu.</p>';
+    }
   }
 // ===== ANSVVARIGA FÖR AVTAL =====
 
@@ -4711,6 +4742,8 @@ async function loadAdminMeetingResponses(meetingId) {
   event.preventDefault();
 
   const id = $('meetingId').value;
+  const previousMeeting = id ? meetings.find(item => String(item.id) === String(id)) : null;
+  const previousMeetingDate = previousMeeting ? String(meetingDate(previousMeeting)).slice(0,10) : '';
   const dateValue = $('meetingDate').value;
   const timeValue = $('meetingTime').value;
 
@@ -4750,7 +4783,9 @@ async function loadAdminMeetingResponses(meetingId) {
 
   resetMeetingForm();
   await loadMeetings();
-
+  if(id && previousMeetingDate && previousMeetingDate!==dateValue){
+    await recordBoardActivity('meeting_date_changed',id,'Mötesdatum ändrat: '+meetingTitle(previousMeeting)+' ('+previousMeetingDate+' → '+dateValue+')','Tidigare datum: '+previousMeetingDate+' · Nytt datum: '+dateValue);
+  }
   message('Mötet har sparats.', 'ok');
 });
 
@@ -5016,15 +5051,12 @@ if (sectionDocuments.length > 0) {
 
     const button = event.target.closest('[data-delete-agenda]');
     if (!button || !confirm('Ta bort dagordningspunkten?')) return;
-
-    const { error } = await db
-      .from('agenda_items')
-      .delete()
-      .eq('id', button.dataset.deleteAgenda);
-
-    if (error) {
-      message('Kunde inte ta bort punkten: ' + error.message, 'error');
-    } else {
+    const deletedItem=agendaItems.find(item=>String(item.id)===String(button.dataset.deleteAgenda));
+    const deletedSection=deletedItem?'§'+(deletedItem.section_number??deletedItem.section??deletedItem.paragraph??'')+' – '+(deletedItem.title||'Dagordningspunkt'):'Dagordningspunkt';
+    const { error } = await db.from('agenda_items').delete().eq('id',button.dataset.deleteAgenda);
+    if (error) message('Kunde inte ta bort punkten: ' + error.message, 'error');
+    else {
+      await recordBoardActivity('agenda_deleted',selectedMeetingId,'Dagordningspunkt borttagen: '+deletedSection,deletedSection);
       await loadAgenda();
     }
   });
@@ -5084,6 +5116,8 @@ if (sectionDocuments.length > 0) {
     }
 
     const wasEditing = Boolean(editingAgendaItemId);
+    const sectionLabel = '§' + payload.section_number + ' – ' + payload.title;
+    await recordBoardActivity(wasEditing?'agenda_updated':'agenda_added',selectedMeetingId,(wasEditing?'Dagordningspunkt ändrad: ':'Dagordningspunkt tillagd: ')+sectionLabel,sectionLabel);
     resetAgendaEditForm();
     await loadAgenda();
     message(wasEditing ? 'Dagordningspunkten har uppdaterats.' : 'Dagordningspunkten har lagts till.', 'ok');
@@ -5371,6 +5405,7 @@ let editingMinutesActionIndex=null;
 function resetMinutesActionForm(){
   editingMinutesActionIndex=null;
   $('minutesActionTitle').value='';
+  $('minutesActionKind').value='task';
   $('minutesActionSection').value='';
   $('minutesActionSubpoint').innerHTML='<option value="">Ingen underpunkt vald</option>';
   $('minutesActionSubpoint').disabled=true;
@@ -5387,7 +5422,7 @@ $('addMinutesAction').addEventListener('click',()=>{
   if(!section)return message('Välj en huvudpunkt.','error');
   const main=sections.find(x=>String(x[0])===String(section));
   const sectionLabel=selectedSub&&selectedSub.value?selectedSub.dataset.sectionLabel:'§'+section+' '+(main?main[1]:'');
-  const changes={title,section,agendaItemId:selectedSub&&selectedSub.value?selectedSub.value:null,sectionLabel,responsible:minutesActionResponsibleValue(),dueDate:$('minutesActionDue').value};
+  const changes={title,kind:$('minutesActionKind').value==='decision'?'decision':'task',section,agendaItemId:selectedSub&&selectedSub.value?selectedSub.value:null,sectionLabel,responsible:minutesActionResponsibleValue(),dueDate:$('minutesActionDue').value};
   if(editingMinutesActionIndex!==null){
     currentMinutes.__actions[editingMinutesActionIndex]={...currentMinutes.__actions[editingMinutesActionIndex],...changes,updatedAt:new Date().toISOString()};
     resetMinutesActionForm();
@@ -5411,6 +5446,7 @@ $('minutesActionsList').addEventListener('click',async e=>{
     const i=Number(editIndex),a=currentMinutes.__actions[i];if(!a)return;
     editingMinutesActionIndex=i;
     $('minutesActionTitle').value=a.title||'';
+    $('minutesActionKind').value=a.kind==='decision'?'decision':'task';
     $('minutesActionSection').value=a.section||'';
     await loadMinutesActionSubpoints();
     if(a.agendaItemId)$('minutesActionSubpoint').value=String(a.agendaItemId);
@@ -5607,8 +5643,23 @@ function renderMinutesFields() {
   const meetingId=$('minutesMeetingSelect').value;
   if(!meetingId)return message('Välj ett möte innan du sparar.','error');
   const content=minutesContentFromEditor();
+  const {data:previousMinutesRow}=await db.from('meeting_minutes').select('content').eq('meeting_id',meetingId).maybeSingle();
+  let previousContent=previousMinutesRow?.content||{};
+  if(typeof previousContent==='string'){try{previousContent=JSON.parse(previousContent)}catch(error){previousContent={}}}
+  const previousActions=Array.isArray(previousContent.__actions)?previousContent.__actions:[];
+  const previousById=new Map(previousActions.map(action=>[String(action.id||''),action]));
   const {error}=await db.from('meeting_minutes').upsert({meeting_id:meetingId,content,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:'meeting_id'});
   if(error)return message('Kunde inte spara protokollet: '+error.message,'error');
+
+  (Array.isArray(content.__actions)?content.__actions:[]).forEach(action=>{
+    const previous=previousById.get(String(action.id||''));
+    if(!previous){
+      const decision=action.kind==='decision';
+      void recordBoardActivity(decision?'decision_registered':'task_created',meetingId,(decision?'Nytt beslut registrerat: ':'Uppgift skapad: ')+(action.title||'Utan rubrik'),action.sectionLabel||'');
+    }else if(previous.status!=='Klar' && action.status==='Klar'){
+      void recordBoardActivity('task_completed',meetingId,'Uppgift slutförd: '+(action.title||'Uppgift'),action.sectionLabel||'');
+    }
+  });
 
   // Numret tilldelas först när protokollet sparas första gången.
   const {data:numberData,error:numberError}=await db.rpc('assign_meeting_minutes_number',{p_meeting_id:String(meetingId),p_protocol_year:Number(protocolPeriod(meetings.find(m=>String(m.id)===String(meetingId))).slice(0,4))});
@@ -7748,36 +7799,25 @@ async function renderHomeDashboard() {
     ).join('');
   }
 
-  const activityRoot = $('homeRecentActivity');
-  const activity = [];
-  recentDocs.slice(0, 3).forEach(doc => {
-    const meeting = meetingById.get(String(doc.meeting_id));
-    activity.push({
-      time: new Date(doc.created_at).getTime(),
-      text: 'Nytt mötesdokument uppladdat: ' + (doc.display_name || doc.file_name || doc.name || 'Dokument'),
-      meta: meeting ? meetingTitle(meeting) : 'Mötesdokument',
-      kind: 'document',
-      meetingId: doc.meeting_id
-    });
-  });
-  allTasks.filter(task => task.status === 'Klar' && (task.updatedAt || task.createdAt)).forEach(task => {
-    const stamp = task.updatedAt || task.createdAt;
-    const time = new Date(stamp).getTime();
-    if (time >= cutoff) activity.push({
-      time,
-      text: 'Uppföljningsuppgift avslutad: ' + (task.title || 'Uppgift'),
-      meta: task.responsible || 'Ingen ansvarig angiven',
-      kind: 'task',
-      meetingId: task.meetingId
-    });
-  });
-  activity.sort((a,b) => b.time-a.time);
-  activityRoot.innerHTML = activity.length
-    ? activity.slice(0, 3).map(item => '<button type="button" class="home-event-card" '+(item.kind === 'document' ? 'data-home-document="'+esc(item.meetingId)+'"' : 'data-home-task="'+esc(item.meetingId)+'"')+'><span class="home-event-icon" aria-hidden="true">'+(item.kind === 'document'?'▤':'✓')+'</span><span class="home-event-copy"><strong>'+esc(item.text)+'</strong><small>'+esc(item.meta)+' · '+esc(new Date(item.time).toLocaleString('sv-SE', { dateStyle:'short', timeStyle:'short' }))+'</small></span><span class="home-card-arrow">›</span></button>').join('')
-    : '<p class="home-empty">Inga nya händelser de senaste 7 dagarna.</p>';
+  await renderRecentBoardActivity();
 }
 
 document.addEventListener('click', event => {
+  const activityButton=event.target.closest('[data-home-activity-meeting]');
+  if(activityButton){
+    const meetingId=activityButton.dataset.homeActivityMeeting;
+    const eventType=activityButton.dataset.homeActivityType||'';
+    if(eventType.startsWith('agenda_')){
+      showTab('meetings');
+      const openButton=[...document.querySelectorAll('#meetingsList [data-action="select"][data-id]')].find(button=>button.dataset.id===meetingId);
+      if(openButton)openButton.click();
+    }else{
+      showTab('minutes');
+      $('minutesMeetingSelect').value=meetingId;
+      $('minutesMeetingSelect').dispatchEvent(new Event('change'));
+    }
+    return;
+  }
   const docButton = event.target.closest('[data-home-document]');
   if (docButton) {
     showTab('documents');
