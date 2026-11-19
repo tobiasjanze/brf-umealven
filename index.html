@@ -3377,7 +3377,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
               <strong id="homeUnreadCount">–</strong><span>Olästa dokument</span><small id="homeUnreadStatusText">Handlingar att läsa</small>
             </button>
             <button type="button" class="home-stat home-stat--green" data-home-open="minutes">
-              <strong id="homeOpenTaskCount">–</strong><span>Protokolluppföljning</span><small id="homeTaskStatusText">Pågående uppföljningar</small>
+              <strong id="homeOpenTaskCount">–</strong><span>Protokoll<span class="home-stat-title-second-line">uppföljning</span></span><small id="homeTaskStatusText">Pågående uppföljningar</small>
             </button>
             <button type="button" class="home-stat home-stat--green" data-home-open="contracts">
               <strong id="homeContractAlertCount">–</strong><span>Avtalsbevakning</span><small id="homeContractStatusText">Kommande omförhandlingar</small>
@@ -8299,6 +8299,10 @@ function createMeetingNotice() {
     overflow-wrap: anywhere;
     word-break: normal;
     hyphens: auto;
+  }
+
+  .home-stat .home-stat-title-second-line {
+    display: block;
   }
 
   .home-stat small {
