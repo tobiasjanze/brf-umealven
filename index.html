@@ -4002,7 +4002,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
         .order('created_at',{ascending:false}).limit(10);
       if(error)throw error;
       if(!data || !data.length){root.innerHTML='<p class="home-empty">Inga händelser har registrerats ännu.</p>';return;}
-      const icons={agenda_added:'＋',agenda_updated:'✎',agenda_deleted:'×',meeting_date_changed:'◷',decision_registered:'✓',task_created:'＋',task_completed:'✓'};
+      const icons={agenda_added:'＋',agenda_updated:'✎',agenda_deleted:'×',meeting_date_changed:'◷',decision_registered:'✓',decision_deleted:'×',task_created:'＋',task_completed:'✓',task_deleted:'×'};
       root.innerHTML=data.map(item=>'<button type="button" class="home-event-card" data-home-activity-meeting="'+esc(item.meeting_id||'')+'" data-home-activity-type="'+esc(item.event_type)+'"><span class="home-event-icon" aria-hidden="true">'+(icons[item.event_type]||'•')+'</span><span class="home-event-copy"><strong>'+esc(item.summary)+'</strong><small>'+esc(item.section_label?item.section_label+' · ':'')+esc(item.meeting_label||'Styrelseportalen')+' · '+esc(new Date(item.created_at).toLocaleString('sv-SE',{dateStyle:'short',timeStyle:'short'}))+'</small></span><span class="home-card-arrow">›</span></button>').join('');
     } catch(error) {
       console.warn('Kunde inte hämta aktivitetsloggen:',error);
@@ -5463,7 +5463,9 @@ $('minutesActionsList').addEventListener('click',async e=>{
     const actions=Array.isArray(currentMinutes.__actions)?currentMinutes.__actions:[];
     const item=actions[deleteIndex];
     if(!item)return;
-    if(!confirm('Vill du ta bort uppgiften "'+(item.title||'Uppgift')+'" permanent från protokollet?'))return;
+    const isDecision=item.kind==='decision';
+    const itemLabel=isDecision?'beslut':'uppgift';
+    if(!confirm('Vill du ta bort '+itemLabel+' "'+(item.title||itemLabel)+'" permanent från protokollet?'))return;
     const meetingId=$('minutesMeetingSelect').value;
     if(!meetingId)return message('Välj ett möte innan uppgiften tas bort.','error');
     const previousActions=[...actions];
@@ -5482,8 +5484,14 @@ $('minutesActionsList').addEventListener('click',async e=>{
     }
     currentMinutes=content;
     renderMinutesActions();
+    await recordBoardActivity(
+      isDecision?'decision_deleted':'task_deleted',
+      meetingId,
+      (isDecision?'Beslut borttaget: ':'Uppgift borttagen: ')+(item.title||'Utan rubrik'),
+      item.sectionLabel||''
+    );
     await renderHomeDashboard();
-    message('Uppgiften har raderats permanent från protokollet.','ok');
+    message((isDecision?'Beslutet':'Uppgiften')+' har raderats permanent från protokollet.','ok');
   }
 });
 $('minutesPreviousActions').addEventListener('click',e=>{
