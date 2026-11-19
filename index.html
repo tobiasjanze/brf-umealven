@@ -7692,6 +7692,10 @@ async function renderHomeDashboard() {
     .filter(days => days !== null);
   const overdueAnnualCount = annualDueDays.filter(days => days < 0).length;
   const dueSoonAnnualCount = annualDueDays.filter(days => days >= 0 && days <= 7).length;
+  // Visa alla planerade/pågående poster i årshjulet, inte antalet möten.
+  const activeAnnualEvents = annualEvents.filter(item =>
+    item.status !== 'Genomförd' && item.status !== 'Ej aktuell'
+  );
 
   const activeContracts = contracts.filter(contract => contract.status === 'active');
   const contractDueDays = activeContracts.map(contract => contractDaysLeft(contractActionDate(contract)));
@@ -7710,7 +7714,7 @@ async function renderHomeDashboard() {
   unreadNode.textContent = docsResult.error || readsResult.error ? '–' : unreadDocs.length;
   openTaskNode.textContent = minutesResult.error ? '–' : openTasks.length;
   contractAlertNode.textContent = contractsLoadError ? '–' : contractAlertCount;
-  upcomingNode.textContent = annualEventsLoadError ? '–' : upcomingMeetings.length;
+  upcomingNode.textContent = annualEventsLoadError ? '–' : activeAnnualEvents.length;
 
   // Alla fyra rutor visar gult och ett streck när respektive datakälla inte kan läsas.
   const setHomeStatColor = (node, color) => {
@@ -7762,7 +7766,9 @@ async function renderHomeDashboard() {
       ? overdueAnnualCount + ' försenade · ' + dueSoonAnnualCount + ' inom 7 dagar'
       : dueSoonAnnualCount
         ? dueSoonAnnualCount + ' aktiviteter inom 7 dagar'
-        : 'Inga nära slutdatum';
+        : activeAnnualEvents.length
+          ? 'Planerade och pågående i årshjulet'
+          : 'Inga planerade aktiviteter';
 
   const recentRoot = $('homeRecentDocuments');
   if (!docsResult.error && !readsResult.error) {
