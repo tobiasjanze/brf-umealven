@@ -3377,7 +3377,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
               <strong id="homeUnreadCount">–</strong><span>Olästa dokument</span><small id="homeUnreadStatusText">Handlingar att läsa</small>
             </button>
             <button type="button" class="home-stat home-stat--green" data-home-open="minutes">
-              <strong id="homeOpenTaskCount">–</strong><span>Protokoll<span class="home-stat-title-second-line">uppföljning</span></span><small id="homeTaskStatusText">Pågående uppföljningar</small>
+              <strong id="homeOpenTaskCount">–</strong><span class="home-stat-title-first-line">Protokoll</span><span class="home-stat-title-second-line">uppföljning</span><small id="homeTaskStatusText">Pågående uppföljningar</small>
             </button>
             <button type="button" class="home-stat home-stat--green" data-home-open="contracts">
               <strong id="homeContractAlertCount">–</strong><span>Avtalsbevakning</span><small id="homeContractStatusText">Kommande omförhandlingar</small>
@@ -8301,16 +8301,15 @@ function createMeetingNotice() {
     hyphens: auto;
   }
 
-  .home-stat > span {
-    display: block;
-    white-space: normal !important;
-  }
-
-  .home-stat .home-stat-title-second-line {
+  .home-stat > .home-stat-title-first-line,
+  .home-stat > .home-stat-title-second-line {
     display: block !important;
+    flex: 0 0 auto;
+    align-self: stretch;
     width: 100%;
-    clear: both;
+    min-width: 0;
     white-space: normal !important;
+    line-height: 1.25;
   }
 
   .home-stat small {
