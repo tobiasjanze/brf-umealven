@@ -7891,10 +7891,6 @@ document.addEventListener('change', event => {
 document.addEventListener('reset', event => {
   if (portalDirtyIds.includes(event.target.id)) portalDirtyForms.delete(event.target.id);
 }, true);
-portalDirtyIds.forEach(id => {
-  const form = document.getElementById(id);
-  if (form) form.addEventListener('submit', () => portalDirtyForms.delete(id), true);
-});
 function portalNavigationAllowed() {
   if (!isAdminUser || !portalDirtyForms.size) return true;
   const labels = [...portalDirtyForms].map(portalFormLabel);
