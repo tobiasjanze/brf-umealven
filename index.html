@@ -4263,7 +4263,7 @@ renderHome();
     select.innerHTML = '';
 
     sections
-      .filter(([number]) => ['5', '7', '8', '9', '10', '11'].includes(String(number)))
+      .filter(([number]) => ['1', '2', '3', '4', '5', '7', '8', '9', '10', '11'].includes(String(number)))
       .forEach(([number, title]) => {
         const option = document.createElement('option');
 
@@ -4976,7 +4976,7 @@ const agendaDocuments = linkedDocuments || [];
   )
 )
 );
-      } else if (['7', '8', '9', '10', '11'].includes(String(number))) {
+      } else if (['1', '2', '3', '4', '5', '7', '8', '9', '10', '11'].includes(String(number))) {
     const empty = document.createElement('p');
     empty.className = 'muted';
     empty.textContent = 'Ingen extra punkt tillagd.';
@@ -5085,8 +5085,8 @@ if (sectionDocuments.length > 0) {
       return;
     }
     const selectedSection = String($('agendaSection').value);
-    if (!['5', '7', '8', '9', '10', '11'].includes(selectedSection)) {
-      message('Underpunkter kan endast läggas till under punkt 5 och 7–11.', 'error');
+    if (!['1', '2', '3', '4', '5', '7', '8', '9', '10', '11'].includes(selectedSection)) {
+      message('Underpunkter kan endast läggas till under punkt 1–5 och 7–11.', 'error');
       return;
     }
 
