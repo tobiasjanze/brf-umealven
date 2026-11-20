@@ -7869,6 +7869,64 @@ document.addEventListener('click', event => {
   }
 });
 
+// ===== CENTRAL NAVIGATION: OSPARADE FORMULÄR + DATAUPPDATERING =====
+const portalDirtyForms = new Set();
+const portalDirtyIds = ['meetingForm','agendaForm','contractForm','annualEventForm','uploadForm'];
+function portalFormLabel(id) {
+  return ({meetingForm:'mötet',agendaForm:'dagordningspunkten',contractForm:'avtalet',annualEventForm:'årshjulsaktiviteten',uploadForm:'dokumentet',minutesEditor:'protokollet'})[id] || 'informationen';
+}
+document.addEventListener('input', event => {
+  if (!isAdminUser) return;
+  const form = event.target.closest('form');
+  if (form && portalDirtyIds.includes(form.id)) portalDirtyForms.add(form.id);
+  if (event.target.closest('#minutesEditor')) portalDirtyForms.add('minutesEditor');
+}, true);
+document.addEventListener('change', event => {
+  if (!isAdminUser) return;
+  const form = event.target.closest('form');
+  if (form && portalDirtyIds.includes(form.id)) portalDirtyForms.add(form.id);
+  if (event.target.closest('#minutesEditor')) portalDirtyForms.add('minutesEditor');
+}, true);
+document.addEventListener('reset', event => {
+  if (portalDirtyIds.includes(event.target.id)) portalDirtyForms.delete(event.target.id);
+}, true);
+portalDirtyIds.forEach(id => {
+  const form = document.getElementById(id);
+  if (form) form.addEventListener('submit', () => portalDirtyForms.delete(id), true);
+});
+function portalNavigationAllowed() {
+  if (!isAdminUser || !portalDirtyForms.size) return true;
+  const labels = [...portalDirtyForms].map(portalFormLabel);
+  const description = [...new Set(labels)].join(', ');
+  const leave = confirm('Osparad information i ' + description + '.\n\nInformationen kan gå förlorad om du byter flik.\n\nVill du lämna sidan ändå?');
+  if (leave) portalDirtyForms.clear();
+  return leave;
+}
+async function portalRefreshForTab(tabName) {
+  if (!currentUser) return;
+  try {
+    if (tabName === 'meetings') {
+      await loadMeetings();
+      if (selectedMeetingId) await loadAgenda();
+    } else if (tabName === 'minutes') {
+      await loadMeetings();
+      const meetingId = $('minutesMeetingSelect').value;
+      if (meetingId) await loadMinutes(meetingId);
+    } else if (tabName === 'documents') {
+      await loadMeetings();
+      if ($('documentsMeetingSelect').value) await loadDocuments();
+    } else if (tabName === 'contracts') {
+      await loadContracts();
+    } else if (tabName === 'annual') {
+      await loadAnnualEvents();
+    } else if (tabName === 'agenda') {
+      if (selectedMeetingId) await loadAgenda();
+    }
+    renderHomeDashboard();
+  } catch (error) {
+    console.error('Uppdatering vid flikbyte misslyckades:', error);
+  }
+}
 function showHome() {
   $('homeView').classList.remove('hidden');
   renderHomeDashboard();
