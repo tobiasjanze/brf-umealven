@@ -7928,6 +7928,8 @@ async function portalRefreshForTab(tabName) {
   }
 }
 function showHome() {
+  if (!portalNavigationAllowed()) return;
+  if (currentUser) { loadMeetings(); loadContracts(); loadAnnualEvents(); }
   $('homeView').classList.remove('hidden');
   renderHomeDashboard();
   $('appNav').classList.add('hidden');
@@ -7942,7 +7944,8 @@ function showHome() {
 }
 
 function showTab(tabName) {
-  if (tabName === 'annual' && currentUser) loadAnnualEvents();
+  if (!portalNavigationAllowed()) return;
+  if (currentUser) portalRefreshForTab(tabName);
   $('homeView').classList.add('hidden');
   $('appNav').classList.remove('hidden');
 
