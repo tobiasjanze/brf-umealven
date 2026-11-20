@@ -5658,6 +5658,7 @@ function renderMinutesFields() {
   const previousById=new Map(previousActions.map(action=>[String(action.id||''),action]));
   const {error}=await db.from('meeting_minutes').upsert({meeting_id:meetingId,content,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:'meeting_id'});
   if(error)return message('Kunde inte spara protokollet: '+error.message,'error');
+  portalDirtyForms.delete('minutesEditor');
 
   if(!previousMinutesReadError){
     (Array.isArray(content.__actions)?content.__actions:[]).forEach(action=>{
