@@ -3299,13 +3299,13 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 @media(max-width:700px){.document-document-row{flex-direction:column}.document-document-actions{justify-content:flex-start;min-width:0;width:100%}.document-document-actions button{flex:1}}
 
 
-/* Sticky navigation: mjuk döljning även på iPad och dator */
+/* Dynamisk navigation: döljning uppåt på dator, nedåt på mobil/iPad */
 #appNav{transition:transform .55s ease-in-out,opacity .55s ease-in-out;}
 #appNav.nav-auto-hidden{transform:translateY(-115%);opacity:0;pointer-events:none;}
-/* Mobil och iPad: kompakt ikonmeny, sticky och skrollriktad */
 @media (max-width:1400px){
- #appNav{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:6px 4px;background:rgba(244,246,248,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:0 0 10px;transition:transform .38s ease-in-out,opacity .38s ease-in-out;}
- #appNav .tab{display:flex;align-items:center;justify-content:center;flex-direction:column;width:100%;min-width:0;min-height:46px;padding:6px 2px;margin:0;font-size:.7rem;line-height:1;white-space:nowrap;border-radius:10px;}
+ body{padding-bottom:calc(82px + env(safe-area-inset-bottom));}
+ #appNav{position:fixed;top:auto;bottom:calc(8px + env(safe-area-inset-bottom));left:10px;right:10px;width:auto;z-index:1000;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:7px 5px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(210,220,230,.85);border-radius:22px;box-shadow:0 4px 18px rgba(23,50,77,.16);margin:0;transition:transform .38s ease-in-out,opacity .38s ease-in-out;}
+ #appNav .tab{display:flex;align-items:center;justify-content:center;flex-direction:column;width:100%;min-width:0;min-height:46px;padding:6px 2px;margin:0;font-size:.7rem;line-height:1;white-space:nowrap;border-radius:14px;}
  #appNav .tab svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
  #appNav button[data-tab="meetings"] svg{color:#246eb5;}
  #appNav button[data-tab="minutes"] svg{color:#7853b5;}
@@ -3315,7 +3315,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
  #appNav #homeBtn svg{color:#17324d;}
  #appNav .tab .nav-label{display:none;}
  #appNav #homeBtn{grid-column:auto;justify-self:stretch;width:100%;min-width:0;margin:0;}
- #appNav.mobile-nav-idle,#appNav.nav-auto-hidden{transform:translateY(-125%);opacity:0;pointer-events:none;}
+ #appNav.mobile-nav-idle,#appNav.nav-auto-hidden{transform:translateY(125%);opacity:0;pointer-events:none;}
 }
 </style>
 </head>
