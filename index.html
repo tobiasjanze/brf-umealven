@@ -7951,6 +7951,7 @@ async function portalRefreshForTab(tabName) {
 }
 function showHome() {
   if (!portalNavigationAllowed()) return;
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   if (currentUser) { loadMeetings(); loadContracts(); loadAnnualEvents(); }
   $('homeView').classList.remove('hidden');
   renderHomeDashboard();
@@ -7968,6 +7969,7 @@ function showHome() {
 
 function showTab(tabName) {
   if (!portalNavigationAllowed()) return;
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   if (currentUser) portalRefreshForTab(tabName);
   $('homeView').classList.add('hidden');
   $('appNav').classList.remove('hidden');
