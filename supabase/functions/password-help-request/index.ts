@@ -1,10 +1,15 @@
 // Secure password-help request endpoint for BRF Umeälven.
-// Required Supabase Edge Function secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY.
-// Optional: MAIL_FROM (must be a verified sender in Resend).
+// Required Supabase secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+// SMTP_USERNAME, SMTP_PASSWORD. SMTP on port 465 is experimental until tested.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer@6.9.16";
 
 const ADMIN_EMAIL = "tobias.janze@gmail.com";
-const FROM = Deno.env.get("MAIL_FROM") ?? "Styrelseportalen <onboarding@resend.dev>";
+const SMTP_HOST = "smtp.3dg.se";
+const SMTP_PORT = 465;
+const SMTP_USERNAME = Deno.env.get("SMTP_USERNAME");
+const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD");
+const FROM = "BRF Umeälven – Styrelseportalen <info@brfumealven.se>";
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_PER_IP = 5;
 const MAX_PER_EMAIL = 3;
@@ -35,14 +40,13 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
       return response({ message: "Om begäran kan behandlas skickas information till administratören." });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (!supabaseUrl || !serviceKey || !resendKey) {
+    if (!supabaseUrl || !serviceKey || !SMTP_USERNAME || !SMTP_PASSWORD) {
       console.error("Missing server configuration");
       return response({ message: "Om begäran kan behandlas skickas information till administratören." });
     }
@@ -80,19 +84,24 @@ Deno.serve(async (req) => {
       registered = data.users.some(u => (u.email ?? "").toLowerCase() === email);
       if (registered || data.users.length < 1000) break;
     }
+    // Never send mail for an email address that isn't registered.
     if (!registered) return response({ message: "Om begäran kan behandlas skickas information till administratören." });
 
-    const mail = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: FROM,
-        to: [ADMIN_EMAIL],
-        subject: "Begäran om lösenordshjälp – Styrelseportalen",
-        text: `En användare med registrerad e-postadress har begärt hjälp med inloggning.\n\nKontots e-postadress: ${email}\n\nKontrollera användaren och hantera återställningen manuellt. Skicka aldrig lösenord via e-post.`,
-      }),
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: true,
+      auth: { user: SMTP_USERNAME, pass: SMTP_PASSWORD },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
-    if (!mail.ok) console.error("Mail provider rejected request", mail.status);
+    await transporter.sendMail({
+      from: FROM,
+      to: ADMIN_EMAIL,
+      subject: "Begäran om lösenordshjälp – Styrelseportalen",
+      text: `En användare med registrerad e-postadress har begärt hjälp med inloggning.\\n\\nKontots e-postadress: ${email}\\n\\nKontrollera användaren och hantera återställningen manuellt. Skicka aldrig lösenord via e-post.`,
+    });
     return response({ message: "Om begäran kan behandlas skickas information till administratören." });
   } catch (e) {
     console.error("Password-help request failed");
