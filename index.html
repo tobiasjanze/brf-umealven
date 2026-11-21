@@ -3288,10 +3288,6 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 .document-document-actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end;min-width:145px}
 @media(max-width:700px){.document-document-row{flex-direction:column}.document-document-actions{justify-content:flex-start;min-width:0;width:100%}.document-document-actions button{flex:1}}
 
-/* STICKY AUTO-HIDE NAV */
-#appNav{position:sticky;top:0;z-index:1000;padding:10px 12px;margin:0 0 14px;background:rgba(244,246,248,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(217,225,231,.8);transition:opacity .28s ease,transform .28s ease}
-#appNav.nav-idle{opacity:0;transform:translateY(-12px);pointer-events:none}
-@media print{#appNav{display:none!important}}
 </style>
 </head>
 
@@ -7983,15 +7979,7 @@ document.addEventListener('click', event => {
 
 
 $('homeBtn').addEventListener('click', showHome);
-(function setupAutoHideNavigation(){
- const nav=document.getElementById('appNav');if(!nav)return;let timer=null;let lastHidden=nav.classList.contains('hidden');
- const cancel=()=>{if(timer){clearTimeout(timer);timer=null;}};
- const show=()=>{nav.classList.remove('nav-idle');cancel();if(!nav.classList.contains('hidden'))timer=setTimeout(()=>nav.classList.add('nav-idle'),3000);};
- const activity=()=>{if(!nav.classList.contains('hidden'))show();};
- ['touchstart','touchmove','scroll','pointerdown','keydown'].forEach(t=>document.addEventListener(t,activity,{passive:true}));nav.addEventListener('click',activity);
- const obs=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('nav-idle');}else show();}});
- obs.observe(nav,{attributes:true,attributeFilter:['class']});if(!nav.classList.contains('hidden'))show();
-})();
+
 
 
   // Gemensam utskriftsvy. Öppnas som ett vanligt dokument i en ny flik
