@@ -8278,19 +8278,28 @@ $('homeBtn').addEventListener('click', showHome);
     }
   });
 
-  $('forgotBtn').addEventListener('click', () => {
+  $('forgotBtn').addEventListener('click', async () => {
     const memberEmail = $('email').value.trim();
     if (!memberEmail) {
-      loginMessage('Skriv in din e-postadress först, så kan begäran innehålla rätt konto.', 'error');
+      loginMessage('Skriv in din e-postadress först.', 'error');
       $('email').focus();
       return;
     }
-    const adminEmail = 'tobias.janze@gmail.com';
-    const subject = 'Begäran om hjälp med lösenord – Styrelseportalen BRF Umeälven';
-    const body = 'Hej!\n\nJag behöver hjälp att återställa mitt lösenord till Styrelseportalen.\n\nMitt konto (e-postadress): ' + memberEmail + '\n\nVänligen hjälp mig att komma in igen.\n\nTack!';
-    const mailto = 'mailto:' + adminEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    window.location.href = mailto;
-    loginMessage('E-postprogrammet öppnas med en färdig begäran. Skicka mejlet för att kontakta administratören.');
+    const button = $('forgotBtn');
+    button.disabled = true;
+    button.textContent = 'Skickar begäran…';
+    try {
+      await db.functions.invoke('password-help-request', {
+        body: { email: memberEmail }
+      });
+      // Neutral response: do not reveal whether the account exists.
+      loginMessage('Om begäran kan behandlas skickas information till administratören.', 'ok');
+    } catch (error) {
+      loginMessage('Begäran kunde inte skickas just nu. Försök igen senare.', 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Begär hjälp med lösenord';
+    }
   });
 
   $('logoutBtn').addEventListener('click', async () => {
