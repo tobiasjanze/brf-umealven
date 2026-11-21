@@ -8826,7 +8826,8 @@ async function loadUserRole(user) {
  document.addEventListener('pointerdown',activity,{passive:true});
  document.addEventListener('keydown',activity);
  window.addEventListener('resize',()=>{cancel();nav.classList.remove('mobile-nav-idle');if(mobile())reveal();});
- const appObserver=new MutationObserver(()=>{if(nav.classList.contains('hidden')){cancel();nav.classList.remove('mobile-nav-idle');}else if(mobile())reveal();});
+ let lastHidden=nav.classList.contains('hidden');
+ const appObserver=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('mobile-nav-idle');}else if(mobile())reveal();}});
  appObserver.observe(nav,{attributes:true,attributeFilter:['class']});
  if(mobile()&&!nav.classList.contains('hidden'))reveal();
 })();
