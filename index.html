@@ -3384,6 +3384,16 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   <section id="appPanel" class="hidden">
     <!-- STARTSIDA -->
 
+    <nav id="appNav" class="tabs hidden" aria-label="Huvudnavigation">
+      <button class="tab active" data-tab="meetings" aria-label="Möten och dagordning" title="Möten och dagordning"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M7 14h3M7 17h6"/></svg><span class="nav-label">Möten och dagordning</span></button>
+      <button class="tab" data-tab="minutes" aria-label="Protokoll" title="Protokoll"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v15H4V5a2 2 0 0 1 2-2z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span class="nav-label">Protokoll</span></button>
+      <button class="tab" data-tab="documents" aria-label="Mötesdokument" title="Mötesdokument"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 11h18M8 15h8M8 18h5"/></svg><span class="nav-label">Mötesdokument</span></button>
+      <button class="tab" data-tab="contracts" aria-label="Bevaka avtal" title="Bevaka avtal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/><path d="m16 3 5 5"/><path d="m11 13 8-8a2 2 0 0 1 3 3l-8 8-4 1z"/></svg><span class="nav-label">Bevaka avtal</span></button>
+      <button class="tab" data-tab="annual" aria-label="Årshjul" title="Årshjul"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 3.8A9 9 0 0 1 18 7l1.5-1M19.5 6v3h-3M16 20.2A9 9 0 0 1 6 17l-1.5 1M4.5 18v-3h3"/></svg><span class="nav-label">Årshjul</span></button>
+      <button id="homeBtn" class="tab home-back" type="button" aria-label="Startsida" title="Startsida"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9M9 21v-7h6v7"/></svg><span class="nav-label">Startsida</span></button>
+    </nav>
+
+
     <section id="homeView">
 
       <div class="panel">
@@ -3498,15 +3508,6 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
     </section>
       
     
-    <nav id="appNav" class="tabs hidden" aria-label="Huvudnavigation">
-      <button class="tab active" data-tab="meetings" aria-label="Möten och dagordning" title="Möten och dagordning"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M7 14h3M7 17h6"/></svg><span class="nav-label">Möten och dagordning</span></button>
-      <button class="tab" data-tab="minutes" aria-label="Protokoll" title="Protokoll"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v15H4V5a2 2 0 0 1 2-2z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span class="nav-label">Protokoll</span></button>
-      <button class="tab" data-tab="documents" aria-label="Mötesdokument" title="Mötesdokument"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 11h18M8 15h8M8 18h5"/></svg><span class="nav-label">Mötesdokument</span></button>
-      <button class="tab" data-tab="contracts" aria-label="Bevaka avtal" title="Bevaka avtal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/><path d="m16 3 5 5"/><path d="m11 13 8-8a2 2 0 0 1 3 3l-8 8-4 1z"/></svg><span class="nav-label">Bevaka avtal</span></button>
-      <button class="tab" data-tab="annual" aria-label="Årshjul" title="Årshjul"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 3.8A9 9 0 0 1 18 7l1.5-1M19.5 6v3h-3M16 20.2A9 9 0 0 1 6 17l-1.5 1M4.5 18v-3h3"/></svg><span class="nav-label">Årshjul</span></button>
-      <button id="homeBtn" class="tab home-back" type="button" aria-label="Startsida" title="Startsida"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9M9 21v-7h6v7"/></svg><span class="nav-label">Startsida</span></button>
-    </nav>
-
     <div id="appMsg" class="status hidden" role="status"></div>
 
     <!-- MÖTEN OCH DAGORDNING -->
