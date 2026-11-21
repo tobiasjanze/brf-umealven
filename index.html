@@ -3299,6 +3299,12 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 @media(max-width:700px){.document-document-row{flex-direction:column}.document-document-actions{justify-content:flex-start;min-width:0;width:100%}.document-document-actions button{flex:1}}
 
 
+/* Administratörsstyrd lösenordshjälp på inloggningssidan */
+.forgot-help{margin-top:18px;padding:18px;border:1px solid #d7e2ec;border-radius:16px;background:#f7fbff;}
+.forgot-help h3{margin:0 0 8px;font-size:1.1rem;}
+.forgot-help p{margin:0 0 14px;color:#64748b;line-height:1.5;}
+.forgot-help .forgot-request{display:block;width:100%;padding:14px 16px;border:1px solid #c9dced;border-radius:14px;background:#e6f2fc;color:#17324d;font-weight:700;font-size:1rem;box-shadow:0 3px 10px rgba(23,50,77,.08);}
+.forgot-help .forgot-note{margin:12px 0 0;font-size:.9rem;color:#64748b;}
 /* Dynamisk navigation: döljning uppåt på dator, nedåt på mobil/iPad */
 #appNav{transition:transform .55s ease-in-out,opacity .55s ease-in-out;}
 #appNav.nav-auto-hidden{transform:translateY(-115%);opacity:0;pointer-events:none;}
@@ -3379,9 +3385,15 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 
       <div class="toolbar">
         <button class="primary" type="submit">Logga in</button>
-        <button id="forgotBtn" type="button">Glömt lösenord?</button>
       </div>
     </form>
+
+    <section id="forgotHelp" class="forgot-help" aria-labelledby="forgotHelpTitle">
+      <h3 id="forgotHelpTitle">Glömt lösenord?</h3>
+      <p>Har du glömt ditt lösenord? Skicka en begäran till portalens administratör så hjälper vi dig att komma in igen.</p>
+      <button id="forgotBtn" type="button" class="forgot-request">Begär hjälp med lösenord</button>
+      <p class="forgot-note">Begäran skickas till portalens administratör.</p>
+    </section>
 
     <div id="loginMsg" class="status hidden" role="status"></div>
   </section>
@@ -8266,23 +8278,19 @@ $('homeBtn').addEventListener('click', showHome);
     }
   });
 
-  $('forgotBtn').addEventListener('click', async () => {
-    const email = $('email').value.trim();
-
-    if (!email) {
-      loginMessage('Skriv in din e-postadress först.', 'error');
+  $('forgotBtn').addEventListener('click', () => {
+    const memberEmail = $('email').value.trim();
+    if (!memberEmail) {
+      loginMessage('Skriv in din e-postadress först, så kan begäran innehålla rätt konto.', 'error');
+      $('email').focus();
       return;
     }
-
-    const { error } = await db.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.href
-    });
-
-    loginMessage(
-      error
-        ? 'Kunde inte skicka återställningslänk: ' + error.message
-        : 'Om adressen finns registrerad har en återställningslänk skickats.'
-    );
+    const adminEmail = 'tobias.janze@gmail.com';
+    const subject = 'Begäran om hjälp med lösenord – Styrelseportalen BRF Umeälven';
+    const body = 'Hej!\n\nJag behöver hjälp att återställa mitt lösenord till Styrelseportalen.\n\nMitt konto (e-postadress): ' + memberEmail + '\n\nVänligen hjälp mig att komma in igen.\n\nTack!';
+    const mailto = 'mailto:' + adminEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    window.location.href = mailto;
+    loginMessage('E-postprogrammet öppnas med en färdig begäran. Skicka mejlet för att kontakta administratören.');
   });
 
   $('logoutBtn').addEventListener('click', async () => {
