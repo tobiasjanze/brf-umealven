@@ -7947,7 +7947,7 @@ function showHome() {
   if (currentUser) { loadMeetings(); loadContracts(); loadAnnualEvents(); }
   $('homeView').classList.remove('hidden');
   renderHomeDashboard();
-  $('appNav').classList.add('hidden');
+  $('appNav').classList.remove('hidden');
 
   document.querySelectorAll('.tabcontent').forEach(section => {
     section.classList.add('hidden');
@@ -7956,6 +7956,7 @@ function showHome() {
   document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.remove('active');
   });
+  $('homeBtn').classList.add('active');
 }
 
 function showTab(tabName) {
