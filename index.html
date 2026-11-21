@@ -3307,6 +3307,12 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
  #appNav{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:6px 4px;background:rgba(244,246,248,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:0 0 10px;transition:transform .38s ease-in-out,opacity .38s ease-in-out;}
  #appNav .tab{display:flex;align-items:center;justify-content:center;flex-direction:column;width:100%;min-width:0;min-height:46px;padding:6px 2px;margin:0;font-size:.7rem;line-height:1;white-space:nowrap;border-radius:10px;}
  #appNav .tab svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
+ #appNav button[data-tab="meetings"] svg{color:#246eb5;}
+ #appNav button[data-tab="minutes"] svg{color:#7853b5;}
+ #appNav button[data-tab="documents"] svg{color:#2e8757;}
+ #appNav button[data-tab="contracts"] svg{color:#b56b2b;}
+ #appNav button[data-tab="annual"] svg{color:#b34e7b;}
+ #appNav #homeBtn svg{color:#17324d;}
  #appNav .tab .nav-label{display:none;}
  #appNav #homeBtn{grid-column:auto;justify-self:stretch;width:100%;min-width:0;margin:0;}
  #appNav.mobile-nav-idle,#appNav.nav-auto-hidden{transform:translateY(-125%);opacity:0;pointer-events:none;}
