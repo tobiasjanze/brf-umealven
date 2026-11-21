@@ -3302,8 +3302,8 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 /* Sticky navigation: mjuk döljning även på iPad och dator */
 #appNav{transition:transform .55s ease-in-out,opacity .55s ease-in-out;}
 #appNav.nav-auto-hidden{transform:translateY(-115%);opacity:0;pointer-events:none;}
-/* Mobil: kompakt ikonmeny, sticky och skrollriktad */
-@media (max-width:600px){
+/* Mobil och iPad: kompakt ikonmeny, sticky och skrollriktad */
+@media (max-width:1100px){
  #appNav{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:6px 4px;background:rgba(244,246,248,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:0 0 10px;transition:transform .38s ease-in-out,opacity .38s ease-in-out;}
  #appNav .tab{display:flex;align-items:center;justify-content:center;flex-direction:column;width:100%;min-width:0;min-height:46px;padding:6px 2px;margin:0;font-size:.7rem;line-height:1;white-space:nowrap;border-radius:10px;}
  #appNav .tab svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
