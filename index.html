@@ -3302,12 +3302,14 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 /* Sticky navigation: mjuk döljning även på iPad och dator */
 #appNav{transition:transform .55s ease-in-out,opacity .55s ease-in-out;}
 #appNav.nav-auto-hidden{transform:translateY(-115%);opacity:0;pointer-events:none;}
-/* Mobil: kompakt sticky navigation med diskret auto-hide */
+/* Mobil: kompakt ikonmeny, sticky och skrollriktad */
 @media (max-width:600px){
- #appNav{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:6px;background:rgba(244,246,248,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:0 0 10px;transition:transform .55s ease-in-out,opacity .55s ease-in-out;}
- #appNav .tab{min-height:40px;padding:7px 5px;font-size:.82rem;line-height:1.15;}
- #appNav #homeBtn{grid-column:2;justify-self:stretch;width:100%;min-width:0;margin:0;}
- #appNav.mobile-nav-idle{transform:translateY(-115%);opacity:0;pointer-events:none;}
+ #appNav{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:6px 4px;background:rgba(244,246,248,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:0 0 10px;transition:transform .38s ease-in-out,opacity .38s ease-in-out;}
+ #appNav .tab{display:flex;align-items:center;justify-content:center;flex-direction:column;width:100%;min-width:0;min-height:46px;padding:6px 2px;margin:0;font-size:.7rem;line-height:1;white-space:nowrap;border-radius:10px;}
+ #appNav .tab svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
+ #appNav .tab .nav-label{display:none;}
+ #appNav #homeBtn{grid-column:auto;justify-self:stretch;width:100%;min-width:0;margin:0;}
+ #appNav.mobile-nav-idle,#appNav.nav-auto-hidden{transform:translateY(-125%);opacity:0;pointer-events:none;}
 }
 </style>
 </head>
@@ -3490,15 +3492,13 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
     </section>
       
     
-    <nav id="appNav" class="tabs hidden">
-      <button class="tab active" data-tab="meetings">Möten och dagordning</button>
-      <button class="tab" data-tab="minutes">Protokoll</button>
-      <button class="tab" data-tab="documents">Mötesdokument</button>
-      <button class="tab" data-tab="contracts">Bevaka avtal</button>
-      <button class="tab" data-tab="annual">Årshjul</button>
-      <button id="homeBtn" class="tab home-back" type="button">
-  Startsida
-</button>
+    <nav id="appNav" class="tabs hidden" aria-label="Huvudnavigation">
+      <button class="tab active" data-tab="meetings" aria-label="Möten och dagordning" title="Möten och dagordning"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M7 14h3M7 17h6"/></svg><span class="nav-label">Möten och dagordning</span></button>
+      <button class="tab" data-tab="minutes" aria-label="Protokoll" title="Protokoll"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v15H4V5a2 2 0 0 1 2-2z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span class="nav-label">Protokoll</span></button>
+      <button class="tab" data-tab="documents" aria-label="Mötesdokument" title="Mötesdokument"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 11h18M8 15h8M8 18h5"/></svg><span class="nav-label">Mötesdokument</span></button>
+      <button class="tab" data-tab="contracts" aria-label="Bevaka avtal" title="Bevaka avtal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/><path d="m16 3 5 5"/><path d="m11 13 8-8a2 2 0 0 1 3 3l-8 8-4 1z"/></svg><span class="nav-label">Bevaka avtal</span></button>
+      <button class="tab" data-tab="annual" aria-label="Årshjul" title="Årshjul"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 3.8A9 9 0 0 1 18 7l1.5-1M19.5 6v3h-3M16 20.2A9 9 0 0 1 6 17l-1.5 1M4.5 18v-3h3"/></svg><span class="nav-label">Årshjul</span></button>
+      <button id="homeBtn" class="tab home-back" type="button" aria-label="Startsida" title="Startsida"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9M9 21v-7h6v7"/></svg><span class="nav-label">Startsida</span></button>
     </nav>
 
     <div id="appMsg" class="status hidden" role="status"></div>
@@ -8816,21 +8816,32 @@ async function loadUserRole(user) {
 <script>
 (function navAutoHideAcrossDevices(){
  const nav=document.getElementById('appNav');if(!nav)return;
- let timer=null;
+ let timer=null,lastY=window.scrollY||0,accum=0;
  const active=()=>!nav.classList.contains('hidden');
+ const mobile=()=>window.matchMedia('(max-width:600px)').matches;
  const cancel=()=>{if(timer){clearTimeout(timer);timer=null;}};
- const reveal=()=>{if(!active())return;nav.classList.remove('nav-auto-hidden','mobile-nav-idle');cancel();timer=setTimeout(()=>nav.classList.add('nav-auto-hidden'),3000);};
- const activity=()=>reveal();
- document.addEventListener('scroll',activity,{passive:true});
- document.addEventListener('touchstart',activity,{passive:true});
- document.addEventListener('pointerdown',activity,{passive:true});
- document.addEventListener('pointermove',activity,{passive:true});
- document.addEventListener('keydown',activity);
- window.addEventListener('resize',reveal);
+ const show=()=>{if(active())nav.classList.remove('nav-auto-hidden','mobile-nav-idle');};
+ const hide=()=>{if(active())nav.classList.add('nav-auto-hidden');};
+ const timerReveal=()=>{if(!active()||mobile())return;show();cancel();timer=setTimeout(hide,3000);};
+ const revealMobile=()=>{if(active()&&mobile()){show();accum=0;lastY=window.scrollY||0;}else timerReveal();};
+ const mobileScroll=()=>{
+   if(!active()||!mobile())return;
+   const y=window.scrollY||0,delta=y-lastY;lastY=y;
+   if(y<=35){accum=0;show();return;}
+   if(Math.abs(delta)<2)return;
+   accum+=delta;
+   if(accum>10){hide();accum=0;}
+   else if(accum<-8){show();accum=0;}
+ };
+ document.addEventListener('scroll',()=>{if(mobile())mobileScroll();else timerReveal();},{passive:true});
+ document.addEventListener('touchstart',revealMobile,{passive:true});
+ document.addEventListener('pointerdown',revealMobile,{passive:true});
+ document.addEventListener('keydown',revealMobile);
+ window.addEventListener('resize',revealMobile);
  let lastHidden=nav.classList.contains('hidden');
- const appObserver=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('nav-auto-hidden','mobile-nav-idle');}else reveal();}});
+ const appObserver=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('nav-auto-hidden','mobile-nav-idle');}else{lastY=window.scrollY||0;accum=0;revealMobile();}}});
  appObserver.observe(nav,{attributes:true,attributeFilter:['class']});
- if(active())reveal();
+ if(active())revealMobile();
 })();
 </script>
 </body>
