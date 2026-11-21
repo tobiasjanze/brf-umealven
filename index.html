@@ -7983,7 +7983,15 @@ document.addEventListener('click', event => {
 
 
 $('homeBtn').addEventListener('click', showHome);
-(function setupAutoHideNavigation(){const nav=document.getElementById('appNav');if(!nav)return;let timer=null;const show=()=>{nav.classList.remove('nav-idle');if(timer)clearTimeout(timer);if(!nav.classList.contains('hidden'))timer=setTimeout(()=>nav.classList.add('nav-idle'),3000);};['touchstart','touchmove','scroll','pointerdown','pointermove','keydown'].forEach(t=>document.addEventListener(t,show,{passive:true}));nav.addEventListener('click',show);const obs=new MutationObserver(()=>{if(nav.classList.contains('hidden')){nav.classList.remove('nav-idle');if(timer)clearTimeout(timer);}else show();});obs.observe(nav,{attributes:true,attributeFilter:['class']});show();})();
+(function setupAutoHideNavigation(){
+ const nav=document.getElementById('appNav');if(!nav)return;let timer=null;let lastHidden=nav.classList.contains('hidden');
+ const cancel=()=>{if(timer){clearTimeout(timer);timer=null;}};
+ const show=()=>{nav.classList.remove('nav-idle');cancel();if(!nav.classList.contains('hidden'))timer=setTimeout(()=>nav.classList.add('nav-idle'),3000);};
+ const activity=()=>{if(!nav.classList.contains('hidden'))show();};
+ ['touchstart','touchmove','scroll','pointerdown','keydown'].forEach(t=>document.addEventListener(t,activity,{passive:true}));nav.addEventListener('click',activity);
+ const obs=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('nav-idle');}else show();}});
+ obs.observe(nav,{attributes:true,attributeFilter:['class']});if(!nav.classList.contains('hidden'))show();
+})();
 
 
   // Gemensam utskriftsvy. Öppnas som ett vanligt dokument i en ny flik
