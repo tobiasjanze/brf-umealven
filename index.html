@@ -3301,7 +3301,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 
 /* Mobil: kompakt sticky navigation med diskret auto-hide */
 @media (max-width:600px){
- #appNav{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:6px;background:rgba(244,246,248,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:0 0 10px;transition:transform .25s ease,opacity .25s ease;}
+ #appNav{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:6px;background:rgba(244,246,248,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:0 0 10px;transition:transform .55s ease-in-out,opacity .55s ease-in-out;}
  #appNav .tab{min-height:40px;padding:7px 5px;font-size:.82rem;line-height:1.15;}
  #appNav #homeBtn{grid-column:2;justify-self:stretch;width:100%;min-width:0;margin:0;}
  #appNav.mobile-nav-idle{transform:translateY(-115%);opacity:0;pointer-events:none;}
@@ -8819,7 +8819,7 @@ async function loadUserRole(user) {
  const nav=document.getElementById('appNav');if(!nav)return;
  let timer=null;const mobile=()=>window.matchMedia('(max-width:600px)').matches;
  const cancel=()=>{if(timer){clearTimeout(timer);timer=null;}};
- const reveal=()=>{if(!mobile()||nav.classList.contains('hidden'))return;nav.classList.remove('mobile-nav-idle');cancel();timer=setTimeout(()=>nav.classList.add('mobile-nav-idle'),2500);};
+ const reveal=()=>{if(!mobile()||nav.classList.contains('hidden'))return;nav.classList.remove('mobile-nav-idle');cancel();timer=setTimeout(()=>nav.classList.add('mobile-nav-idle'),3000);};
  const activity=()=>{if(mobile())reveal();};
  document.addEventListener('scroll',activity,{passive:true});
  document.addEventListener('touchstart',activity,{passive:true});
