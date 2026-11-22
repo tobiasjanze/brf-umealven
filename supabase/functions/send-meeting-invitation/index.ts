@@ -32,6 +32,7 @@ Deno.serve(async(req)=>{
     if(roleError||isAdmin!==true) return response({error:"Forbidden"},403);
     const body=await req.json();
     const meetingId=String(body?.meetingId||"");
+    const meetingTitleFromClient=typeof body?.meetingTitle==="string"?body.meetingTitle.slice(0,200):"Styrelsemöte";
     const pdfBase64=typeof body?.pdfBase64==="string"?body.pdfBase64:"";
     const fileName=typeof body?.fileName==="string"?body.fileName:"Kallelse.pdf";
     if(!meetingId||meetingId.length>100||!pdfBase64||pdfBase64.length>11_000_000) return response({error:"Invalid request"},400);
@@ -40,8 +41,6 @@ Deno.serve(async(req)=>{
     const pdfBytes=Uint8Array.from(atob(pdfBase64),c=>c.charCodeAt(0));
     if(pdfBytes.length<100||pdfBytes.length>8*1024*1024) return response({error:"Invalid PDF size"},400);
     const admin=createClient(url,service,{auth:{persistSession:false}});
-    const {data:meeting,error:meetingError}=await admin.from("meetings").select("id,title,name").eq("id",meetingId).maybeSingle();
-    if(meetingError||!meeting) return response({error:"Meeting not found"},404);
     const selectedIds=Array.isArray(body?.recipientUserIds)?[...new Set(body.recipientUserIds.filter((id:any)=>typeof id==="string"))]:[];
     if(!selectedIds.length||selectedIds.length>200) return response({error:"Invalid recipient selection"},400);
     const {data:members,error:membersError}=await userClient.rpc("get_active_board_members");
@@ -58,7 +57,7 @@ Deno.serve(async(req)=>{
     }
     const recipients=[...new Set(emails.map(e=>e.trim()).filter(Boolean))];
     if(!recipients.length) throw new Error("No active board member email addresses");
-    const title=meeting.title||meeting.name||"Styrelsemöte";
+    const title=meetingTitleFromClient||"Styrelsemöte";
     const transporter=nodemailer.createTransport({host:SMTP_HOST,port:SMTP_PORT,secure:true,auth:{user:SMTP_USERNAME,pass:SMTP_PASSWORD},connectionTimeout:10000,greetingTimeout:10000,socketTimeout:20000});
     await transporter.sendMail({
       from:FROM,to:FROM,bcc:recipients,subject:"Kallelse – "+title,
@@ -66,7 +65,7 @@ Deno.serve(async(req)=>{
       attachments:[{filename:fileName.replace(/[^a-zA-Z0-9åäöÅÄÖ _.-]/g,"_").slice(0,120),content:pdfBytes,contentType:"application/pdf"}]
     });
     try {
-      await admin.from("board_activity_log").insert({event_type:"meeting_invitation_sent",meeting_id:String(meeting.id),meeting_label:title,summary:"PDF-kallelse skickad via e-post till "+recipients.length+" valda styrelsemedlemmar",section_label:"E-postutskick",created_by:userData.user.id});
+      await admin.from("board_activity_log").insert({event_type:"meeting_invitation_sent",meeting_id:meetingId,meeting_label:title,summary:"PDF-kallelse skickad via e-post till "+recipients.length+" valda styrelsemedlemmar",section_label:"E-postutskick",created_by:userData.user.id});
     } catch(logError) { console.warn("Activity log write failed",logError); }
     return response({success:true,recipientCount:recipients.length});
   }catch(e){console.error("Meeting PDF invitation send failed",e);return response({error:"Utskicket kunde inte genomföras. Kontrollera mottagare och serverlogg."},500);}
