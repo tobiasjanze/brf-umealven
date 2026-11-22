@@ -6368,8 +6368,10 @@ async function editDocument(doc) {
     }
   }
 
-  // Gemensam läsare för skärmvisning. Utskriftsfunktionerna lämnas orörda.
+  // Gemensam skärmläsare för PDF, bilder, Word och text. Utskrift lämnas orörd.
   let mammothReaderPromise = null;
+  let pdfJsReaderPromise = null;
+
   function loadMammothReader() {
     if (window.mammoth) return Promise.resolve(window.mammoth);
     if (mammothReaderPromise) return mammothReaderPromise;
@@ -6384,158 +6386,116 @@ async function editDocument(doc) {
     return mammothReaderPromise;
   }
 
+  function loadPdfJsReader(){
+    if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+    if(pdfJsReaderPromise)return pdfJsReaderPromise;
+    pdfJsReaderPromise=new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.async=true;
+      s.onload=()=>{if(window.pdfjsLib){window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve(window.pdfjsLib);}else reject(new Error('PDF-renderaren laddades inte.'));};
+      s.onerror=()=>reject(new Error('PDF-renderaren kunde inte hämtas.'));
+      document.head.appendChild(s);
+    });
+    return pdfJsReaderPromise;
+  }
+
   function openGenericDocumentReader(title, contentNode, noteText='Dokumentet visas i läsläge. Originalfilen ändras inte.') {
     document.getElementById('documentPreviewOverlay')?.remove();
     const overlay=document.createElement('div');
     overlay.id='documentPreviewOverlay';
     overlay.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(15,25,35,.72);display:flex;align-items:center;justify-content:center;padding:10px;';
     const panel=document.createElement('div');
-    panel.style.cssText='width:min(1200px,100%);height:min(92vh,900px);background:#fff;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;color:#24313c;';
+    panel.style.cssText='width:min(1200px,100%);height:min(92vh,900px);height:min(92dvh,900px);background:#fff;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;color:#24313c;';
     const header=document.createElement('div');
     header.style.cssText='display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #d9e1e7;flex:0 0 auto;';
-    const name=document.createElement('strong');name.textContent=title;
+    const name=document.createElement('strong');name.textContent=title;name.style.cssText='overflow-wrap:anywhere;min-width:0;';
     const close=document.createElement('button');close.textContent='Stäng';close.style.cssText='flex:0 0 auto;';
-    close.addEventListener('click',()=>overlay.remove());
+    const closeReader=()=>{overlay.remove();document.removeEventListener('keydown',esc);};
+    close.addEventListener('click',closeReader);
     header.append(name,close);
-    const body=document.createElement('div');body.style.cssText='overflow:auto;flex:1;min-height:0;';
+    const body=document.createElement('div');body.style.cssText='overflow:auto;flex:1;min-height:0;background:#f3f5f7;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;';
     body.appendChild(contentNode);
     const note=document.createElement('div');note.style.cssText='padding:8px 12px;color:#687783;font-size:13px;border-top:1px solid #d9e1e7;flex:0 0 auto;';note.textContent=noteText;
     panel.append(header,body,note);overlay.appendChild(panel);document.body.appendChild(overlay);
-    overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
-    const esc=e=>{if(e.key==='Escape'&&document.getElementById('documentPreviewOverlay')){overlay.remove();document.removeEventListener('keydown',esc);}};
+    overlay.addEventListener('click',e=>{if(e.target===overlay)closeReader();});
+    const esc=e=>{if(e.key==='Escape'&&overlay.isConnected)closeReader();};
     document.addEventListener('keydown',esc);
+    return {overlay,body,close:closeReader};
+  }
+
+  async function renderPdfInReader(blob,title){
+    const pdfjs=await loadPdfJsReader();
+    const buffer=await blob.arrayBuffer();
+    const pdf=await pdfjs.getDocument({data:buffer}).promise;
+    const pages=document.createElement('div');
+    pages.style.cssText='display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;';
+    const reader=openGenericDocumentReader(title,pages,'PDF visas i portalens läsare. Utskriftsfunktionen är oförändrad.');
+    for(let i=1;i<=pdf.numPages;i++){
+      if(!reader.overlay.isConnected)return;
+      const page=await pdf.getPage(i);
+      const base=page.getViewport({scale:1});
+      const available=Math.max(280,reader.body.clientWidth-24);
+      const scale=Math.min(2.25,available/base.width);
+      const viewport=page.getViewport({scale});
+      const canvas=document.createElement('canvas');
+      canvas.style.cssText='display:block;width:100%;height:auto;max-width:'+Math.round(viewport.width)+'px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12);';
+      canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+      pages.appendChild(canvas);
+      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+    }
   }
 
   async function openDocument(doc) {
     const path=storagePath(doc);
     if(!path){message('Dokumentet saknar sökväg till lagringsfilen.','error');return;}
     if(isExcelDocument(doc)){await openExcelDocument(doc,path);return;}
-
     const name=String(doc.file_name||doc.name||doc.display_name||'').toLowerCase();
-    const {data,error}=await db.storage.from(STORAGE_BUCKET).createSignedUrl(path,300);
-    if(error){message('Kunde inte öppna filen: '+error.message,'error');return;}
-    const url=data.signedUrl;
-
+    const title=doc.display_name||doc.file_name||'Dokument';
     try{
       if(/\.(pdf)$/.test(name)){
-        const frame=document.createElement('iframe');
-        frame.src=url;frame.title=doc.display_name||doc.file_name||'PDF';
-        frame.style.cssText='border:0;width:100%;height:100%;min-height:70vh;';
-        frame.setAttribute('sandbox','allow-same-origin allow-downloads');
-        openGenericDocumentReader(doc.display_name||doc.file_name||'PDF-dokument',frame,'PDF visas i läsaren. Utskriftsfunktionen i portalen är oförändrad.');
+        message('Hämtar PDF för visning…','ok');
+        const {data:blob,error}=await db.storage.from(STORAGE_BUCKET).download(path);
+        if(error||!blob)throw new Error(error?.message||'PDF-filen kunde inte hämtas.');
+        await renderPdfInReader(blob,title);
       }else if(/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(name)){
-        const img=document.createElement('img');img.src=url;img.alt=doc.display_name||doc.file_name||'Bild';
-        img.style.cssText='display:block;max-width:100%;height:auto;margin:auto;';
-        openGenericDocumentReader(doc.display_name||doc.file_name||'Bild',img,'Bildvisning. Originalfilen ändras inte.');
+        const {data,error}=await db.storage.from(STORAGE_BUCKET).createSignedUrl(path,300);
+        if(error||!data?.signedUrl)throw new Error(error?.message||'Bildlänken kunde inte skapas.');
+        const img=document.createElement('img');img.src=data.signedUrl;img.alt=title;
+        img.style.cssText='display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;margin:auto;';
+        const holder=document.createElement('div');holder.style.cssText='display:flex;align-items:center;justify-content:center;min-height:100%;padding:12px;';
+        holder.appendChild(img);
+        openGenericDocumentReader(title,holder,'Bildvisning. Originalfilen ändras inte.');
       }else if(/\.(docx)$/.test(name)){
-        const {data:blob,error:dlError}=await db.storage.from(STORAGE_BUCKET).download(path);
-        if(dlError||!blob)throw new Error(dlError?.message||'Nedladdning misslyckades');
+        const {data:blob,error}=await db.storage.from(STORAGE_BUCKET).download(path);
+        if(error||!blob)throw new Error(error?.message||'Word-filen kunde inte hämtas.');
         const mammoth=await loadMammothReader();
         const result=await mammoth.convertToHtml({arrayBuffer:await blob.arrayBuffer()});
-        const frame=document.createElement('iframe');frame.title=doc.display_name||doc.file_name||'Word';
-        frame.style.cssText='border:0;width:100%;height:100%;min-height:70vh;';
-        frame.setAttribute('sandbox','allow-same-origin');
-        openGenericDocumentReader(doc.display_name||doc.file_name||'Word-dokument',frame,'Word-visning. Formatering kan skilja sig från originalet. Utskrift sker via portalens separata utskriftsfunktion.');
-        frame.srcdoc='<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Arial,sans-serif;line-height:1.55;color:#24313c;padding:20px;max-width:900px;margin:auto}img{max-width:100%}table{border-collapse:collapse;max-width:100%}td,th{border:1px solid #ccc;padding:6px}</style></head><body>'+result.value+'</body></html>';
+        const article=document.createElement('article');
+        article.style.cssText='font-family:Arial,sans-serif;line-height:1.55;color:#24313c;padding:clamp(16px,4vw,30px);max-width:1000px;margin:auto;background:white;overflow-wrap:anywhere;';
+        article.innerHTML=result.value;
+        article.querySelectorAll('img').forEach(img=>img.style.maxWidth='100%');
+        article.querySelectorAll('table').forEach(t=>{t.style.cssText='border-collapse:collapse;width:100%;max-width:100%;overflow:auto;';});
+        openGenericDocumentReader(title,article,'Word visas i läsläge. Formatering kan skilja sig från originalet. Utskrift via portalens separata utskriftsfunktion.');
       }else if(/\.(txt|csv|log|md)$/.test(name)){
-        const {data:blob,error:dlError}=await db.storage.from(STORAGE_BUCKET).download(path);
-        if(dlError||!blob)throw new Error(dlError?.message||'Nedladdning misslyckades');
-        const pre=document.createElement('pre');pre.textContent=await blob.text();pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;font-family:monospace;';
-        openGenericDocumentReader(doc.display_name||doc.file_name||'Textdokument',pre,'Textvisning. Originalfilen ändras inte.');
+        const {data:blob,error}=await db.storage.from(STORAGE_BUCKET).download(path);
+        if(error||!blob)throw new Error(error?.message||'Textfilen kunde inte hämtas.');
+        const pre=document.createElement('pre');pre.textContent=await blob.text();pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;font-family:monospace;background:white;margin:0;';
+        openGenericDocumentReader(title,pre,'Textvisning. Originalfilen ändras inte.');
       }else{
-        const opened=window.open(url,'_blank');
-        if(!opened){message('Safari blockerade öppningen. Lässtatus har inte ändrats.','error');return;}
-        try{opened.opener=null;}catch(_){}
+        const {data,error}=await db.storage.from(STORAGE_BUCKET).createSignedUrl(path,300);
+        if(error||!data?.signedUrl)throw new Error(error?.message||'Filens visningslänk kunde inte skapas.');
+        const frame=document.createElement('iframe');frame.src=data.signedUrl;frame.title=title;
+        frame.style.cssText='border:0;width:100%;height:100%;min-height:70vh;background:white;';
+        frame.setAttribute('sandbox','allow-same-origin allow-downloads');
+        openGenericDocumentReader(title,frame,'Dokumentet visas i läsläge. Utskrift via portalens separata funktion.');
       }
       await markMeetingDocumentRead(doc.id);
     }catch(err){
       console.error('Document preview error:',err);
-      message('Dokumentet kunde inte visas i läsaren. Du kan fortfarande använda nedladdningsfunktionen.','error');
+      message('Dokumentet kunde inte visas i läsaren. '+(err?.message||'Du kan fortfarande ladda ner filen.'),'error');
     }
   }
-
-  async function deleteDocument(doc) {
-    if (!isAdminUser) {
-      message('Endast administratör kan ta bort mötesdokument.', 'error');
-      return;
-    }
-    if (!confirm('Ta bort dokumentet?')) return;
-
-    const path = storagePath(doc);
-
-    if (path) {
-      const { error } = await db.storage
-        .from(STORAGE_BUCKET)
-        .remove([path]);
-
-      if (error) {
-        message('Kunde inte ta bort lagringsfilen: ' + error.message, 'error');
-        return;
-      }
-    }
-
-    const { error } = await db
-      .from('meeting_documents')
-      .delete()
-      .eq('id', doc.id);
-
-    if (error) {
-      message('Kunde inte ta bort dokumentposten: ' + error.message, 'error');
-    } else {
-      await loadDocuments();
-      message('Dokumentet har tagits bort.', 'ok');
-    }
-  }
-
-  $('uploadForm').addEventListener('submit', async event => {
-    event.preventDefault();
-
-    const meetingId = $('documentsMeetingSelect').value;
-    const file = $('documentFile').files[0];
-const displayName = $('documentDisplayName').value.trim();
-const sectionNumber = $('documentAgendaSection').value;
-    const agendaItemId = $('documentAgendaSubpoint').value || null;
-    if (!meetingId || !file) {
-      message('Välj möte och fil.', 'error');
-      return;
-    }
-
-    const path =
-      `${currentUser.id}/${meetingId}/${Date.now()}_${safeFile(file.name)}`;
-
-    const { error: uploadError } = await db.storage
-      .from(STORAGE_BUCKET)
-      .upload(path, file, { upsert: false });
-
-    if (uploadError) {
-      message('Uppladdningen misslyckades: ' + uploadError.message, 'error');
-      return;
-    }
-
-    const { error } = await db.from('meeting_documents').insert({
-    meeting_id: meetingId,
-    file_name: file.name,
-    display_name: displayName || file.name,
-    section_number: sectionNumber || null,
-agenda_item_id: agendaItemId,
-description: $('documentDescription').value.trim(),
-    storage_path: path,
-    uploaded_by: currentUser.id
-});
-
-    if (error) {
-      message(
-        'Filen laddades upp men dokumentposten kunde inte sparas: ' +
-        error.message,
-        'error'
-      );
-      return;
-    }
-
-    event.target.reset();
-    await loadDocuments();
-    message('Dokumentet har laddats upp.', 'ok');
-  });
 
   // =========================================
   // BRF UMEÄLVEN – BEVAKA AVTAL
