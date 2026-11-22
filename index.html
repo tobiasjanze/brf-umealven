@@ -8605,13 +8605,13 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
     try{
       // Rendera dokument från en fristående, stabil kopia. Detta undviker att
       // html2pdf fångar den fasta overlayens endast delvis renderade innehåll.
-      const capturePdf=async(source,title)=>{
+      const capturePdf=async(source,title,parent)=>{
         const host=document.createElement('div');
         host.style.cssText='position:fixed;left:-10000px;top:0;width:794px;background:#fff;z-index:-1;';
         const clone=source.cloneNode(true);
         clone.style.cssText+='display:block;width:794px;max-width:none;margin:0;padding:32px;background:#fff;box-sizing:border-box;';
         clone.querySelectorAll('details').forEach(d=>d.open=true);
-        host.appendChild(clone);document.body.appendChild(host);
+        host.appendChild(clone);(parent||document.body).appendChild(host);
         try{
           await Promise.all([...clone.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve;})));
           await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
@@ -8623,13 +8623,13 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
       const toBase64=blob=>new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=reject;reader.readAsDataURL(blob);});
       createMeetingNotice();noticeOverlay=document.getElementById('meetingNoticeOverlay');
       const noticePage=noticeOverlay?.querySelector('.page');if(!noticePage)throw new Error('Kallelsevisningen kunde inte hittas');
-      const noticeBlob=await capturePdf(noticePage,'Kallelse.pdf');
+      const noticeBlob=await capturePdf(noticePage,'Kallelse.pdf',noticeOverlay);
       const agendaSource=document.getElementById('agendaSections');
       if(!agendaSource||!agendaSource.innerHTML.trim())throw new Error('Dagordningen är tom eller kunde inte hämtas');
       const meetingHeading=meetingTitle(meeting)+' – '+dateText(meetingDate(meeting));
       const agendaWrap=document.createElement('div');
       agendaWrap.innerHTML='<p><strong>'+esc(meetingHeading)+'</strong></p>'+agendaSource.innerHTML;
-      const agendaBlob=await capturePdf(agendaWrap,'Dagordning.pdf');
+      const agendaBlob=await capturePdf(agendaWrap,'Dagordning.pdf',noticeOverlay);
       const noticeBase64=await toBase64(noticeBlob);
       const agendaBase64=await toBase64(agendaBlob);
       const {data,error}=await db.functions.invoke('send-meeting-invitation',{body:{meetingId:String(meeting.id),meetingTitle:meetingTitle(meeting),pdfBase64:noticeBase64,fileName:'Kallelse-'+safeFile(meetingTitle(meeting))+'.pdf',agendaPdfBase64:agendaBase64,agendaFileName:'Dagordning-'+safeFile(meetingTitle(meeting))+'.pdf',recipientUserIds:selectedIds}});
