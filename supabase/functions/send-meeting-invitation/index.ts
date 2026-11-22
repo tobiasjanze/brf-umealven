@@ -34,12 +34,15 @@ Deno.serve(async(req)=>{
     const meetingId=String(body?.meetingId||"");
     const meetingTitleFromClient=typeof body?.meetingTitle==="string"?body.meetingTitle.slice(0,200):"Styrelsemöte";
     const pdfBase64=typeof body?.pdfBase64==="string"?body.pdfBase64:"";
+    const agendaPdfBase64=typeof body?.agendaPdfBase64==="string"?body.agendaPdfBase64:"";
     const fileName=typeof body?.fileName==="string"?body.fileName:"Kallelse.pdf";
-    if(!meetingId||meetingId.length>100||!pdfBase64||pdfBase64.length>11_000_000) return response({error:"Invalid request"},400);
-    // Reject non-PDF payloads; base64 PDF begins with JVBERi0.
-    if(!pdfBase64.startsWith("JVBERi0")) return response({error:"Invalid PDF"},400);
+    const agendaFileName=typeof body?.agendaFileName==="string"?body.agendaFileName:"Dagordning.pdf";
+    if(!meetingId||meetingId.length>100||!pdfBase64||pdfBase64.length>11_000_000||!agendaPdfBase64||agendaPdfBase64.length>11_000_000) return response({error:"Invalid request"},400);
+    // Validera båda PDF-filerna och begränsa storleken.
+    if(!pdfBase64.startsWith("JVBERi0")||!agendaPdfBase64.startsWith("JVBERi0")) return response({error:"Invalid PDF"},400);
     const pdfBytes=Uint8Array.from(atob(pdfBase64),c=>c.charCodeAt(0));
-    if(pdfBytes.length<100||pdfBytes.length>8*1024*1024) return response({error:"Invalid PDF size"},400);
+    const agendaPdfBytes=Uint8Array.from(atob(agendaPdfBase64),c=>c.charCodeAt(0));
+    if(pdfBytes.length<100||pdfBytes.length>8*1024*1024||agendaPdfBytes.length<100||agendaPdfBytes.length>8*1024*1024) return response({error:"Invalid PDF size"},400);
     const admin=createClient(url,service,{auth:{persistSession:false}});
     const selectedIds=Array.isArray(body?.recipientUserIds)?[...new Set(body.recipientUserIds.filter((id:any)=>typeof id==="string"))]:[];
     if(!selectedIds.length||selectedIds.length>200) return response({error:"Invalid recipient selection"},400);
@@ -61,8 +64,11 @@ Deno.serve(async(req)=>{
     const transporter=nodemailer.createTransport({host:SMTP_HOST,port:SMTP_PORT,secure:true,auth:{user:SMTP_USERNAME,pass:SMTP_PASSWORD},connectionTimeout:10000,greetingTimeout:10000,socketTimeout:20000});
     await transporter.sendMail({
       from:FROM,to:FROM,bcc:recipients,subject:"Kallelse – "+title,
-      text:"Härmed skickas kallelsen till "+title+". Se bifogad PDF.\n\nVänligen registrera din närvaro i styrelseportalen.",
-      attachments:[{filename:fileName.replace(/[^a-zA-Z0-9åäöÅÄÖ _.-]/g,"_").slice(0,120),content:pdfBytes,contentType:"application/pdf"}]
+      text:"Hej!\n\nHär kommer kallelsen till kommande styrelsemöte i BRF Umeälven.\n\nKallelse och dagordning finns bifogade i detta mejl. Ta gärna del av underlaget inför mötet.\n\nÖvriga möteshandlingar finns att läsa i styrelseportalen.\n\nVälkommen!\n\nMvh\nTobias Janze\nOrdförande\nBRF Umeälven",
+      attachments:[
+        {filename:fileName.replace(/[^a-zA-Z0-9åäöÅÄÖ _.-]/g,"_").slice(0,120),content:pdfBytes,contentType:"application/pdf"},
+        {filename:agendaFileName.replace(/[^a-zA-Z0-9åäöÅÄÖ _.-]/g,"_").slice(0,120),content:agendaPdfBytes,contentType:"application/pdf"}
+      ]
     });
     try {
       await admin.from("board_activity_log").insert({event_type:"meeting_invitation_sent",meeting_id:meetingId,meeting_label:title,summary:"PDF-kallelse skickad via e-post till "+recipients.length+" valda styrelsemedlemmar",section_label:"E-postutskick",created_by:userData.user.id});
