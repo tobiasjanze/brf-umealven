@@ -6441,7 +6441,7 @@ async function editDocument(doc) {
     return {overlay,body,close:closeReader};
   }
 
-  async async function renderPdfInReader(blob,title){
+  async function renderPdfInReader(blob,title){
     const pdfjs=await loadPdfJsReader();
     const buffer=await blob.arrayBuffer();
     const pdf=await pdfjs.getDocument({data:buffer}).promise;
