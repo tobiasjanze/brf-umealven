@@ -6441,26 +6441,60 @@ async function editDocument(doc) {
     return {overlay,body,close:closeReader};
   }
 
-  async function renderPdfInReader(blob,title){
+  async async function renderPdfInReader(blob,title){
     const pdfjs=await loadPdfJsReader();
     const buffer=await blob.arrayBuffer();
     const pdf=await pdfjs.getDocument({data:buffer}).promise;
     const pages=document.createElement('div');
-    pages.style.cssText='display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;';
-    const reader=openGenericDocumentReader(title,pages,'PDF visas i portalens läsare. Utskriftsfunktionen är oförändrad.',()=>downloadOriginalDocument(currentReaderDoc,currentReaderPath));
+    pages.style.cssText='display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;min-width:100%;box-sizing:border-box;';
+    const reader=openGenericDocumentReader(title,pages,'PDF visas i portalens läsare. Zooma med knapparna eller två fingrar. Utskriftsfunktionen är oförändrad.',()=>downloadOriginalDocument(currentReaderDoc,currentReaderPath));
+    const toolbar=document.createElement('div');
+    toolbar.style.cssText='position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;justify-content:center;padding:8px;background:rgba(245,247,249,.96);border:1px solid #d8e1e8;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,.08);width:100%;box-sizing:border-box;';
+    const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.setAttribute('aria-label','Zooma ut');minus.style.cssText='min-width:44px;font-size:20px;';
+    const label=document.createElement('span');label.style.cssText='min-width:60px;text-align:center;font-weight:600;';
+    const plus=document.createElement('button');plus.type='button';plus.textContent='+';plus.setAttribute('aria-label','Zooma in');plus.style.cssText='min-width:44px;font-size:20px;';
+    const reset=document.createElement('button');reset.type='button';reset.textContent='Återställ';
+    toolbar.append(minus,label,plus,reset);pages.prepend(toolbar);
+    let zoom=1, baseScale=1, renderBusy=false, rerenderQueued=false;
+    const canvasRecords=[];
+    async function renderAll(){
+      if(renderBusy){rerenderQueued=true;return;}
+      renderBusy=true;rerenderQueued=false;
+      try{
+        for(const rec of canvasRecords){
+          if(!reader.overlay.isConnected)break;
+          const scale=baseScale*zoom;
+          const viewport=rec.page.getViewport({scale});
+          rec.canvas.width=Math.ceil(viewport.width);rec.canvas.height=Math.ceil(viewport.height);
+          rec.canvas.style.width=Math.round(viewport.width)+'px';rec.canvas.style.maxWidth='none';rec.canvas.style.height='auto';
+          await rec.page.render({canvasContext:rec.canvas.getContext('2d'),viewport}).promise;
+        }
+      }catch(err){console.error('PDF zoom-rendering:',err);}
+      renderBusy=false;
+      if(rerenderQueued)renderAll();
+    }
+    function setZoom(next){zoom=Math.max(1,Math.min(4,next));label.textContent=Math.round(zoom*100)+'%';renderAll();}
+    minus.addEventListener('click',()=>setZoom(zoom-.25));
+    plus.addEventListener('click',()=>setZoom(zoom+.25));
+    reset.addEventListener('click',()=>setZoom(1));
+    let pinchStart=null;
+    reader.body.addEventListener('touchstart',e=>{if(e.touches.length===2){pinchStart={distance:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),zoom};}},{passive:true});
+    reader.body.addEventListener('touchmove',e=>{if(e.touches.length===2&&pinchStart){e.preventDefault();const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);setZoom(pinchStart.zoom*(d/pinchStart.distance));}},{passive:false});
+    reader.body.addEventListener('touchend',e=>{if(e.touches.length<2)pinchStart=null;},{passive:true});
     for(let i=1;i<=pdf.numPages;i++){
       if(!reader.overlay.isConnected)return;
       const page=await pdf.getPage(i);
       const base=page.getViewport({scale:1});
       const available=Math.max(280,reader.body.clientWidth-24);
-      const scale=Math.min(2.25,available/base.width);
-      const viewport=page.getViewport({scale});
+      baseScale=Math.min(2.25,available/base.width);
+      const viewport=page.getViewport({scale:baseScale});
       const canvas=document.createElement('canvas');
-      canvas.style.cssText='display:block;width:100%;height:auto;max-width:'+Math.round(viewport.width)+'px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12);';
-      canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
-      pages.appendChild(canvas);
+      canvas.style.cssText='display:block;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12);height:auto;';
+      canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);canvas.style.width=Math.round(viewport.width)+'px';
+      pages.appendChild(canvas);canvasRecords.push({page,canvas});
       await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
     }
+    label.textContent='100%';
   }
 
   async function openDocument(doc) {
