@@ -3583,6 +3583,8 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   <button id="createNotice" type="button">
     Skapa kallelse
   </button>
+
+  <button id="sendMeetingInvitation" type="button" class="primary hidden">Skicka kallelse via e-post</button>
 </div>
 
         <div id="agendaSections"></div>
@@ -8564,6 +8566,27 @@ function createMeetingNotice() {
 // ===== SLUT SKAPA KALLELSE =====
   // Koppla knappen Skapa kallelse
 $('createNotice').addEventListener('click', createMeetingNotice);
+$('sendMeetingInvitation')?.addEventListener('click', async () => {
+  if (!isAdminUser) { message('Du saknar behörighet.', 'error'); return; }
+  const meeting = meetings.find(item => String(item.id) === String(selectedMeetingId));
+  if (!meeting) { message('Välj ett möte först.', 'error'); return; }
+  const confirmation = confirm('Skicka kallelse via e-post till aktiva styrelsemedlemmar för mötet "' + meetingTitle(meeting) + '"?');
+  if (!confirmation) return;
+  const button = $('sendMeetingInvitation');
+  button.disabled = true;
+  button.textContent = 'Skickar kallelse…';
+  try {
+    const { data, error } = await db.functions.invoke('send-meeting-invitation', { body: { meetingId: String(meeting.id) } });
+    if (error || !data?.success) throw error || new Error(data?.error || 'Utskicket misslyckades');
+    message('Kallelsen har skickats via e-post till ' + data.recipientCount + ' styrelsemedlemmar.', 'ok');
+  } catch (error) {
+    console.error('Meeting invitation email error:', error);
+    message('Kallelsen kunde inte skickas. Kontrollera Edge Function-loggen.', 'error');
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Skicka kallelse via e-post';
+  }
+});
   // ===== LÄGG TILL MÖTE I KALENDER =====
 
   function downloadMeetingCalendar(meeting) {
@@ -8679,6 +8702,7 @@ $('createNotice').addEventListener('click', createMeetingNotice);
     $('uploadForm').classList.toggle('hidden', !admin);
     // Kallelse – endast administratören får skapa
 $('createNotice').classList.toggle('hidden', !admin);
+$('sendMeetingInvitation')?.classList.toggle('hidden', !admin);
 
     // Avtal – endast administratören får hantera
     $('contractAdminPanel').classList.toggle('hidden', !admin);
