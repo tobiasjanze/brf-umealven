@@ -8608,7 +8608,7 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
       const pdfBlob=await html2pdf().set({margin:[10,10,10,10],filename:'Kallelse.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(page).toPdf().output('blob');
       if(!pdfBlob||pdfBlob.size>8*1024*1024)throw new Error('PDF-filen är tom eller för stor');
       const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=reject;reader.readAsDataURL(pdfBlob);});
-      const {data,error}=await db.functions.invoke('send-meeting-invitation',{body:{meetingId:String(meeting.id),pdfBase64:base64,fileName:'Kallelse-'+safeFile(meetingTitle(meeting))+'.pdf',recipientUserIds:selectedIds}});
+      const {data,error}=await db.functions.invoke('send-meeting-invitation',{body:{meetingId:String(meeting.id),meetingTitle:meetingTitle(meeting),pdfBase64:base64,fileName:'Kallelse-'+safeFile(meetingTitle(meeting))+'.pdf',recipientUserIds:selectedIds}});
       if(error||!data?.success)throw error||new Error(data?.error||'Utskicket misslyckades');
       message('PDF-kallelsen har skickats till '+data.recipientCount+' valda mottagare.','ok');overlay.remove();
     }catch(error){console.error('Meeting invitation PDF email error:',error);message('Kallelsen kunde inte skickas. Kontrollera Edge Function och mottagarval.','error');sendButton.disabled=false;sendButton.textContent='Skapa PDF och skicka';}
