@@ -6466,15 +6466,30 @@ async function editDocument(doc) {
     function clearPinchPreview(){
       canvasRecords.forEach(rec=>{rec.canvas.style.transform='';rec.canvas.style.transformOrigin='';});
     }
-    async function renderAll(){
+    async function renderAll(preservePosition=false){
       if(renderBusy){rerenderQueued=true;return;}
+      // Vid pinch-zoom: spara vilken sida och vilken punkt på sidan som låg
+      // vid scrollpositionen, så layoutförändringen inte flyttar läsaren.
+      let scrollAnchor=null;
+      if(preservePosition&&canvasRecords.length){
+        const bodyRect=reader.body.getBoundingClientRect();
+        const bodyScroll=reader.body.scrollTop;
+        const visibleY=bodyScroll;
+        let rec=canvasRecords.find(r=>{
+          const top=r.canvas.getBoundingClientRect().top-bodyRect.top+bodyScroll;
+          return top+r.canvas.offsetHeight>visibleY;
+        })||canvasRecords[canvasRecords.length-1];
+        const pageTop=rec.canvas.getBoundingClientRect().top-bodyRect.top+bodyScroll;
+        const pageHeight=Math.max(1,rec.canvas.offsetHeight);
+        scrollAnchor={rec,relative:Math.max(0,Math.min(1,(visibleY-pageTop)/pageHeight))};
+      }
       renderBusy=true;rerenderQueued=false;
       try{
         for(const rec of canvasRecords){
           if(!reader.overlay.isConnected)break;
           const scale=baseScale*zoom;
           const viewport=rec.page.getViewport({scale});
-          // Render to a temporary canvas so the visible page is never cleared during zoom.
+          // Rendera på en separat canvas för att undvika blinkning.
           const nextCanvas=document.createElement('canvas');
           nextCanvas.width=Math.ceil(viewport.width);nextCanvas.height=Math.ceil(viewport.height);
           nextCanvas.style.cssText='display:block;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12);height:auto;max-width:none;width:'+Math.round(viewport.width)+'px;';
@@ -6483,10 +6498,15 @@ async function editDocument(doc) {
           rec.canvas.replaceWith(nextCanvas);
           rec.canvas=nextCanvas;
         }
+        if(scrollAnchor&&reader.overlay.isConnected){
+          const bodyRect=reader.body.getBoundingClientRect();
+          const newPageTop=scrollAnchor.rec.canvas.getBoundingClientRect().top-bodyRect.top+reader.body.scrollTop;
+          reader.body.scrollTop=newPageTop+scrollAnchor.relative*scrollAnchor.rec.canvas.offsetHeight;
+        }
       }catch(err){console.error('PDF zoom-rendering:',err);}
       finally{
         renderBusy=false;
-        if(rerenderQueued&&reader.overlay.isConnected)renderAll();
+        if(rerenderQueued&&reader.overlay.isConnected)renderAll(preservePosition);
       }
     }
     function setZoom(next,render=true){
@@ -6518,7 +6538,7 @@ async function editDocument(doc) {
       pinchStart=null;
       if(pinchFrame){cancelAnimationFrame(pinchFrame);pinchFrame=0;}
       clearPinchPreview();
-      if(pinchRenderPending){pinchRenderPending=false;renderAll();}
+      if(pinchRenderPending){pinchRenderPending=false;renderAll(true);}
     };
     reader.body.addEventListener('touchend',e=>{if(e.touches.length<2)finishPinch();},{passive:true});
     reader.body.addEventListener('touchcancel',finishPinch,{passive:true});
