@@ -8289,12 +8289,17 @@ $('homeBtn').addEventListener('click', showHome);
     button.disabled = true;
     button.textContent = 'Skickar begäran…';
     try {
-      await db.functions.invoke('password-help-request', {
+      const { data, error } = await db.functions.invoke('password-help-request', {
         body: { email: memberEmail }
       });
+      if (error) {
+        console.error('Password-help request failed:', error);
+        throw error;
+      }
       // Neutral response: do not reveal whether the account exists.
       loginMessage('Om begäran kan behandlas skickas information till administratören.', 'ok');
     } catch (error) {
+      console.error('Password-help error:', error);
       loginMessage('Begäran kunde inte skickas just nu. Försök igen senare.', 'error');
     } finally {
       button.disabled = false;
