@@ -6284,7 +6284,7 @@ async function editDocument(doc) {
 
   function isExcelDocument(doc) {
     const name = String(doc.file_name || doc.name || doc.display_name || '').toLowerCase();
-    return /\\.(xlsx|xls|xlsm|xlsb|ods)$/.test(name);
+    return /\.(xlsx|xls|xlsm|xlsb|ods)$/.test(name);
   }
 
   function loadXlsxRenderer() {
