@@ -8572,49 +8572,50 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
   const meeting = meetings.find(item => String(item.id) === String(selectedMeetingId));
   if (!meeting) { message('Välj ett möte först.', 'error'); return; }
   if (typeof html2pdf === 'undefined') { message('PDF-funktionen kunde inte laddas. Ladda om sidan och försök igen.', 'error'); return; }
-  const confirmation = confirm('Skapa PDF av den befintliga kallelsen och skicka den via e-post till aktiva styrelsemedlemmar för "' + meetingTitle(meeting) + '"?');
-  if (!confirmation) return;
-  const button = $('sendMeetingInvitation');
-  button.disabled = true;
-  button.textContent = 'Skapar PDF och skickar…';
-  let overlay = null;
-  try {
-    // Använd den befintliga kallelsebyggaren – ingen separat kallelsemall.
-    createMeetingNotice();
-    overlay = document.getElementById('meetingNoticeOverlay');
-    const page = overlay?.querySelector('.page');
-    if (!page) throw new Error('Kallelsevisningen kunde inte hittas');
-    await new Promise(resolve => setTimeout(resolve, 350));
-    const pdfBlob = await html2pdf().set({
-      margin: [10, 10, 10, 10],
-      filename: 'Kallelse.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'] }
-    }).from(page).toPdf().output('blob');
-    if (!pdfBlob || pdfBlob.size > 8 * 1024 * 1024) throw new Error('PDF-filen är tom eller för stor');
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
-      reader.onerror = reject;
-      reader.readAsDataURL(pdfBlob);
-    });
-    const { data, error } = await db.functions.invoke('send-meeting-invitation', {
-      body: { meetingId: String(meeting.id), pdfBase64: base64, fileName: 'Kallelse-' + safeFile(meetingTitle(meeting)) + '.pdf' }
-    });
-    if (error || !data?.success) throw error || new Error(data?.error || 'Utskicket misslyckades');
-    message('PDF-kallelsen har skickats via e-post till ' + data.recipientCount + ' styrelsemedlemmar.', 'ok');
-  } catch (error) {
-    console.error('Meeting invitation PDF email error:', error);
-    message('Kallelsen kunde inte skickas. Kontrollera att PDF-funktionen och Edge Function är aktiva.', 'error');
-  } finally {
-    overlay?.remove();
-    button.disabled = false;
-    button.textContent = 'Skicka kallelse via e-post';
-  }
+  const { data: members, error: memberError } = await db.rpc('get_active_board_members');
+  if (memberError || !Array.isArray(members) || !members.length) { message('Kunde inte hämta aktiva styrelsemedlemmar.', 'error'); return; }
+  const selectable = members.filter(m => typeof m.user_id === 'string' && m.display_name);
+  if (!selectable.length) { message('Inga valbara styrelsemedlemmar hittades.', 'error'); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'meetingRecipientOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = '<div style="background:#fff;color:#24313c;border-radius:14px;padding:22px;max-width:520px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.25)"><h2 style="margin-top:0">Skicka kallelse via e-post</h2><p>Välj vilka styrelsemedlemmar som ska få kallelsen.</p><div style="display:flex;gap:8px;margin:12px 0"><button type="button" id="recipientSelectAll">Välj alla</button><button type="button" id="recipientSelectNone">Avmarkera alla</button></div><div id="recipientChoices"></div><p id="recipientCount" style="font-weight:700;margin-top:14px"></p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button type="button" id="recipientCancel">Avbryt</button><button type="button" id="recipientSend" class="primary" style="background:#245b83;color:white">Skapa PDF och skicka</button></div></div>';
+  document.body.appendChild(overlay);
+  const choices=overlay.querySelector('#recipientChoices');
+  selectable.forEach(m=>{
+    const label=document.createElement('label');
+    label.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #e5ebef;font-weight:normal;';
+    const cb=document.createElement('input'); cb.type='checkbox';cb.checked=true;cb.value=m.user_id;cb.style.width='auto;margin:0';
+    const name=document.createElement('span');name.textContent=m.display_name;
+    label.append(cb,name);choices.appendChild(label);
+  });
+  const updateCount=()=>{const n=choices.querySelectorAll('input:checked').length;overlay.querySelector('#recipientCount').textContent=n+' mottagare valda';overlay.querySelector('#recipientSend').disabled=n===0;};
+  choices.addEventListener('change',updateCount);updateCount();
+  overlay.querySelector('#recipientSelectAll').onclick=()=>{choices.querySelectorAll('input').forEach(cb=>cb.checked=true);updateCount();};
+  overlay.querySelector('#recipientSelectNone').onclick=()=>{choices.querySelectorAll('input').forEach(cb=>cb.checked=false);updateCount();};
+  overlay.querySelector('#recipientCancel').onclick=()=>overlay.remove();
+  overlay.querySelector('#recipientSend').onclick=async()=>{
+    const selectedIds=[...choices.querySelectorAll('input:checked')].map(cb=>cb.value);
+    if(!selectedIds.length)return;
+    const confirmSend=confirm('Skicka kallelsen "'+meetingTitle(meeting)+'" till '+selectedIds.length+' valda mottagare?');
+    if(!confirmSend)return;
+    const sendButton=overlay.querySelector('#recipientSend');sendButton.disabled=true;sendButton.textContent='Skapar PDF och skickar…';
+    let noticeOverlay=null;
+    try{
+      createMeetingNotice();noticeOverlay=document.getElementById('meetingNoticeOverlay');
+      const page=noticeOverlay?.querySelector('.page');if(!page)throw new Error('Kallelsevisningen kunde inte hittas');
+      await new Promise(resolve=>setTimeout(resolve,350));
+      const pdfBlob=await html2pdf().set({margin:[10,10,10,10],filename:'Kallelse.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(page).toPdf().output('blob');
+      if(!pdfBlob||pdfBlob.size>8*1024*1024)throw new Error('PDF-filen är tom eller för stor');
+      const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=reject;reader.readAsDataURL(pdfBlob);});
+      const {data,error}=await db.functions.invoke('send-meeting-invitation',{body:{meetingId:String(meeting.id),pdfBase64:base64,fileName:'Kallelse-'+safeFile(meetingTitle(meeting))+'.pdf',recipientUserIds:selectedIds}});
+      if(error||!data?.success)throw error||new Error(data?.error||'Utskicket misslyckades');
+      message('PDF-kallelsen har skickats till '+data.recipientCount+' valda mottagare.','ok');overlay.remove();
+    }catch(error){console.error('Meeting invitation PDF email error:',error);message('Kallelsen kunde inte skickas. Kontrollera Edge Function och mottagarval.','error');sendButton.disabled=false;sendButton.textContent='Skapa PDF och skicka';}
+    finally{noticeOverlay?.remove();}
+  };
 });
-  // ===== LÄGG TILL MÖTE I KALENDER =====
+// ===== LÄGG TILL MÖTE I KALENDER =====
 
   function downloadMeetingCalendar(meeting) {
 
