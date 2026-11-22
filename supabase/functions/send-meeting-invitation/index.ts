@@ -42,10 +42,13 @@ Deno.serve(async(req)=>{
     const admin=createClient(url,service,{auth:{persistSession:false}});
     const {data:meeting,error:meetingError}=await admin.from("meetings").select("id,title,name").eq("id",meetingId).maybeSingle();
     if(meetingError||!meeting) return response({error:"Meeting not found"},404);
+    const selectedIds=Array.isArray(body?.recipientUserIds)?[...new Set(body.recipientUserIds.filter((id:any)=>typeof id==="string"))]:[];
+    if(!selectedIds.length||selectedIds.length>200) return response({error:"Invalid recipient selection"},400);
     const {data:members,error:membersError}=await userClient.rpc("get_active_board_members");
     if(membersError||!Array.isArray(members)||!members.length) throw new Error("Active board members unavailable");
-    const memberIds=[...new Set(members.map((m:any)=>m.user_id).filter((id:any)=>typeof id==="string"))];
-    if(!memberIds.length) throw new Error("No active member ids");
+    const activeIds=[...new Set(members.map((m:any)=>m.user_id).filter((id:any)=>typeof id==="string"))];
+    if(selectedIds.some((id:string)=>!activeIds.includes(id))) return response({error:"Invalid or inactive recipient"},403);
+    const memberIds=selectedIds;
     const emails:string[]=[];
     for(let page=1;page<=20;page++){
       const {data,error}=await admin.auth.admin.listUsers({page,perPage:1000});
@@ -63,7 +66,7 @@ Deno.serve(async(req)=>{
       attachments:[{filename:fileName.replace(/[^a-zA-Z0-9åäöÅÄÖ _.-]/g,"_").slice(0,120),content:pdfBytes,contentType:"application/pdf"}]
     });
     try {
-      await admin.from("board_activity_log").insert({event_type:"meeting_invitation_sent",meeting_id:String(meeting.id),meeting_label:title,summary:"PDF-kallelse skickad via e-post till "+recipients.length+" styrelsemedlemmar",section_label:"E-postutskick",created_by:userData.user.id});
+      await admin.from("board_activity_log").insert({event_type:"meeting_invitation_sent",meeting_id:String(meeting.id),meeting_label:title,summary:"PDF-kallelse skickad via e-post till "+recipients.length+" valda styrelsemedlemmar",section_label:"E-postutskick",created_by:userData.user.id});
     } catch(logError) { console.warn("Activity log write failed",logError); }
     return response({success:true,recipientCount:recipients.length});
   }catch(e){console.error("Meeting PDF invitation send failed",e);return response({error:"Utskicket kunde inte genomföras. Kontrollera mottagare och serverlogg."},500);}
