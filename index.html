@@ -6305,7 +6305,7 @@ async function editDocument(doc) {
     document.getElementById('excelPreviewOverlay')?.remove();
   }
 
-  function renderExcelPreview(workbook, fileName) {
+  function renderExcelPreview(workbook, fileName, downloadCallback) {
     closeExcelPreview();
     const overlay = document.createElement('div');
     overlay.id = 'excelPreviewOverlay';
@@ -6315,9 +6315,11 @@ async function editDocument(doc) {
     const header = document.createElement('div');
     header.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #d9e1e7;';
     const title = document.createElement('strong'); title.textContent = fileName;
+    const headerActions=document.createElement('div');headerActions.style.cssText='display:flex;gap:8px;align-items:center;flex:0 0 auto;';
+    const download=document.createElement('button');download.textContent='Ladda ner';download.style.cssText='flex:0 0 auto;';download.addEventListener('click',()=>downloadCallback?.());
     const close = document.createElement('button'); close.textContent = 'Stäng'; close.style.cssText = 'flex:0 0 auto;';
     close.addEventListener('click', closeExcelPreview);
-    header.append(title,close);
+    headerActions.append(download,close);header.append(title,headerActions);
     const tabs = document.createElement('div'); tabs.style.cssText = 'display:flex;gap:6px;overflow-x:auto;padding:8px;border-bottom:1px solid #d9e1e7;';
     const body = document.createElement('div'); body.style.cssText = 'overflow:auto;flex:1;padding:8px;';
     const note = document.createElement('div'); note.style.cssText = 'padding:8px 12px;color:#687783;font-size:13px;border-top:1px solid #d9e1e7;';
@@ -6360,7 +6362,7 @@ async function editDocument(doc) {
     try{
       const XLSX=await loadXlsxRenderer();
       const workbook=XLSX.read(await data.arrayBuffer(),{type:'array',cellDates:true});
-      renderExcelPreview(workbook,doc.display_name||doc.file_name||'Excel-dokument');
+      renderExcelPreview(workbook,doc.display_name||doc.file_name||'Excel-dokument',()=>downloadOriginalDocument(doc,path));
       await markMeetingDocumentRead(doc.id);
     }catch(err){
       console.error('Excel preview error:',err);
@@ -6400,7 +6402,20 @@ async function editDocument(doc) {
     return pdfJsReaderPromise;
   }
 
-  function openGenericDocumentReader(title, contentNode, noteText='Dokumentet visas i läsläge. Originalfilen ändras inte.') {
+  let currentReaderDoc=null,currentReaderPath=null;
+  async function downloadOriginalDocument(doc,path){
+    try{
+      if(!path){message('Dokumentets lagringsväg saknas.','error');return;}
+      message('Förbereder nedladdning…','ok');
+      const {data,error}=await db.storage.from(STORAGE_BUCKET).download(path);
+      if(error||!data)throw new Error(error?.message||'Filen kunde inte hämtas.');
+      const fileName=String(doc.file_name||doc.name||doc.display_name||'dokument').replace(/[\\/:*?"<>|]+/g,'_');
+      const url=URL.createObjectURL(data);const a=document.createElement('a');a.href=url;a.download=fileName;a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),30000);message('Nedladdningen har startat.','ok');
+    }catch(err){console.error('Document download error:',err);message('Dokumentet kunde inte laddas ner. '+(err?.message||''),'error');}
+  }
+
+  function openGenericDocumentReader(title, contentNode, noteText='Dokumentet visas i läsläge. Originalfilen ändras inte.', downloadCallback=null) {
     document.getElementById('documentPreviewOverlay')?.remove();
     const overlay=document.createElement('div');
     overlay.id='documentPreviewOverlay';
@@ -6410,10 +6425,12 @@ async function editDocument(doc) {
     const header=document.createElement('div');
     header.style.cssText='display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #d9e1e7;flex:0 0 auto;';
     const name=document.createElement('strong');name.textContent=title;name.style.cssText='overflow-wrap:anywhere;min-width:0;';
+    const headerActions=document.createElement('div');headerActions.style.cssText='display:flex;gap:8px;align-items:center;flex:0 0 auto;';
+    const download=document.createElement('button');download.textContent='Ladda ner';download.style.cssText='flex:0 0 auto;';download.addEventListener('click',()=>downloadCallback?.());
     const close=document.createElement('button');close.textContent='Stäng';close.style.cssText='flex:0 0 auto;';
     const closeReader=()=>{overlay.remove();document.removeEventListener('keydown',esc);};
     close.addEventListener('click',closeReader);
-    header.append(name,close);
+    headerActions.append(download,close);header.append(name,headerActions);
     const body=document.createElement('div');body.style.cssText='overflow:auto;flex:1;min-height:0;background:#f3f5f7;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;';
     body.appendChild(contentNode);
     const note=document.createElement('div');note.style.cssText='padding:8px 12px;color:#687783;font-size:13px;border-top:1px solid #d9e1e7;flex:0 0 auto;';note.textContent=noteText;
@@ -6430,7 +6447,7 @@ async function editDocument(doc) {
     const pdf=await pdfjs.getDocument({data:buffer}).promise;
     const pages=document.createElement('div');
     pages.style.cssText='display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;';
-    const reader=openGenericDocumentReader(title,pages,'PDF visas i portalens läsare. Utskriftsfunktionen är oförändrad.');
+    const reader=openGenericDocumentReader(title,pages,'PDF visas i portalens läsare. Utskriftsfunktionen är oförändrad.',()=>downloadOriginalDocument(currentReaderDoc,currentReaderPath));
     for(let i=1;i<=pdf.numPages;i++){
       if(!reader.overlay.isConnected)return;
       const page=await pdf.getPage(i);
@@ -6457,7 +6474,7 @@ async function editDocument(doc) {
         message('Hämtar PDF för visning…','ok');
         const {data:blob,error}=await db.storage.from(STORAGE_BUCKET).download(path);
         if(error||!blob)throw new Error(error?.message||'PDF-filen kunde inte hämtas.');
-        await renderPdfInReader(blob,title);
+        currentReaderDoc=doc;currentReaderPath=path;await renderPdfInReader(blob,title);
       }else if(/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(name)){
         const {data,error}=await db.storage.from(STORAGE_BUCKET).createSignedUrl(path,300);
         if(error||!data?.signedUrl)throw new Error(error?.message||'Bildlänken kunde inte skapas.');
@@ -6465,7 +6482,7 @@ async function editDocument(doc) {
         img.style.cssText='display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;margin:auto;';
         const holder=document.createElement('div');holder.style.cssText='display:flex;align-items:center;justify-content:center;min-height:100%;padding:12px;';
         holder.appendChild(img);
-        openGenericDocumentReader(title,holder,'Bildvisning. Originalfilen ändras inte.');
+        openGenericDocumentReader(title,holder,'Bildvisning. Originalfilen ändras inte.',()=>downloadOriginalDocument(doc,path));
       }else if(/\.(docx)$/.test(name)){
         const {data:blob,error}=await db.storage.from(STORAGE_BUCKET).download(path);
         if(error||!blob)throw new Error(error?.message||'Word-filen kunde inte hämtas.');
@@ -6476,19 +6493,19 @@ async function editDocument(doc) {
         article.innerHTML=result.value;
         article.querySelectorAll('img').forEach(img=>img.style.maxWidth='100%');
         article.querySelectorAll('table').forEach(t=>{t.style.cssText='border-collapse:collapse;width:100%;max-width:100%;overflow:auto;';});
-        openGenericDocumentReader(title,article,'Word visas i läsläge. Formatering kan skilja sig från originalet. Utskrift via portalens separata utskriftsfunktion.');
+        openGenericDocumentReader(title,article,'Word visas i läsläge. Formatering kan skilja sig från originalet. Utskrift via portalens separata utskriftsfunktion.',()=>downloadOriginalDocument(doc,path));
       }else if(/\.(txt|csv|log|md)$/.test(name)){
         const {data:blob,error}=await db.storage.from(STORAGE_BUCKET).download(path);
         if(error||!blob)throw new Error(error?.message||'Textfilen kunde inte hämtas.');
         const pre=document.createElement('pre');pre.textContent=await blob.text();pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;font-family:monospace;background:white;margin:0;';
-        openGenericDocumentReader(title,pre,'Textvisning. Originalfilen ändras inte.');
+        openGenericDocumentReader(title,pre,'Textvisning. Originalfilen ändras inte.',()=>downloadOriginalDocument(doc,path));
       }else{
         const {data,error}=await db.storage.from(STORAGE_BUCKET).createSignedUrl(path,300);
         if(error||!data?.signedUrl)throw new Error(error?.message||'Filens visningslänk kunde inte skapas.');
         const frame=document.createElement('iframe');frame.src=data.signedUrl;frame.title=title;
         frame.style.cssText='border:0;width:100%;height:100%;min-height:70vh;background:white;';
         frame.setAttribute('sandbox','allow-same-origin allow-downloads');
-        openGenericDocumentReader(title,frame,'Dokumentet visas i läsläge. Utskrift via portalens separata funktion.');
+        openGenericDocumentReader(title,frame,'Dokumentet visas i läsläge. Utskrift via portalens separata funktion.',()=>downloadOriginalDocument(doc,path));
       }
       await markMeetingDocumentRead(doc.id);
     }catch(err){
