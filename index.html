@@ -8,6 +8,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     :root {
@@ -8570,19 +8571,45 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
   if (!isAdminUser) { message('Du saknar behörighet.', 'error'); return; }
   const meeting = meetings.find(item => String(item.id) === String(selectedMeetingId));
   if (!meeting) { message('Välj ett möte först.', 'error'); return; }
-  const confirmation = confirm('Skicka kallelse via e-post till aktiva styrelsemedlemmar för mötet "' + meetingTitle(meeting) + '"?');
+  if (typeof html2pdf === 'undefined') { message('PDF-funktionen kunde inte laddas. Ladda om sidan och försök igen.', 'error'); return; }
+  const confirmation = confirm('Skapa PDF av den befintliga kallelsen och skicka den via e-post till aktiva styrelsemedlemmar för "' + meetingTitle(meeting) + '"?');
   if (!confirmation) return;
   const button = $('sendMeetingInvitation');
   button.disabled = true;
-  button.textContent = 'Skickar kallelse…';
+  button.textContent = 'Skapar PDF och skickar…';
+  let overlay = null;
   try {
-    const { data, error } = await db.functions.invoke('send-meeting-invitation', { body: { meetingId: String(meeting.id) } });
+    // Använd den befintliga kallelsebyggaren – ingen separat kallelsemall.
+    createMeetingNotice();
+    overlay = document.getElementById('meetingNoticeOverlay');
+    const page = overlay?.querySelector('.page');
+    if (!page) throw new Error('Kallelsevisningen kunde inte hittas');
+    await new Promise(resolve => setTimeout(resolve, 350));
+    const pdfBlob = await html2pdf().set({
+      margin: [10, 10, 10, 10],
+      filename: 'Kallelse.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    }).from(page).toPdf().output('blob');
+    if (!pdfBlob || pdfBlob.size > 8 * 1024 * 1024) throw new Error('PDF-filen är tom eller för stor');
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+      reader.onerror = reject;
+      reader.readAsDataURL(pdfBlob);
+    });
+    const { data, error } = await db.functions.invoke('send-meeting-invitation', {
+      body: { meetingId: String(meeting.id), pdfBase64: base64, fileName: 'Kallelse-' + safeFile(meetingTitle(meeting)) + '.pdf' }
+    });
     if (error || !data?.success) throw error || new Error(data?.error || 'Utskicket misslyckades');
-    message('Kallelsen har skickats via e-post till ' + data.recipientCount + ' styrelsemedlemmar.', 'ok');
+    message('PDF-kallelsen har skickats via e-post till ' + data.recipientCount + ' styrelsemedlemmar.', 'ok');
   } catch (error) {
-    console.error('Meeting invitation email error:', error);
-    message('Kallelsen kunde inte skickas. Kontrollera Edge Function-loggen.', 'error');
+    console.error('Meeting invitation PDF email error:', error);
+    message('Kallelsen kunde inte skickas. Kontrollera att PDF-funktionen och Edge Function är aktiva.', 'error');
   } finally {
+    overlay?.remove();
     button.disabled = false;
     button.textContent = 'Skicka kallelse via e-post';
   }
