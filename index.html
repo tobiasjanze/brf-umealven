@@ -8620,10 +8620,36 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
           return blob;
         }finally{host.remove();}
       };
+      // Kallelse-PDF: rendera innehållet i en fristående dokumentyta med egna
+      // CSS-regler. Detta undviker att portalens overlay/CSS klipper texten.
+      const captureNoticePdf=async(source,title)=>{
+        const host=document.createElement('div');
+        host.style.cssText='position:absolute;left:-10000px;top:0;width:794px;background:#fff;';
+        const clone=source.cloneNode(true);
+        clone.style.cssText='display:block;width:730px;max-width:none;margin:0;padding:32px;background:#fff;color:#24313c;font-family:Arial,sans-serif;font-size:16px;line-height:1.5;box-sizing:border-box;';
+        clone.querySelectorAll('*').forEach(el=>{el.style.maxWidth='100%';el.style.boxSizing='border-box';});
+        const logo=clone.querySelector('.logo');
+        if(logo){logo.style.cssText='display:block;width:230px;height:auto;margin:0 0 30px 0;';}
+        clone.querySelectorAll('h1').forEach(el=>el.style.cssText='color:#17324d;font-size:28px;border-bottom:3px solid #245b83;padding-bottom:12px;margin:0 0 22px;');
+        clone.querySelectorAll('h2').forEach(el=>el.style.cssText='color:#17324d;font-size:20px;margin:28px 0 12px;');
+        clone.querySelectorAll('p').forEach(el=>el.style.cssText+='margin:0 0 14px;');
+        const info=clone.querySelector('.meeting-info');
+        if(info)info.style.cssText='background:#eef4f8;border-left:5px solid #245b83;padding:18px;margin:22px 0;';
+        const notes=clone.querySelector('.notes');if(notes)notes.style.cssText='white-space:pre-wrap;';
+        const footer=clone.querySelector('.footer');if(footer)footer.style.cssText='margin-top:40px;border-top:1px solid #ccd6df;padding-top:15px;color:#687783;font-size:12px;';
+        host.appendChild(clone);document.body.appendChild(host);
+        try{
+          await Promise.all([...clone.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve;})));
+          await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+          const blob=await html2pdf().set({margin:10,filename:title,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,scrollX:0,scrollY:0},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(clone).toPdf().output('blob');
+          if(!blob||blob.size<1000||blob.size>8*1024*1024)throw new Error('Kallelse-PDF blev tom eller för stor');
+          return blob;
+        }finally{host.remove();}
+      };
       const toBase64=blob=>new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=reject;reader.readAsDataURL(blob);});
       createMeetingNotice();noticeOverlay=document.getElementById('meetingNoticeOverlay');
       const noticePage=noticeOverlay?.querySelector('.page');if(!noticePage)throw new Error('Kallelsevisningen kunde inte hittas');
-      const noticeBlob=await capturePdf(noticePage,'Kallelse.pdf',noticeOverlay);
+      const noticeBlob=await captureNoticePdf(noticePage,'Kallelse.pdf');
       const agendaSource=document.getElementById('agendaSections');
       if(!agendaSource||!agendaSource.innerHTML.trim())throw new Error('Dagordningen är tom eller kunde inte hämtas');
       const meetingHeading=meetingTitle(meeting)+' – '+dateText(meetingDate(meeting));
