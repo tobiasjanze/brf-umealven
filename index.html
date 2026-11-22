@@ -8601,18 +8601,42 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
     if(!confirmSend)return;
     const sendButton=overlay.querySelector('#recipientSend');sendButton.disabled=true;sendButton.textContent='Skapar PDF och skickar…';
     let noticeOverlay=null;
+    let captureHost=null;
     try{
+      // Rendera dokument från en fristående, stabil kopia. Detta undviker att
+      // html2pdf fångar den fasta overlayens endast delvis renderade innehåll.
+      const capturePdf=async(source,title)=>{
+        const host=document.createElement('div');
+        host.style.cssText='position:fixed;left:-10000px;top:0;width:794px;background:#fff;z-index:-1;';
+        const clone=source.cloneNode(true);
+        clone.style.cssText+='display:block;width:794px;max-width:none;margin:0;padding:32px;background:#fff;box-sizing:border-box;';
+        clone.querySelectorAll('details').forEach(d=>d.open=true);
+        host.appendChild(clone);document.body.appendChild(host);
+        try{
+          await Promise.all([...clone.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve;})));
+          await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+          const blob=await html2pdf().set({margin:10,filename:title,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(clone).toPdf().output('blob');
+          if(!blob||blob.size<1000||blob.size>8*1024*1024)throw new Error('PDF-filen blev tom eller för stor');
+          return blob;
+        }finally{host.remove();}
+      };
+      const toBase64=blob=>new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=reject;reader.readAsDataURL(blob);});
       createMeetingNotice();noticeOverlay=document.getElementById('meetingNoticeOverlay');
-      const page=noticeOverlay?.querySelector('.page');if(!page)throw new Error('Kallelsevisningen kunde inte hittas');
-      await new Promise(resolve=>setTimeout(resolve,350));
-      const pdfBlob=await html2pdf().set({margin:[10,10,10,10],filename:'Kallelse.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(page).toPdf().output('blob');
-      if(!pdfBlob||pdfBlob.size>8*1024*1024)throw new Error('PDF-filen är tom eller för stor');
-      const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=reject;reader.readAsDataURL(pdfBlob);});
-      const {data,error}=await db.functions.invoke('send-meeting-invitation',{body:{meetingId:String(meeting.id),meetingTitle:meetingTitle(meeting),pdfBase64:base64,fileName:'Kallelse-'+safeFile(meetingTitle(meeting))+'.pdf',recipientUserIds:selectedIds}});
+      const noticePage=noticeOverlay?.querySelector('.page');if(!noticePage)throw new Error('Kallelsevisningen kunde inte hittas');
+      const noticeBlob=await capturePdf(noticePage,'Kallelse.pdf');
+      const agendaSource=document.getElementById('agendaSections');
+      if(!agendaSource||!agendaSource.innerHTML.trim())throw new Error('Dagordningen är tom eller kunde inte hämtas');
+      const meetingHeading=meetingTitle(meeting)+' – '+dateText(meetingDate(meeting));
+      const agendaWrap=document.createElement('div');
+      agendaWrap.innerHTML='<p><strong>'+esc(meetingHeading)+'</strong></p>'+agendaSource.innerHTML;
+      const agendaBlob=await capturePdf(agendaWrap,'Dagordning.pdf');
+      const noticeBase64=await toBase64(noticeBlob);
+      const agendaBase64=await toBase64(agendaBlob);
+      const {data,error}=await db.functions.invoke('send-meeting-invitation',{body:{meetingId:String(meeting.id),meetingTitle:meetingTitle(meeting),pdfBase64:noticeBase64,fileName:'Kallelse-'+safeFile(meetingTitle(meeting))+'.pdf',agendaPdfBase64:agendaBase64,agendaFileName:'Dagordning-'+safeFile(meetingTitle(meeting))+'.pdf',recipientUserIds:selectedIds}});
       if(error||!data?.success)throw error||new Error(data?.error||'Utskicket misslyckades');
-      message('PDF-kallelsen har skickats till '+data.recipientCount+' valda mottagare.','ok');overlay.remove();
-    }catch(error){console.error('Meeting invitation PDF email error:',error);message('Kallelsen kunde inte skickas. Kontrollera Edge Function och mottagarval.','error');sendButton.disabled=false;sendButton.textContent='Skapa PDF och skicka';}
-    finally{noticeOverlay?.remove();}
+      message('Kallelse och dagordning skickades som PDF till '+data.recipientCount+' valda mottagare.','ok');overlay.remove();
+    }catch(error){console.error('Meeting invitation PDF email error:',error);message('PDF-filerna kunde inte skapas eller skickas. Kontrollera mottagare och försök igen.','error');sendButton.disabled=false;sendButton.textContent='Skapa PDF och skicka';}
+    finally{noticeOverlay?.remove();captureHost?.remove();}
   };
 });
 // ===== LÄGG TILL MÖTE I KALENDER =====
