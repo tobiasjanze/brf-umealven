@@ -6278,36 +6278,111 @@ async function editDocument(doc) {
     return doc.storage_path || doc.file_path || doc.path || '';
   }
 
+  // Excel-filer renderas i portalens egen visare. iOS Home Screen-webbappar
+  // hanterar externa XLSX-öppningar/downloads inkonsekvent (ofta vit vy).
+  let xlsxRendererPromise = null;
+
+  function isExcelDocument(doc) {
+    const name = String(doc.file_name || doc.name || doc.display_name || '').toLowerCase();
+    return /\\.(xlsx|xls|xlsm|xlsb|ods)$/.test(name);
+  }
+
+  function loadXlsxRenderer() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (xlsxRendererPromise) return xlsxRendererPromise;
+    xlsxRendererPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      script.async = true;
+      script.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error('Excel-visaren laddades inte.'));
+      script.onerror = () => reject(new Error('Excel-visaren kunde inte hämtas från CDN.'));
+      document.head.appendChild(script);
+    });
+    return xlsxRendererPromise;
+  }
+
+  function closeExcelPreview() {
+    document.getElementById('excelPreviewOverlay')?.remove();
+  }
+
+  function renderExcelPreview(workbook, fileName) {
+    closeExcelPreview();
+    const overlay = document.createElement('div');
+    overlay.id = 'excelPreviewOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,25,35,.72);display:flex;align-items:center;justify-content:center;padding:10px;';
+    const panel = document.createElement('div');
+    panel.style.cssText = 'width:min(1200px,100%);height:min(92vh,900px);background:#fff;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;color:#24313c;';
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #d9e1e7;';
+    const title = document.createElement('strong'); title.textContent = fileName;
+    const close = document.createElement('button'); close.textContent = 'Stäng'; close.style.cssText = 'flex:0 0 auto;';
+    close.addEventListener('click', closeExcelPreview);
+    header.append(title,close);
+    const tabs = document.createElement('div'); tabs.style.cssText = 'display:flex;gap:6px;overflow-x:auto;padding:8px;border-bottom:1px solid #d9e1e7;';
+    const body = document.createElement('div'); body.style.cssText = 'overflow:auto;flex:1;padding:8px;';
+    const note = document.createElement('div'); note.style.cssText = 'padding:8px 12px;color:#687783;font-size:13px;border-top:1px solid #d9e1e7;';
+    note.textContent = 'Visning av kalkylbladets cellvärden. Originalfilen och dess formler ändras inte.';
+    panel.append(header,tabs,body,note); overlay.appendChild(panel); document.body.appendChild(overlay);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)closeExcelPreview();});
+    document.addEventListener('keydown',function esc(e){if(e.key==='Escape'&&document.getElementById('excelPreviewOverlay')){closeExcelPreview();document.removeEventListener('keydown',esc);}});
+    const showSheet = name => {
+      body.innerHTML='';
+      tabs.querySelectorAll('button').forEach(b=>{b.style.background=b.dataset.sheet===name?'#245b83':'#e5ebef';b.style.color=b.dataset.sheet===name?'white':'#24313c';});
+      const sheet=workbook.Sheets[name];
+      const rows=window.XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false});
+      const table=document.createElement('table'); table.style.cssText='border-collapse:collapse;width:max-content;min-width:100%;font-size:13px;';
+      const maxRows=Math.min(rows.length,500), maxCols=Math.min(Math.max(...rows.map(r=>r.length),0),50);
+      for(let ri=0;ri<maxRows;ri++){
+        const tr=document.createElement('tr');
+        const row=rows[ri]||[];
+        for(let ci=0;ci<maxCols;ci++){
+          const td=document.createElement(ri===0?'th':'td');
+          td.textContent=String(row[ci]??'');
+          td.style.cssText='border:1px solid #d9e1e7;padding:5px 7px;white-space:pre-wrap;min-width:55px;max-width:260px;overflow-wrap:anywhere;'+(ri===0?'background:#eaf1f5;font-weight:700;position:sticky;top:0;':'');
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+      body.appendChild(table);
+      if(rows.length>500||maxCols>=50){const warning=document.createElement('p');warning.textContent='Visningen är begränsad till 500 rader och 50 kolumner för att hålla iPadens visning responsiv.';warning.style.color='#687783';body.appendChild(warning);}
+    };
+    workbook.SheetNames.forEach(name=>{
+      const btn=document.createElement('button');btn.textContent=name;btn.dataset.sheet=name;btn.style.cssText='white-space:nowrap;';
+      btn.addEventListener('click',()=>showSheet(name));tabs.appendChild(btn);
+    });
+    if(workbook.SheetNames.length)showSheet(workbook.SheetNames[0]);
+  }
+
+  async function openExcelDocument(doc, path) {
+    message('Hämtar Excel-filen för visning…','ok');
+    const {data,error}=await db.storage.from(STORAGE_BUCKET).download(path);
+    if(error||!data){message('Kunde inte hämta Excel-filen: '+(error?.message||'Okänt fel'),'error');return;}
+    try{
+      const XLSX=await loadXlsxRenderer();
+      const workbook=XLSX.read(await data.arrayBuffer(),{type:'array',cellDates:true});
+      renderExcelPreview(workbook,doc.display_name||doc.file_name||'Excel-dokument');
+      await markMeetingDocumentRead(doc.id);
+    }catch(err){
+      console.error('Excel preview error:',err);
+      message('Excel-filen kunde inte renderas. Försök öppna den i Safari eller ladda ner den.','error');
+    }
+  }
+
   async function openDocument(doc) {
     const path = storagePath(doc);
+    if (!path) { message('Dokumentet saknar sökväg till lagringsfilen.', 'error'); return; }
 
-    if (!path) {
-      message('Dokumentet saknar sökväg till lagringsfilen.', 'error');
-      return;
-    }
+    if (isExcelDocument(doc)) { await openExcelDocument(doc,path); return; }
 
-    const { data, error } = await db.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrl(path, 300);
+    const { data, error } = await db.storage.from(STORAGE_BUCKET).createSignedUrl(path, 300);
+    if (error) { message('Kunde inte öppna filen: ' + error.message, 'error'); return; }
 
-    if (error) {
-      message('Kunde inte öppna filen: ' + error.message, 'error');
-      return;
-    }
-
-    // Öppna i en ny flik. Safari returnerar normalt ett fönsterhandtag
-    // när noopener inte anges; med noopener kan returvärdet alltid bli null,
-    // även när fliken faktiskt öppnats.
     const openedWindow = window.open(data.signedUrl, '_blank');
     if (!openedWindow) {
       message('Safari blockerade öppningen av dokumentet. Tillåt popup-fönster och försök igen. Lässtatus har inte ändrats.', 'error');
       return;
     }
-
-    // Förhindra att den öppnade fliken kan navigera tillbaka till portalen.
     try { openedWindow.opener = null; } catch (_) {}
-
-    // Dokumentlänken har öppnats från användarens klick: registrera lässtatus.
     await markMeetingDocumentRead(doc.id);
   }
 
