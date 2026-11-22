@@ -4,7 +4,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.9.16";
 
-const ADMIN_EMAIL = "tobias.janze@gmail.com";
+const ADMIN_EMAIL = "info@brfumealven.se";
 const SMTP_HOST = "smtp.3dg.se";
 const SMTP_PORT = 465;
 const SMTP_USERNAME = Deno.env.get("SMTP_USERNAME");
