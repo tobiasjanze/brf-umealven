@@ -21,7 +21,7 @@ Deno.serve(async(req)=>{
   if(req.method==="OPTIONS") return new Response("ok",{headers:corsHeaders});
   if(req.method!=="POST") return response({error:"Method not allowed"},405);
   try {
-    const token=req.headers.get("Authorization")?.replace(/^Bearer\\s+/i,"");
+    const token=req.headers.get("Authorization")?.replace(/^Bearer\s+/i,"");
     if(!token) return response({error:"Unauthorized"},401);
     const url=Deno.env.get("SUPABASE_URL"), anon=Deno.env.get("SUPABASE_ANON_KEY"), service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if(!url||!anon||!service||!SMTP_USERNAME||!SMTP_PASSWORD) throw new Error("Missing server configuration");
