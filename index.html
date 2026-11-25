@@ -5268,8 +5268,12 @@ if (sectionDocuments.length > 0) {
     const meeting = meetings.find(item => String(item.id) === String(selectedMeetingId));
     const heading = meeting ? meetingTitle(meeting) + ' – ' + dateText(meetingDate(meeting)) : 'Styrelsemöte';
     try {
-      const agendaHtml = await buildAgendaPrintHtml(selectedMeetingId, heading);
-      openPrintableDocument('Dagordning – ' + heading, agendaHtml, { extraCss: '.agenda-print h1{font-size:20px}.print-section{margin:0 0 16px;border-bottom:1px solid #dce5ed;padding-bottom:9px}.print-section h2{background:#eef4f8;padding:7px 8px;font-size:14px}.print-item{margin:8px 0 12px}.print-item h3{font-size:12px;margin:0 0 5px}.print-item p,.print-subitem p{margin:4px 0}.print-subitem{margin:7px 0 10px 14px}.print-docs{margin:4px 0 5px 15px;padding-left:12px;font-size:10px}' });
+      const agendaBlob = await createAgendaPdfBlob(String(selectedMeetingId), heading);
+      const pdfUrl = URL.createObjectURL(agendaBlob);
+      const pdfWindow = window.open('', '_blank');
+      if (!pdfWindow) { URL.revokeObjectURL(pdfUrl); message('Safari blockerade dokumentfönstret. Tillåt popup-fönster och försök igen.', 'error'); return; }
+      pdfWindow.location.replace(pdfUrl);
+      message('Dagordnings-PDF skapad.', 'ok');
     } catch (error) { console.error(error); message('Dagordningsunderlaget kunde inte hämtas.', 'error'); }
   });
     // ===== PROTOKOLL =====
@@ -9105,8 +9109,7 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
       const noticePage=noticeOverlay?.querySelector('.page');if(!noticePage)throw new Error('Kallelsevisningen kunde inte hittas');
       const noticeBlob=await openPrintableDocument('Kallelse – '+meetingTitle(meeting),noticePage.innerHTML,{returnBlob:true});
       const meetingHeading=meetingTitle(meeting)+' – '+dateText(meetingDate(meeting));
-      const agendaWrap=await buildAgendaPrintHtml(String(meeting.id),meetingHeading);
-      const agendaBlob=await openPrintableDocument('Dagordning – '+meetingTitle(meeting),agendaWrap,{returnBlob:true});
+      const agendaBlob=await createAgendaPdfBlob(String(meeting.id),meetingHeading);
       const noticeBase64=await toBase64(noticeBlob);
       const agendaBase64=await toBase64(agendaBlob);
       const {data,error}=await db.functions.invoke('send-meeting-invitation',{body:{meetingId:String(meeting.id),meetingTitle:meetingTitle(meeting),pdfBase64:noticeBase64,fileName:'Kallelse-'+safeFile(meetingTitle(meeting))+'.pdf',agendaPdfBase64:agendaBase64,agendaFileName:'Dagordning-'+safeFile(meetingTitle(meeting))+'.pdf',recipientUserIds:selectedIds}});
