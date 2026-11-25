@@ -4297,6 +4297,7 @@ function showLogin() {
     }
 
     meetings = data || [];
+    renderArchivedMeetings();
 
     renderMeetings();
 populateMeetingSelects();
@@ -4570,7 +4571,7 @@ async function renderHome() {
       return;
     }
 
-    meetings.forEach(meeting => {
+    meetings.filter(meeting => !isMeetingArchived(meeting)).forEach(meeting => {
       const node = document.createElement('div');
       node.className = 'item';
 
