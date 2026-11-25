@@ -4992,8 +4992,8 @@ const agendaDocuments = linkedDocuments || [];
       details.append(summary, body);
 
       if (number === '6') {
-        // §6 består av fasta rubriker. Databasposten används enbart som
-        // kopplings-ID för dokument och ska inte visas som en extra punkt.
+        // Fasta §6-rubriker samt frivilliga underrubriker utan numrering.
+        const subMarker = '__BRF6SUB__|';
         reportHeadings.forEach((heading, headingIndex) => {
           const headingNode = document.createElement('div');
           headingNode.className = 'subhead';
@@ -5005,27 +5005,94 @@ const agendaDocuments = linkedDocuments || [];
           );
           if (!anchorItem) return;
 
+          const subItems = items.filter(item =>
+            String(item.title || '').startsWith(subMarker + String(anchorItem.id) + '|')
+          );
+          subItems.forEach(subItem => {
+            const subTitle = String(subItem.title).split('|').slice(2).join('|');
+            const card = document.createElement('div');
+            card.style.cssText = 'margin:8px 0 8px 14px;padding:10px;border-left:3px solid #cbddeb;background:#f8fbfd;border-radius:8px;';
+            const titleNode = document.createElement('strong');
+            titleNode.textContent = subTitle;
+            card.appendChild(titleNode);
+            if (subItem.description) {
+              const note = document.createElement('p');
+              note.style.margin = '6px 0';
+              note.textContent = subItem.description;
+              card.appendChild(note);
+            }
+            if (isAdminUser) {
+              const actions = document.createElement('div');
+              actions.className = 'item-actions';
+              const edit = document.createElement('button');
+              edit.type = 'button'; edit.className = 'small'; edit.textContent = 'Ändra';
+              edit.addEventListener('click', async () => {
+                const newTitle = prompt('Underrubrik:', subTitle);
+                if (newTitle === null || !newTitle.trim()) return;
+                const newNote = prompt('Anteckning (valfritt):', subItem.description || '');
+                if (newNote === null) return;
+                const { error } = await db.from('agenda_items').update({
+                  title: subMarker + String(anchorItem.id) + '|' + newTitle.trim(),
+                  description: newNote.trim()
+                }).eq('id', subItem.id).eq('meeting_id', selectedMeetingId);
+                if (error) message('Kunde inte ändra underrubriken: ' + error.message, 'error');
+                else await loadAgenda();
+              });
+              const del = document.createElement('button');
+              del.type = 'button'; del.className = 'small danger'; del.textContent = 'Ta bort';
+              del.addEventListener('click', async () => {
+                if (!confirm('Ta bort underrubriken och dess anteckning?')) return;
+                const { error } = await db.from('agenda_items').delete().eq('id', subItem.id).eq('meeting_id', selectedMeetingId);
+                if (error) message('Kunde inte ta bort underrubriken: ' + error.message, 'error');
+                else await loadAgenda();
+              });
+              actions.append(edit, del);
+              card.appendChild(actions);
+            }
+            body.appendChild(card);
+          });
+
+          if (isAdminUser) {
+            const add = document.createElement('button');
+            add.type = 'button'; add.className = 'small';
+            add.textContent = '+ Lägg till underrubrik';
+            add.style.margin = '4px 0 10px 14px';
+            add.addEventListener('click', async () => {
+              const newTitle = prompt('Namn på underrubriken (t.ex. Umeå Energi):');
+              if (newTitle === null || !newTitle.trim()) return;
+              const note = prompt('Anteckning (valfritt):') || '';
+              const { error } = await db.from('agenda_items').insert({
+                meeting_id: selectedMeetingId,
+                section_number: '6',
+                title: subMarker + String(anchorItem.id) + '|' + newTitle.trim(),
+                description: note.trim(),
+                created_by: currentUser.id
+              });
+              if (error) message('Kunde inte lägga till underrubriken: ' + error.message, 'error');
+              else await loadAgenda();
+            });
+            body.appendChild(add);
+          }
+
           const linked = agendaDocuments.filter(doc =>
             String(doc.agenda_item_id || '') === String(anchorItem.id)
           );
-          if (!linked.length) return;
-
-          const box = document.createElement('div');
-          box.className = 'agenda-linked-documents';
-          const label = document.createElement('p');
-          label.className = 'muted';
-          label.textContent = '📎 Dokument till denna punkt:';
-          box.appendChild(label);
-
-          linked.forEach(doc => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'small';
-            button.textContent = doc.display_name || doc.file_name || 'Öppna dokument';
-            button.addEventListener('click', () => openDocument(doc));
-            box.appendChild(button);
-          });
-          body.appendChild(box);
+          if (linked.length) {
+            const box = document.createElement('div');
+            box.className = 'agenda-linked-documents';
+            const label = document.createElement('p');
+            label.className = 'muted';
+            label.textContent = '📎 Dokument till denna punkt:';
+            box.appendChild(label);
+            linked.forEach(doc => {
+              const button = document.createElement('button');
+              button.type = 'button'; button.className = 'small';
+              button.textContent = doc.display_name || doc.file_name || 'Öppna dokument';
+              button.addEventListener('click', () => openDocument(doc));
+              box.appendChild(button);
+            });
+            body.appendChild(box);
+          }
         });
       } else if (items.length) {
         items.forEach((item, index) =>
