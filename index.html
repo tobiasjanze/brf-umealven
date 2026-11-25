@@ -6076,7 +6076,7 @@ $('documentAgendaSection').addEventListener(
         if (linkedItem) {
           if (sectionNumber === '6') {
             const headingIndex = reportHeadings.findIndex(title =>
-              String(item.title || '').trim().toLowerCase() === title.trim().toLowerCase()
+              String(linkedItem.title || '').trim().toLowerCase() === title.trim().toLowerCase()
             );
             if (headingIndex >= 0) subpointLetter = String.fromCharCode(97 + headingIndex);
           } else {
