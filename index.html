@@ -4992,27 +4992,41 @@ const agendaDocuments = linkedDocuments || [];
       details.append(summary, body);
 
       if (number === '6') {
-        reportHeadings.forEach(heading => {
-          const headingIndex = reportHeadings.indexOf(heading);
+        // §6 består av fasta rubriker. Databasposten används enbart som
+        // kopplings-ID för dokument och ska inte visas som en extra punkt.
+        reportHeadings.forEach((heading, headingIndex) => {
           const headingNode = document.createElement('div');
           headingNode.className = 'subhead';
           headingNode.textContent = String.fromCharCode(97 + headingIndex) + ') ' + heading;
           body.append(headingNode);
 
-          items
-            .filter(item =>
-              (item.title || '').toLowerCase() === heading.toLowerCase()
-            )
-            .forEach((item, index) =>
-  body.append(
-  agendaItemNode(
-    item,
-    String.fromCharCode(97 + index),
-    agendaDocuments
-  )
-)
-);
+          const anchorItem = items.find(item =>
+            String(item.title || '').trim().toLowerCase() === heading.trim().toLowerCase()
+          );
+          if (!anchorItem) return;
+
+          const linked = agendaDocuments.filter(doc =>
+            String(doc.agenda_item_id || '') === String(anchorItem.id)
+          );
+          if (!linked.length) return;
+
+          const box = document.createElement('div');
+          box.className = 'agenda-linked-documents';
+          const label = document.createElement('p');
+          label.className = 'muted';
+          label.textContent = '📎 Dokument till denna punkt:';
+          box.appendChild(label);
+
+          linked.forEach(doc => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'small';
+            button.textContent = doc.display_name || doc.file_name || 'Öppna dokument';
+            button.addEventListener('click', () => openDocument(doc));
+            box.appendChild(button);
           });
+          body.appendChild(box);
+        });
       } else if (items.length) {
         items.forEach((item, index) =>
   body.append(
@@ -5854,7 +5868,7 @@ async function loadDocumentAgendaSubpoints() {
     }
   }
 
-  const items = (data || []).filter(item =>
+  const sectionItems = (data || []).filter(item =>
     String(
       item.section_number ??
       item.section ??
@@ -5862,6 +5876,15 @@ async function loadDocumentAgendaSubpoints() {
       ''
     ) === String(sectionNumber)
   );
+
+  // §6 visas och väljs alltid i den fasta ordningen från dagordningen.
+  const items = String(sectionNumber) === '6'
+    ? reportHeadings
+        .map(title => sectionItems.find(item =>
+          String(item.title || '').trim().toLowerCase() === title.trim().toLowerCase()
+        ))
+        .filter(Boolean)
+    : sectionItems;
 
   items.forEach((item, index) => {
     const option = document.createElement('option');
@@ -6050,13 +6073,20 @@ $('documentAgendaSection').addEventListener(
           String(item.id) === String(doc.agenda_item_id)
         );
         if (linkedItem) {
-          const sectionItems = (agendaItemsData || []).filter(item =>
-            String(item.section_number ?? item.section ?? item.paragraph ?? '') === sectionNumber
-          );
-          const subpointIndex = sectionItems.findIndex(item =>
-            String(item.id) === String(doc.agenda_item_id)
-          );
-          if (subpointIndex >= 0) subpointLetter = String.fromCharCode(97 + subpointIndex);
+          if (sectionNumber === '6') {
+            const headingIndex = reportHeadings.findIndex(title =>
+              String(item.title || '').trim().toLowerCase() === title.trim().toLowerCase()
+            );
+            if (headingIndex >= 0) subpointLetter = String.fromCharCode(97 + headingIndex);
+          } else {
+            const sectionItems = (agendaItemsData || []).filter(item =>
+              String(item.section_number ?? item.section ?? item.paragraph ?? '') === sectionNumber
+            );
+            const subpointIndex = sectionItems.findIndex(item =>
+              String(item.id) === String(doc.agenda_item_id)
+            );
+            if (subpointIndex >= 0) subpointLetter = String.fromCharCode(97 + subpointIndex);
+          }
         }
       }
 
@@ -6264,7 +6294,7 @@ async function editDocument(doc) {
 
     if (!sectionNumber) return;
 
-    const subpoints = items.filter(item =>
+    const sectionItems = items.filter(item =>
       String(
         item.section_number ??
         item.section ??
@@ -6272,6 +6302,13 @@ async function editDocument(doc) {
         ''
       ) === String(sectionNumber)
     );
+    const subpoints = String(sectionNumber) === '6'
+      ? reportHeadings
+          .map(title => sectionItems.find(item =>
+            String(item.title || '').trim().toLowerCase() === title.trim().toLowerCase()
+          ))
+          .filter(Boolean)
+      : sectionItems;
 
     subpoints.forEach((item, index) => {
       const option = document.createElement('option');
