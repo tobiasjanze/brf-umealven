@@ -5081,28 +5081,6 @@ const agendaDocuments = linkedDocuments || [];
             body.appendChild(card);
           });
 
-          if (isAdminUser) {
-            const add = document.createElement('button');
-            add.type = 'button'; add.className = 'small';
-            add.textContent = '+ Lägg till underrubrik';
-            add.className = 'brf6-add-subheading';
-            add.addEventListener('click', async () => {
-              const newTitle = prompt('Namn på underrubriken (t.ex. Umeå Energi):');
-              if (newTitle === null || !newTitle.trim()) return;
-              const note = prompt('Anteckning (valfritt):') || '';
-              const { error } = await db.from('agenda_items').insert({
-                meeting_id: selectedMeetingId,
-                section_number: '6',
-                title: subMarker + String(anchorItem.id) + '|' + newTitle.trim(),
-                description: note.trim(),
-                created_by: currentUser.id
-              });
-              if (error) message('Kunde inte lägga till underrubriken: ' + error.message, 'error');
-              else await loadAgenda();
-            });
-            body.appendChild(add);
-          }
-
           const linked = agendaDocuments.filter(doc =>
             String(doc.agenda_item_id || '') === String(anchorItem.id)
           );
