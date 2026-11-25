@@ -8459,7 +8459,6 @@ $('homeBtn').addEventListener('click', showHome);
 
   // Gemensam utskriftsvy. Öppnas som ett vanligt dokument i en ny flik
   // med tydliga knappar för utskrift och återgång – ingen automatisk utskrift.
-  async 
 // ===== DATA-BASERAD DAGORDNINGS-PDF (GEMENSAM FÖR UTSKRIFT OCH KALLELSE) =====
 async function buildAgendaPrintHtml(meetingId, heading) {
   const { data: docs, error: docsError } = await db.from('meeting_documents').select('*').eq('meeting_id', meetingId);
