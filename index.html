@@ -5260,7 +5260,7 @@ if (sectionDocuments.length > 0) {
     resetAgendaEditForm();await loadAgenda();message(wasEditing?'Dagordningspunkten har uppdaterats.':'Dagordningspunkten har lagts till.','ok');
   });
 
-  $('printAgenda').addEventListener('click', () => {
+  $('printAgenda').addEventListener('click', async () => {
     if (!selectedMeetingId) {
       message('Välj ett möte först.', 'error');
       return;
