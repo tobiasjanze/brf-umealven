@@ -8460,87 +8460,68 @@ $('homeBtn').addEventListener('click', showHome);
   // Gemensam utskriftsvy. Öppnas som ett vanligt dokument i en ny flik
   // med tydliga knappar för utskrift och återgång – ingen automatisk utskrift.
 // ===== DATA-BASERAD DAGORDNINGS-PDF (GEMENSAM FÖR UTSKRIFT OCH KALLELSE) =====
-async function buildAgendaPrintHtml(meetingId, heading) {
-  // Single normalized source for agenda printing and invitation PDF.
-  const { data: itemsData, error: agendaError } = await db.from('agenda_items').select('*').eq('meeting_id', String(meetingId)).order('created_at', { ascending: true });
-  if (agendaError) throw agendaError;
-  const agendaItems = itemsData || [];
-  const { data: docsData, error: docsError } = await db.from('meeting_documents').select('*').eq('meeting_id', String(meetingId));
-  if (docsError) throw docsError;
-  const docs = docsData || [];
-  const escPrint = value => esc(String(value ?? ''));
-  const norm = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,' ').trim().toLowerCase();
-  const sectionOf = value => {
-    const raw = value?.section_number ?? value?.section ?? value?.paragraph ?? '';
-    const match = String(raw).match(/\d+/);
-    return match ? match[0] : '';
-  };
-  const itemsBySection = number => agendaItems.filter(item => sectionOf(item) === String(number));
-  const itemId = item => String(item?.id ?? '');
-  const docsByItem = new Map();
-  docs.forEach(doc => {
-    const id = String(doc.agenda_item_id ?? '');
-    if (id) { if (!docsByItem.has(id)) docsByItem.set(id, []); docsByItem.get(id).push(doc); }
-  });
-  const renderedDocIds = new Set();
-  const docList = list => {
-    if (!list?.length) return '';
-    return '<div class="print-documents">' + list.map(doc => {
-      renderedDocIds.add(String(doc.id));
-      const name = doc.display_name || doc.file_name || doc.name || 'Dokument';
-      const description = String(doc.description || '').trim();
-      // Keep name and description as separate block paragraphs. The PDF parser
-      // must not flatten nested list text into a single unseparated string.
-      return '<div class="print-document"><p class="print-document-name">- ' + escPrint(name) + '</p>' +
-        (description ? '<p class="print-document-description">' + escPrint(description) + '</p>' : '') +
-        '</div>';
-    }).join('') + '</div>';
-  };
-  const linked = id => docList(docsByItem.get(String(id)) || []);
-  const sectionOnlyDocs = number => docs.filter(doc => !doc.agenda_item_id && sectionOf(doc) === String(number));
-  let html = '<div class="agenda-print"><h1>Dagordning</h1><p class="print-meeting-title">' + escPrint(heading) + '</p>';
-  for (const [number, title] of sections) {
-    const items = itemsBySection(number);
-    let content = '';
-    if (String(number) === '6') {
-      const marker = '__BRF6SUB__|';
-      reportHeadings.forEach((fixedHeading, index) => {
-        content += '<div class="print-item"><h3>' + String.fromCharCode(97 + index) + ') ' + escPrint(fixedHeading) + '</h3>';
-        const anchor = items.find(item => norm(item.title) === norm(fixedHeading));
-        if (anchor) {
-          const description = String(anchor.description || anchor.notes || '').trim();
-          if (description) content += '<p>' + escPrint(description) + '</p>';
-          const subs = items.filter(item => String(item.title || '').startsWith(marker + itemId(anchor) + '|'));
-          subs.forEach(sub => {
-            const subTitle = String(sub.title || '').split('|').slice(2).join('|').trim() || 'Underrubrik';
-            content += '<div class="print-subitem"><strong>' + escPrint(subTitle) + '</strong>';
-            const subDescription = String(sub.description || sub.notes || '').trim();
-            if (subDescription) content += '<p>' + escPrint(subDescription) + '</p>';
-            content += linked(itemId(sub)) + '</div>';
+async function createAgendaPdfBlob(meetingId, heading) {
+  if (!window.PDFLib) throw new Error('PDFLib kunde inte laddas.');
+  const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
+  const pdf = await PDFDocument.create();
+  pdf.setTitle('Dagordning – ' + heading);
+  pdf.setAuthor('BRF Umeälven');
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const W=595.28,H=841.89, M=48, CW=W-2*M, navy=rgb(.09,.20,.31), pale=rgb(.91,.95,.97), muted=rgb(.39,.47,.55);
+  let page,y; const pages=[];
+  const addPage=()=>{page=pdf.addPage([W,H]);pages.push(page);y=H-M;};
+  addPage();
+  try { const r=await fetch(new URL('brf-umealven-logotyp.png',window.location.href));if(r.ok){const im=await pdf.embedPng(await r.arrayBuffer());const d=im.scale(Math.min(145/im.width,55/im.height));page.drawImage(im,{x:M,y:y-d.height+5,width:d.width,height:d.height});}}catch(_){}
+  const titleText='Dagordning – '+heading;
+  page.drawText(titleText,{x:M+160,y:y-24,size:16,font:bold,color:navy,maxWidth:CW-160});
+  y-=74;page.drawLine({start:{x:M,y},end:{x:W-M,y},thickness:4,color:pale});y-=25;
+  const clean=v=>String(v??'').replace(/\u00a0/g,' ').replace(/[–—]/g,'-').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/\s+/g,' ').trim();
+  const wrap=(v,f,s,max)=>{const words=clean(v).split(' ');let lines=[],line='';for(const word of words){let c=line?line+' '+word:word;if(f.widthOfTextAtSize(c,s)<=max||!line)line=c;else{lines.push(line);line=word;}}if(line)lines.push(line);return lines;};
+  const ensure=h=>{if(y-h<M+35)addPage();};
+  const paragraph=(v,opt={})=>{v=clean(v);if(!v)return;const f=opt.bold?bold:font,s=opt.size||10.5,indent=opt.indent||0,lh=opt.lineHeight||s*1.45,lines=wrap(v,f,s,CW-indent);ensure(lines.length*lh+opt.after+4);lines.forEach(l=>{page.drawText(l,{x:M+indent,y,size:s,font:f,color:opt.color||navy});y-=lh;});y-=opt.after??4;};
+  const sectionHeader=(v)=>{ensure(32);y-=6;page.drawRectangle({x:M,y:y-5,width:CW,height:24,color:pale});paragraph(v,{bold:true,size:14,indent:8,after:8});};
+  const itemHeader=v=>paragraph(v,{bold:true,size:11.5,after:5});
+  const drawDoc=d=>{const name=d.display_name||d.file_name||d.name||'Dokument';paragraph('- '+name,{indent:12,size:10.5,after:3});const desc=String(d.description||'').trim();if(desc)paragraph(desc,{indent:22,size:9.8,color:muted,after:5});};
+  const {data:itemsData,error:agendaError}=await db.from('agenda_items').select('*').eq('meeting_id',String(meetingId)).order('created_at',{ascending:true});if(agendaError)throw agendaError;
+  const {data:docsData,error:docsError}=await db.from('meeting_documents').select('*').eq('meeting_id',String(meetingId));if(docsError)throw docsError;
+  const items=itemsData||[],docs=docsData||[], rendered=new Set();
+  const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,' ').trim().toLowerCase();
+  const sectionOf=v=>{const raw=v?.section_number??v?.section??v?.paragraph??'';const m=String(raw).match(/\d+/);return m?m[0]:'';};
+  const id=v=>String(v?.id??'');
+  const docsForItem=itemId=>docs.filter(d=>String(d.agenda_item_id||'')===String(itemId));
+  const drawItemDocs=arr=>arr.forEach(d=>{rendered.add(String(d.id));drawDoc(d);});
+  paragraph('Dagordning',{bold:true,size:16,after:8});paragraph(heading,{size:10.5,color:muted,after:15});
+  for(const [num,sectionTitle] of sections){
+    sectionHeader('§'+num+' '+sectionTitle);
+    const itemsFor=items.filter(it=>sectionOf(it)===String(num));
+    if(String(num)==='6'){
+      const marker='__BRF6SUB__|';
+      reportHeadings.forEach((fixed,idx)=>{
+        itemHeader(String.fromCharCode(97+idx)+') '+fixed);
+        const anchor=itemsFor.find(it=>norm(it.title)===norm(fixed));
+        if(anchor){
+          const note=String(anchor.description||anchor.notes||'').trim();if(note)paragraph(note,{after:5});
+          items.filter(it=>String(it.title||'').startsWith(marker+id(anchor)+'|')).forEach(sub=>{
+            const subTitle=String(sub.title||'').split('|').slice(2).join('|').trim()||'Underrubrik';
+            paragraph(subTitle,{bold:true,indent:12,size:10.5,after:4});
+            const subNote=String(sub.description||sub.notes||'').trim();if(subNote)paragraph(subNote,{indent:12,after:5});
+            drawItemDocs(docsForItem(id(sub)));
           });
-          content += linked(itemId(anchor));
+          drawItemDocs(docsForItem(id(anchor)));
         }
-        content += '</div>';
       });
-      const fallbackDocs = docs.filter(doc => sectionOf(doc) === '6' && !renderedDocIds.has(String(doc.id)));
-      content += docList([...sectionOnlyDocs('6'), ...fallbackDocs].filter((doc,index,array)=>array.findIndex(x=>String(x.id)===String(doc.id))===index));
-    } else {
-      items.forEach((item, index) => {
-        content += '<div class="print-item"><h3>' + String.fromCharCode(97 + index) + ') ' + escPrint(item.title || 'Dagordningspunkt') + '</h3>';
-        const description = String(item.description || item.notes || '').trim();
-        if (description) content += '<p>' + escPrint(description) + '</p>';
-        content += linked(itemId(item)) + '</div>';
-      });
-      const fallbackDocs = docs.filter(doc => sectionOf(doc) === String(number) && !renderedDocIds.has(String(doc.id)));
-      content += docList([...sectionOnlyDocs(number), ...fallbackDocs].filter((doc,index,array)=>array.findIndex(x=>String(x.id)===String(doc.id))===index));
+    }else{
+      itemsFor.forEach((it,idx)=>{itemHeader(String.fromCharCode(97+idx)+') '+(it.title||'Dagordningspunkt'));const note=String(it.description||it.notes||'').trim();if(note)paragraph(note,{after:5});drawItemDocs(docsForItem(id(it)));});
     }
-    html += '<section class="print-section"><h2>§' + escPrint(number) + ' ' + escPrint(title) + '</h2>' + content + '</section>';
+    const sectionDocs=docs.filter(d=>sectionOf(d)===String(num)&&!rendered.has(String(d.id)));
+    sectionDocs.forEach(d=>{rendered.add(String(d.id));drawDoc(d);});
   }
-  const unplaced = docs.filter(doc => !renderedDocIds.has(String(doc.id)));
-  if (unplaced.length) html += '<section class="print-section"><h2>Dokument som inte kunde kopplas till en dagordningspunkt</h2>' + docList(unplaced) + '</section>';
-  return html + '</div>';
+  const unplaced=docs.filter(d=>!rendered.has(String(d.id)));
+  if(unplaced.length){sectionHeader('Dokument utan tydlig dagordningskoppling');drawItemDocs(unplaced);}
+  pages.forEach((p,i)=>{p.drawLine({start:{x:M,y:32},end:{x:W-M,y:32},thickness:.6,color:pale});p.drawText('BRF Umeälven  |  '+(i+1)+' / '+pages.length,{x:M,y:19,size:8,font,color:muted});});
+  return new Blob([await pdf.save()],{type:'application/pdf'});
 }
-
 async function openPrintableDocument(title, content, options = {}) {
     // returnBlob används av e-postutskicket: samma PDFLib-motor,
     // men utan popup-fönster eller utskriftsmeddelanden.
