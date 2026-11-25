@@ -3533,6 +3533,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   <strong>Årshjul</strong>
   <span>Återkommande aktiviteter och viktiga datum</span>
 </button>
+<button class="home-card" data-open-tab="archive"><svg style="color:#7051B8;background:#E5E1F8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M9 13h6M9 16h6"/></svg><strong>Arkiv – tidigare möten</strong><span>Visa tidigare dagordningar och mötesunderlag</span></button>
         </div>
       </div>
     </section>
@@ -3636,6 +3637,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
       </div>
     </section>
 
+<section id="tab-archive" class="tabcontent hidden"><div class="panel"><h2>Arkiv – tidigare möten</h2><p class="muted">Möten arkiveras automatiskt när mötesdatumet passerat. Dagordningar och mötesunderlag finns kvar.</p><div id="archivedMeetingsList"></div></div></section>
     <!-- PROTOKOLL -->
 
     <section id="tab-minutes" class="tabcontent hidden">
@@ -4295,6 +4297,7 @@ function showLogin() {
     }
 
     meetings = data || [];
+    renderArchivedMeetings();
 
     renderMeetings();
 populateMeetingSelects();
@@ -4556,6 +4559,9 @@ async function renderHome() {
 
 
 
+
+  function isMeetingArchived(meeting) { const date=String(meetingDate(meeting)||"").slice(0,10); if(!date)return false; const d=new Date(); const today=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); return date<today; }
+  function renderArchivedMeetings(){const root=$("archivedMeetingsList");if(!root)return;const archived=meetings.filter(isMeetingArchived).sort((a,b)=>String(meetingDate(b)).localeCompare(String(meetingDate(a))));if(!archived.length){root.innerHTML="<p class=\"muted\">Inga tidigare möten i arkivet ännu.</p>";return;}root.innerHTML=archived.map(m=>"<div class=\"item\"><p><strong>"+esc(dateText(meetingDate(m)))+"</strong></p><p><strong>"+esc(meetingTitle(m))+"</strong></p><p class=\"muted\">"+esc(m.notes||"")+"</p><button class=\"small primary\" data-archive-open-agenda=\""+esc(m.id)+"\">Visa arkiverad dagordning</button></div>").join("");}
   function renderMeetings() {
     const root = $('meetingsList');
     root.innerHTML = '';
@@ -4565,7 +4571,7 @@ async function renderHome() {
       return;
     }
 
-    meetings.forEach(meeting => {
+    meetings.filter(meeting => !isMeetingArchived(meeting)).forEach(meeting => {
       const node = document.createElement('div');
       node.className = 'item';
 
@@ -8447,6 +8453,8 @@ document.querySelectorAll('.tab[data-tab]').forEach(button => {
   });
 });
 
+
+document.addEventListener("click", async event => {const b=event.target.closest("[data-archive-open-agenda]");if(!b)return;const m=meetings.find(x=>String(x.id)===String(b.dataset.archiveOpenAgenda));if(!m)return;showTab("meetings");selectedMeetingId=m.id;$("selectedMeetingPanel").classList.remove("hidden");$("selectedMeetingHeading").innerHTML="Arkiverad dagordning – "+esc(meetingTitle(m))+"<br><span style=\"font-size:0.65em;font-weight:400;\">"+esc(dateText(meetingDate(m)))+"</span>";await loadAgenda();});
 
 document.addEventListener('click', event => {
   const button = event.target.closest('[data-open-tab]');
