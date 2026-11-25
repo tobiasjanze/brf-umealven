@@ -5739,6 +5739,64 @@ $('downloadMinutes').addEventListener('click',()=>printMinutesPdf());
 
   $('documentsMeetingSelect').addEventListener('change', loadDocuments);
 
+// Återställd hantering för uppladdning av mötesdokument.
+$('uploadForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!isAdminUser || !currentUser) {
+    message('Du saknar behörighet att ladda upp dokument.', 'error');
+    return;
+  }
+  const meetingId = $('documentsMeetingSelect').value;
+  const file = $('documentFile').files[0];
+  if (!meetingId || !file) {
+    message('Välj möte och fil.', 'error');
+    return;
+  }
+  const displayName = $('documentDisplayName').value.trim();
+  const sectionNumber = $('documentAgendaSection').value || null;
+  const agendaItemId = $('documentAgendaSubpoint').value || null;
+  if (agendaItemId && !sectionNumber) {
+    message('Välj först en dagordningspunkt.', 'error');
+    return;
+  }
+  const button = $('uploadForm').querySelector('button[type="submit"]');
+  button.disabled = true;
+  const originalText = button.textContent;
+  button.textContent = 'Laddar upp…';
+  const path = currentUser.id + '/' + meetingId + '/' + Date.now() + '_' + safeFile(file.name);
+  try {
+    const { error: uploadError } = await db.storage.from(STORAGE_BUCKET)
+      .upload(path, file, { upsert: false });
+    if (uploadError) throw uploadError;
+    const { error } = await db.from('meeting_documents').insert({
+      meeting_id: meetingId,
+      file_name: file.name,
+      display_name: displayName || file.name,
+      description: $('documentDescription').value.trim(),
+      storage_path: path,
+      uploaded_by: currentUser.id,
+      section_number: sectionNumber,
+      agenda_item_id: agendaItemId
+    });
+    if (error) {
+      // Försök ta bort filen om metadata inte kunde sparas.
+      await db.storage.from(STORAGE_BUCKET).remove([path]);
+      throw error;
+    }
+    $('uploadForm').reset();
+    portalDirtyForms?.delete?.('uploadForm');
+    await loadDocuments();
+    message('Dokumentet har laddats upp.', 'ok');
+  } catch (error) {
+    console.error('Meeting document upload error:', error);
+    message('Uppladdningen misslyckades: ' + (error?.message || 'Okänt fel'), 'error');
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+});
+
+
 async function loadDocumentAgendaSubpoints() {
   const meetingId = $('documentsMeetingSelect').value;
   const sectionNumber = $('documentAgendaSection').value;
