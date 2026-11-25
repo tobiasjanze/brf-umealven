@@ -8485,12 +8485,16 @@ async function buildAgendaPrintHtml(meetingId, heading) {
   const renderedDocIds = new Set();
   const docList = list => {
     if (!list?.length) return '';
-    return '<ul class="print-docs">' + list.map(doc => {
+    return '<div class="print-documents">' + list.map(doc => {
       renderedDocIds.add(String(doc.id));
       const name = doc.display_name || doc.file_name || doc.name || 'Dokument';
       const description = String(doc.description || '').trim();
-      return '<li>' + escPrint(name) + (description ? '<p>' + escPrint(description) + '</p>' : '') + '</li>';
-    }).join('') + '</ul>';
+      // Keep name and description as separate block paragraphs. The PDF parser
+      // must not flatten nested list text into a single unseparated string.
+      return '<div class="print-document"><p class="print-document-name">- ' + escPrint(name) + '</p>' +
+        (description ? '<p class="print-document-description">' + escPrint(description) + '</p>' : '') +
+        '</div>';
+    }).join('') + '</div>';
   };
   const linked = id => docList(docsByItem.get(String(id)) || []);
   const sectionOnlyDocs = number => docs.filter(doc => !doc.agenda_item_id && sectionOf(doc) === String(number));
