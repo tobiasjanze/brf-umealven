@@ -8461,7 +8461,20 @@ $('homeBtn').addEventListener('click', showHome);
   // med tydliga knappar för utskrift och återgång – ingen automatisk utskrift.
 // ===== DATA-BASERAD DAGORDNINGS-PDF (GEMENSAM FÖR UTSKRIFT OCH KALLELSE) =====
 async function buildAgendaPrintHtml(meetingId, heading) {
-  const { data: docs, error: docsError } = await db.from('meeting_documents').select('*').eq('meeting_id', meetingId);
+  // Utskriften/kallelsebilagan ska alltid använda data för det uttryckligen valda mötet,
+  // och inte vara beroende av den globala agendaItems som skärmvyn använder.
+  const { data: itemsData, error: agendaError } = await db
+    .from('agenda_items')
+    .select('*')
+    .eq('meeting_id', String(meetingId))
+    .order('created_at', { ascending: true });
+  if (agendaError) throw agendaError;
+  const meetingAgendaItems = itemsData || [];
+
+  const { data: docs, error: docsError } = await db
+    .from('meeting_documents')
+    .select('*')
+    .eq('meeting_id', String(meetingId));
   if (docsError) throw docsError;
   const linkedDocs = docs || [];
   const escPrint = value => esc(String(value || ''));
@@ -8477,7 +8490,7 @@ async function buildAgendaPrintHtml(meetingId, heading) {
   };
   let html = '<div class="agenda-print"><h1>Dagordning</h1><p class="print-meeting-title">' + escPrint(heading) + '</p>';
   for (const [number, title] of sections) {
-    const items = agendaItems.filter(item => String(item.section_number ?? item.section ?? item.paragraph ?? '') === String(number));
+    const items = meetingAgendaItems.filter(item => String(item.section_number ?? item.section ?? item.paragraph ?? '') === String(number));
     let content = '';
     if (String(number) === '6') {
       const marker = '__BRF6SUB__|';
