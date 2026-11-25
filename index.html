@@ -8461,61 +8461,79 @@ $('homeBtn').addEventListener('click', showHome);
   // med tydliga knappar för utskrift och återgång – ingen automatisk utskrift.
 // ===== DATA-BASERAD DAGORDNINGS-PDF (GEMENSAM FÖR UTSKRIFT OCH KALLELSE) =====
 async function buildAgendaPrintHtml(meetingId, heading) {
-  // Build the printout for the explicitly selected meeting, independent of UI state.
+  // Single normalized source for agenda printing and invitation PDF.
   const { data: itemsData, error: agendaError } = await db.from('agenda_items').select('*').eq('meeting_id', String(meetingId)).order('created_at', { ascending: true });
   if (agendaError) throw agendaError;
-  const meetingAgendaItems = itemsData || [];
-  const { data: docs, error: docsError } = await db.from('meeting_documents').select('*').eq('meeting_id', String(meetingId));
+  const agendaItems = itemsData || [];
+  const { data: docsData, error: docsError } = await db.from('meeting_documents').select('*').eq('meeting_id', String(meetingId));
   if (docsError) throw docsError;
-  const linkedDocs = docs || [];
+  const docs = docsData || [];
   const escPrint = value => esc(String(value ?? ''));
-  const docList = itemId => {
-    const matches = linkedDocs.filter(d => String(d.agenda_item_id || '') === String(itemId));
-    if (!matches.length) return '';
-    return '<ul class="print-docs">' + matches.map(d => '<li>' + escPrint(d.display_name || d.file_name || d.name || 'Dokument') + '</li>').join('') + '</ul>';
+  const norm = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,' ').trim().toLowerCase();
+  const sectionOf = value => {
+    const raw = value?.section_number ?? value?.section ?? value?.paragraph ?? '';
+    const match = String(raw).match(/\d+/);
+    return match ? match[0] : '';
   };
-  const sectionDocs = number => {
-    const matches = linkedDocs.filter(d => !d.agenda_item_id && String(d.section_number || '').trim() === String(number));
-    if (!matches.length) return '';
-    return '<ul class="print-docs">' + matches.map(d => '<li>' + escPrint(d.display_name || d.file_name || d.name || 'Dokument') + '</li>').join('') + '</ul>';
+  const itemsBySection = number => agendaItems.filter(item => sectionOf(item) === String(number));
+  const itemId = item => String(item?.id ?? '');
+  const docsByItem = new Map();
+  docs.forEach(doc => {
+    const id = String(doc.agenda_item_id ?? '');
+    if (id) { if (!docsByItem.has(id)) docsByItem.set(id, []); docsByItem.get(id).push(doc); }
+  });
+  const renderedDocIds = new Set();
+  const docList = list => {
+    if (!list?.length) return '';
+    return '<ul class="print-docs">' + list.map(doc => {
+      renderedDocIds.add(String(doc.id));
+      const name = doc.display_name || doc.file_name || doc.name || 'Dokument';
+      const description = String(doc.description || '').trim();
+      return '<li>' + escPrint(name) + (description ? '<p>' + escPrint(description) + '</p>' : '') + '</li>';
+    }).join('') + '</ul>';
   };
+  const linked = id => docList(docsByItem.get(String(id)) || []);
+  const sectionOnlyDocs = number => docs.filter(doc => !doc.agenda_item_id && sectionOf(doc) === String(number));
   let html = '<div class="agenda-print"><h1>Dagordning</h1><p class="print-meeting-title">' + escPrint(heading) + '</p>';
   for (const [number, title] of sections) {
-    const items = meetingAgendaItems.filter(item => String(item.section_number ?? item.section ?? item.paragraph ?? '').trim() === String(number));
+    const items = itemsBySection(number);
     let content = '';
     if (String(number) === '6') {
       const marker = '__BRF6SUB__|';
       reportHeadings.forEach((fixedHeading, index) => {
         content += '<div class="print-item"><h3>' + String.fromCharCode(97 + index) + ') ' + escPrint(fixedHeading) + '</h3>';
-        const anchor = items.find(it => String(it.title || '').trim().toLowerCase() === fixedHeading.trim().toLowerCase());
+        const anchor = items.find(item => norm(item.title) === norm(fixedHeading));
         if (anchor) {
-          // Print description stored directly on the fixed §6 anchor as well.
-          if (anchor.description && String(anchor.description).trim()) {
-            content += '<p>' + escPrint(anchor.description) + '</p>';
-          }
-          const subs = items.filter(it => String(it.title || '').startsWith(marker + String(anchor.id) + '|'));
+          const description = String(anchor.description || anchor.notes || '').trim();
+          if (description) content += '<p>' + escPrint(description) + '</p>';
+          const subs = items.filter(item => String(item.title || '').startsWith(marker + itemId(anchor) + '|'));
           subs.forEach(sub => {
-            const subTitle = String(sub.title || '').split('|').slice(2).join('|');
+            const subTitle = String(sub.title || '').split('|').slice(2).join('|').trim() || 'Underrubrik';
             content += '<div class="print-subitem"><strong>' + escPrint(subTitle) + '</strong>';
-            if (sub.description) content += '<p>' + escPrint(sub.description) + '</p>';
-            content += docList(sub.id) + '</div>';
+            const subDescription = String(sub.description || sub.notes || '').trim();
+            if (subDescription) content += '<p>' + escPrint(subDescription) + '</p>';
+            content += linked(itemId(sub)) + '</div>';
           });
-          content += docList(anchor.id);
+          content += linked(itemId(anchor));
         }
         content += '</div>';
       });
+      const fallbackDocs = docs.filter(doc => sectionOf(doc) === '6' && !renderedDocIds.has(String(doc.id)));
+      content += docList([...sectionOnlyDocs('6'), ...fallbackDocs].filter((doc,index,array)=>array.findIndex(x=>String(x.id)===String(doc.id))===index));
     } else {
       items.forEach((item, index) => {
         content += '<div class="print-item"><h3>' + String.fromCharCode(97 + index) + ') ' + escPrint(item.title || 'Dagordningspunkt') + '</h3>';
-        const description = item.description || item.notes || '';
-        if (description.trim()) content += '<p>' + escPrint(description) + '</p>';
-        content += docList(item.id) + '</div>';
+        const description = String(item.description || item.notes || '').trim();
+        if (description) content += '<p>' + escPrint(description) + '</p>';
+        content += linked(itemId(item)) + '</div>';
       });
+      const fallbackDocs = docs.filter(doc => sectionOf(doc) === String(number) && !renderedDocIds.has(String(doc.id)));
+      content += docList([...sectionOnlyDocs(number), ...fallbackDocs].filter((doc,index,array)=>array.findIndex(x=>String(x.id)===String(doc.id))===index));
     }
-    content += sectionDocs(number);
-    // Always include all fixed sections 1–11, even if they have no extra items.
     html += '<section class="print-section"><h2>§' + escPrint(number) + ' ' + escPrint(title) + '</h2>' + content + '</section>';
   }
+  const unplaced = docs.filter(doc => !renderedDocIds.has(String(doc.id)));
+  if (unplaced.length) html += '<section class="print-section"><h2>Dokument som inte kunde kopplas till en dagordningspunkt</h2>' + docList(unplaced) + '</section>';
   return html + '</div>';
 }
 
