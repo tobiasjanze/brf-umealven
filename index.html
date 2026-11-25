@@ -5806,7 +5806,7 @@ async function loadDocumentAgendaSubpoints() {
 
   if (!meetingId || !sectionNumber) return;
 
-  const { data, error } = await db
+  let { data, error } = await db
     .from('agenda_items')
     .select('*')
     .eq('meeting_id', meetingId)
@@ -5815,6 +5815,43 @@ async function loadDocumentAgendaSubpoints() {
   if (error) {
     message('Kunde inte läsa underpunkterna: ' + error.message, 'error');
     return;
+  }
+
+  // §6 har fasta rapportunderpunkter. Skapa endast de poster som saknas
+  // så att dokument kan kopplas till respektive rapport i databasen.
+  if (String(sectionNumber) === '6' && isAdminUser) {
+    const existing = (data || []).filter(item =>
+      String(item.section_number ?? item.section ?? item.paragraph ?? '') === '6'
+    );
+    const existingTitles = new Set(existing.map(item => String(item.title || '').trim().toLowerCase()));
+    const missing = reportHeadings.filter(title => !existingTitles.has(title.trim().toLowerCase()));
+
+    if (missing.length) {
+      const { error: seedError } = await db.from('agenda_items').insert(
+        missing.map(title => ({
+          meeting_id: meetingId,
+          section_number: '6',
+          title,
+          description: '',
+          created_by: currentUser.id
+        }))
+      );
+      if (seedError) {
+        message('Kunde inte förbereda underpunkterna i §6 för dokumentkoppling: ' + seedError.message, 'error');
+        return;
+      }
+
+      const refreshed = await db
+        .from('agenda_items')
+        .select('*')
+        .eq('meeting_id', meetingId)
+        .order('created_at', { ascending: true });
+      if (refreshed.error) {
+        message('Kunde inte läsa de uppdaterade underpunkterna: ' + refreshed.error.message, 'error');
+        return;
+      }
+      data = refreshed.data || [];
+    }
   }
 
   const items = (data || []).filter(item =>
