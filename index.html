@@ -5267,14 +5267,10 @@ if (sectionDocuments.length > 0) {
     }
     const meeting = meetings.find(item => String(item.id) === String(selectedMeetingId));
     const heading = meeting ? meetingTitle(meeting) + ' – ' + dateText(meetingDate(meeting)) : 'Styrelsemöte';
-    const agendaHtml = $('agendaSections').innerHTML;
-    if (!agendaHtml.trim()) {
-      message('Dagordningen är tom eller har inte hunnit laddas.', 'error');
-      return;
-    }
-    openPrintableDocument('Dagordning – ' + heading,
-      '<p><strong>' + esc(heading) + '</strong></p>' + agendaHtml,
-      { extraCss: '.agenda-section{margin:0 0 15px;border-bottom:1px solid #dce5ed;padding-bottom:8px}.agenda-section summary{font-size:17px;color:#173b5e;padding:6px 0}.agenda-body{padding:4px 12px}.item{margin:8px 0 12px;padding:7px 0;border-bottom:1px solid #edf1f5}.item h3{font-size:14px;margin:0 0 4px}.item p{margin:3px 0}.subhead{font-weight:700;margin-top:8px}.agenda-linked-documents{color:#52677b;font-size:13px}details>summary{list-style:none}' });
+    try {
+      const agendaHtml = await buildAgendaPrintHtml(selectedMeetingId, heading);
+      openPrintableDocument('Dagordning – ' + heading, agendaHtml, { extraCss: '.agenda-print h1{font-size:20px}.print-section{margin:0 0 16px;border-bottom:1px solid #dce5ed;padding-bottom:9px}.print-section h2{background:#eef4f8;padding:7px 8px;font-size:14px}.print-item{margin:8px 0 12px}.print-item h3{font-size:12px;margin:0 0 5px}.print-item p,.print-subitem p{margin:4px 0}.print-subitem{margin:7px 0 10px 14px}.print-docs{margin:4px 0 5px 15px;padding-left:12px;font-size:10px}' });
+    } catch (error) { console.error(error); message('Dagordningsunderlaget kunde inte hämtas.', 'error'); }
   });
     // ===== PROTOKOLL =====
 
@@ -8463,7 +8459,59 @@ $('homeBtn').addEventListener('click', showHome);
 
   // Gemensam utskriftsvy. Öppnas som ett vanligt dokument i en ny flik
   // med tydliga knappar för utskrift och återgång – ingen automatisk utskrift.
-  async function openPrintableDocument(title, content, options = {}) {
+  async 
+// ===== DATA-BASERAD DAGORDNINGS-PDF (GEMENSAM FÖR UTSKRIFT OCH KALLELSE) =====
+async function buildAgendaPrintHtml(meetingId, heading) {
+  const { data: docs, error: docsError } = await db.from('meeting_documents').select('*').eq('meeting_id', meetingId);
+  if (docsError) throw docsError;
+  const linkedDocs = docs || [];
+  const escPrint = value => esc(String(value || ''));
+  const docList = itemId => {
+    const matches = linkedDocs.filter(d => String(d.agenda_item_id || '') === String(itemId));
+    if (!matches.length) return '';
+    return '<ul class="print-docs">' + matches.map(d => '<li>' + escPrint(d.display_name || d.file_name || d.name || 'Dokument') + '</li>').join('') + '</ul>';
+  };
+  const sectionDocs = number => {
+    const matches = linkedDocs.filter(d => !d.agenda_item_id && String(d.section_number || '').trim() === String(number));
+    if (!matches.length) return '';
+    return '<ul class="print-docs">' + matches.map(d => '<li>' + escPrint(d.display_name || d.file_name || d.name || 'Dokument') + '</li>').join('') + '</ul>';
+  };
+  let html = '<div class="agenda-print"><h1>Dagordning</h1><p class="print-meeting-title">' + escPrint(heading) + '</p>';
+  for (const [number, title] of sections) {
+    const items = agendaItems.filter(item => String(item.section_number ?? item.section ?? item.paragraph ?? '') === String(number));
+    let content = '';
+    if (String(number) === '6') {
+      const marker = '__BRF6SUB__|';
+      reportHeadings.forEach((fixedHeading, index) => {
+        content += '<div class="print-item"><h3>' + String.fromCharCode(97 + index) + ') ' + escPrint(fixedHeading) + '</h3>';
+        const anchor = items.find(it => String(it.title || '').trim().toLowerCase() === fixedHeading.trim().toLowerCase());
+        if (anchor) {
+          const subs = items.filter(it => String(it.title || '').startsWith(marker + String(anchor.id) + '|'));
+          subs.forEach(sub => {
+            const subTitle = String(sub.title || '').split('|').slice(2).join('|');
+            content += '<div class="print-subitem"><strong>' + escPrint(subTitle) + '</strong>';
+            if (sub.description) content += '<p>' + escPrint(sub.description) + '</p>';
+            content += docList(sub.id) + '</div>';
+          });
+          content += docList(anchor.id);
+        }
+        content += '</div>';
+      });
+    } else {
+      items.forEach((item, index) => {
+        content += '<div class="print-item"><h3>' + String.fromCharCode(97 + index) + ') ' + escPrint(item.title || 'Dagordningspunkt') + '</h3>';
+        const description = item.description || item.notes || '';
+        if (description.trim()) content += '<p>' + escPrint(description) + '</p>';
+        content += docList(item.id) + '</div>';
+      });
+    }
+    content += sectionDocs(number);
+    if (content.trim()) html += '<section class="print-section"><h2>§' + escPrint(number) + ' ' + escPrint(title) + '</h2>' + content + '</section>';
+  }
+  return html + '</div>';
+}
+
+function openPrintableDocument(title, content, options = {}) {
     // returnBlob används av e-postutskicket: samma PDFLib-motor,
     // men utan popup-fönster eller utskriftsmeddelanden.
     let pdfWindow = null;
@@ -9045,10 +9093,8 @@ $('sendMeetingInvitation')?.addEventListener('click', async () => {
       createMeetingNotice();noticeOverlay=document.getElementById('meetingNoticeOverlay');
       const noticePage=noticeOverlay?.querySelector('.page');if(!noticePage)throw new Error('Kallelsevisningen kunde inte hittas');
       const noticeBlob=await openPrintableDocument('Kallelse – '+meetingTitle(meeting),noticePage.innerHTML,{returnBlob:true});
-      const agendaSource=document.getElementById('agendaSections');
-      if(!agendaSource||!agendaSource.innerHTML.trim())throw new Error('Dagordningen är tom eller kunde inte hämtas');
       const meetingHeading=meetingTitle(meeting)+' – '+dateText(meetingDate(meeting));
-      const agendaWrap='<p><strong>'+esc(meetingHeading)+'</strong></p>'+agendaSource.innerHTML;
+      const agendaWrap=await buildAgendaPrintHtml(String(meeting.id),meetingHeading);
       const agendaBlob=await openPrintableDocument('Dagordning – '+meetingTitle(meeting),agendaWrap,{returnBlob:true});
       const noticeBase64=await toBase64(noticeBlob);
       const agendaBase64=await toBase64(agendaBlob);
