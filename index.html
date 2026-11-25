@@ -8489,6 +8489,10 @@ async function buildAgendaPrintHtml(meetingId, heading) {
         content += '<div class="print-item"><h3>' + String.fromCharCode(97 + index) + ') ' + escPrint(fixedHeading) + '</h3>';
         const anchor = items.find(it => String(it.title || '').trim().toLowerCase() === fixedHeading.trim().toLowerCase());
         if (anchor) {
+          // Print description stored directly on the fixed §6 anchor as well.
+          if (anchor.description && String(anchor.description).trim()) {
+            content += '<p>' + escPrint(anchor.description) + '</p>';
+          }
           const subs = items.filter(it => String(it.title || '').startsWith(marker + String(anchor.id) + '|'));
           subs.forEach(sub => {
             const subTitle = String(sub.title || '').split('|').slice(2).join('|');
