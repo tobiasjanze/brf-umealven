@@ -5006,7 +5006,7 @@ const agendaDocuments = linkedDocuments || [];
         const subMarker = '__BRF6SUB__|';
         reportHeadings.forEach((heading, headingIndex) => {
           const headingNode = document.createElement('div');
-          headingNode.className = 'subhead';
+          headingNode.className = 'subhead brf6-fixed-heading';
           headingNode.textContent = String.fromCharCode(97 + headingIndex) + ') ' + heading;
           body.append(headingNode);
 
