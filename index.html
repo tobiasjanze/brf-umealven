@@ -3496,7 +3496,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
           </button>
 
           <button class="home-card" data-open-tab="minutes">
-            <svg style="color:#7051B8;background:#E5E1F8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg style="color:#C26B16;background:#FCE8D5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M6 3h12a2 2 0 0 1 2 2v15H4V5a2 2 0 0 1 2-2z"/>
               <path d="M8 7h8M8 11h8M8 15h5"/>
               <path d="m15 18 2-2 2 2"/>
@@ -8454,7 +8454,35 @@ document.querySelectorAll('.tab[data-tab]').forEach(button => {
 });
 
 
-document.addEventListener("click", async event => {const b=event.target.closest("[data-archive-open-agenda]");if(!b)return;const m=meetings.find(x=>String(x.id)===String(b.dataset.archiveOpenAgenda));if(!m)return;showTab("meetings");selectedMeetingId=m.id;$("selectedMeetingPanel").classList.remove("hidden");$("selectedMeetingHeading").innerHTML="Arkiverad dagordning – "+esc(meetingTitle(m))+"<br><span style=\"font-size:0.65em;font-weight:400;\">"+esc(dateText(meetingDate(m)))+"</span>";await loadAgenda();});
+document.addEventListener("click", async event => {
+  const b=event.target.closest("[data-archive-open-agenda]"); if(!b)return;
+  const m=meetings.find(x=>String(x.id)===String(b.dataset.archiveOpenAgenda)); if(!m)return;
+  const root=$("tab-archive");
+  let view=$("archiveAgendaViewer");
+  if(!view){view=document.createElement("div");view.id="archiveAgendaViewer";view.className="panel";root.appendChild(view);}
+  view.innerHTML="<h2>Arkiverad dagordning</h2><p><strong>"+esc(meetingTitle(m))+"</strong></p><p class='muted'>"+esc(dateText(meetingDate(m)))+"</p><button type='button' id='archiveBackBtn'>Tillbaka till arkivet</button><div id='archiveAgendaReadonly'></div>";
+  $("archiveBackBtn").addEventListener("click",()=>{view.remove();});
+  const [itemsResult,docsResult]=await Promise.all([
+    db.from("agenda_items").select("*").eq("meeting_id",m.id).order("created_at",{ascending:true}),
+    db.from("meeting_documents").select("*").eq("meeting_id",m.id)
+  ]);
+  const body=$("archiveAgendaReadonly");
+  if(itemsResult.error){body.innerHTML="<p>Kunde inte läsa arkiverad dagordning.</p>";return;}
+  const items=itemsResult.data||[], docs=docsResult.data||[];
+  sections.forEach(([num,title])=>{
+    const group=items.filter(it=>String(it.section_number??it.section??it.paragraph??"")===String(num));
+    const sectionEl=document.createElement("section");sectionEl.className="item";
+    sectionEl.innerHTML="<h3>§"+esc(num)+" "+esc(title)+"</h3>";
+    if(String(num)==="6"){
+      reportHeadings.forEach((heading,hi)=>{
+        const anchor=group.find(it=>String(it.title||"").trim().toLowerCase()===heading.trim().toLowerCase());
+        const h=document.createElement("h4");h.textContent=String.fromCharCode(97+hi)+") "+heading;sectionEl.appendChild(h);
+        if(anchor){group.filter(it=>String(it.title||"").startsWith("__BRF6SUB__|"+anchor.id+"|")).forEach(sub=>{const card=document.createElement("div");card.className="item";card.innerHTML="<strong>"+esc(String(sub.title).split("|").slice(2).join("|"))+"</strong>"+(sub.description?"<p>"+esc(sub.description)+"</p>":"");docs.filter(d=>String(d.agenda_item_id||"")===String(sub.id)).forEach(d=>{const btn=document.createElement("button");btn.type="button";btn.className="small";btn.textContent=d.display_name||d.file_name||"Dokument";btn.addEventListener("click",()=>openDocument(d));card.appendChild(btn);});sectionEl.appendChild(card);});}
+      });
+    }else group.forEach(it=>{const card=document.createElement("div");card.className="item";card.innerHTML="<strong>"+esc(it.title||"Dagordningspunkt")+"</strong>"+(it.description||it.notes?"<p>"+esc(it.description||it.notes)+"</p>":"");docs.filter(d=>String(d.agenda_item_id||"")===String(it.id)).forEach(d=>{const btn=document.createElement("button");btn.type="button";btn.className="small";btn.textContent=d.display_name||d.file_name||"Dokument";btn.addEventListener("click",()=>openDocument(d));card.appendChild(btn);});sectionEl.appendChild(card);});
+    body.appendChild(sectionEl);
+  });
+});
 
 document.addEventListener('click', event => {
   const button = event.target.closest('[data-open-tab]');
