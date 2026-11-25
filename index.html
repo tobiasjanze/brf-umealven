@@ -5800,6 +5800,7 @@ $('uploadForm').addEventListener('submit', async event => {
     $('uploadForm').reset();
     portalDirtyForms?.delete?.('uploadForm');
     await loadDocuments();
+    if (String(sectionNumber) === '6') await loadAgenda();
     message('Dokumentet har laddats upp.', 'ok');
   } catch (error) {
     console.error('Meeting document upload error:', error);
