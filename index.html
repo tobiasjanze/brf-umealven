@@ -3616,6 +3616,14 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
               </div>
             </div>
 
+                          <div id="brf6SubheadingFields" class="hidden" style="margin-top:12px;padding:12px;border:1px solid #dce5ec;border-radius:12px;background:#f8fbfd">
+                <label for="agendaReportAnchor">Fast underpunkt i §6</label>
+                <select id="agendaReportAnchor"></select>
+                <label for="agendaSubheadingTitle">Underrubrik</label>
+                <input id="agendaSubheadingTitle" placeholder="Exempelvis Umeå Energi">
+                <label for="agendaSubheadingDescription">Anteckning / underlag</label>
+                <textarea id="agendaSubheadingDescription"></textarea>
+              </div>
             <label for="agendaDescription">Anteckning / underlag</label>
             <textarea id="agendaDescription"></textarea>
 
@@ -4320,7 +4328,7 @@ renderHome();
     select.innerHTML = '';
 
     sections
-      .filter(([number]) => ['1', '2', '3', '4', '5', '7', '8', '9', '10', '11'].includes(String(number)))
+      .filter(([number]) => ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'].includes(String(number)))
       .forEach(([number, title]) => {
         const option = document.createElement('option');
 
@@ -5222,54 +5230,66 @@ if (sectionDocuments.length > 0) {
 
   $('cancelAgendaEdit').addEventListener('click', resetAgendaEditForm);
 
+  async function ensureSection6Anchors() {
+    if (!selectedMeetingId || !isAdminUser) return;
+    const existing = agendaItems.filter(item => String(item.section_number ?? item.section ?? item.paragraph ?? '') === '6');
+    const titles = new Set(existing.map(item => String(item.title || '').trim().toLowerCase()));
+    const missing = reportHeadings.filter(title => !titles.has(title.trim().toLowerCase()));
+    if (!missing.length) return;
+    const { error } = await db.from('agenda_items').insert(missing.map(title => ({
+      meeting_id: selectedMeetingId, section_number:'6', title, description:'', created_by:currentUser.id
+    })));
+    if (error) { message('Kunde inte förbereda de fasta punkterna i §6: '+error.message,'error'); return; }
+    await loadAgenda();
+  }
+
+  function refreshSection6AnchorSelect() {
+    const select=$('agendaReportAnchor'); if(!select)return;
+    select.innerHTML='';
+    reportHeadings.forEach((title,index)=>{const opt=document.createElement('option');opt.value=title;opt.textContent=String.fromCharCode(97+index)+') '+title;select.append(opt);});
+  }
+  $('agendaSection').addEventListener('change', async () => {
+    const is6=String($('agendaSection').value)==='6';
+    $('brf6SubheadingFields').classList.toggle('hidden',!is6);
+    if(is6){refreshSection6AnchorSelect();await ensureSection6Anchors();}
+  });
+
+  let editingAgendaItemId = null;
+  function resetAgendaEditForm() {
+    editingAgendaItemId = null;
+    $('agendaForm').reset();
+    $('brf6SubheadingFields').classList.add('hidden');
+    const submitButton = $('agendaForm').querySelector('button[type="submit"]');
+    if (submitButton) submitButton.textContent = 'Lägg till punkt';
+    $('cancelAgendaEdit').classList.add('hidden');
+  }
+  $('cancelAgendaEdit').addEventListener('click', resetAgendaEditForm);
+
   $('agendaForm').addEventListener('submit', async event => {
     event.preventDefault();
-
-    if (!selectedMeetingId) {
-      message('Välj först ett möte.', 'error');
-      return;
+    if (!selectedMeetingId) { message('Välj först ett möte.','error'); return; }
+    if (!isAdminUser) { message('Du har inte behörighet att ändra dagordningen.','error'); return; }
+    const selectedSection=String($('agendaSection').value);
+    if(selectedSection==='6'){
+      const anchorTitle=$('agendaReportAnchor').value;
+      const anchor=agendaItems.find(item=>String(item.section_number??item.section??item.paragraph??'')==='6'&&String(item.title||'').trim().toLowerCase()===anchorTitle.trim().toLowerCase());
+      if(!anchor){message('Den fasta §6-punkten kunde inte hittas. Försök ladda om dagordningen.','error');return;}
+      const subTitle=$('agendaSubheadingTitle').value.trim();
+      if(!subTitle){message('Ange en underrubrik.','error');return;}
+      const payload={meeting_id:selectedMeetingId,section_number:'6',title:'__BRF6SUB__|'+String(anchor.id)+'|'+subTitle,description:$('agendaSubheadingDescription').value.trim(),created_by:currentUser.id};
+      const {error}=await db.from('agenda_items').insert(payload);
+      if(error){message('Kunde inte spara underrubriken: '+error.message,'error');return;}
+      resetAgendaEditForm();await loadAgenda();message('Underrubriken har lagts till.','ok');return;
     }
-    if (!isAdminUser) {
-      message('Du har inte behörighet att ändra dagordningen.', 'error');
-      return;
-    }
-    const selectedSection = String($('agendaSection').value);
-    if (!['1', '2', '3', '4', '5', '7', '8', '9', '10', '11'].includes(selectedSection)) {
-      message('Underpunkter kan endast läggas till under punkt 1–5 och 7–11.', 'error');
-      return;
-    }
-
-    const payload = {
-      meeting_id: selectedMeetingId,
-      section_number: $('agendaSection').value,
-      title: $('agendaTitle').value.trim(),
-      description: $('agendaDescription').value.trim()
-    };
-
+    if(!['1','2','3','4','5','7','8','9','10','11'].includes(selectedSection)){message('Underpunkter kan endast läggas till under punkt 1–5 och 7–11.','error');return;}
+    const payload={meeting_id:selectedMeetingId,section_number:$('agendaSection').value,title:$('agendaTitle').value.trim(),description:$('agendaDescription').value.trim()};
     let result;
-    if (editingAgendaItemId) {
-      result = await db
-        .from('agenda_items')
-        .update(payload)
-        .eq('id', editingAgendaItemId)
-        .eq('meeting_id', selectedMeetingId);
-    } else {
-      result = await db
-        .from('agenda_items')
-        .insert({ ...payload, created_by: currentUser.id });
-    }
-
-    if (result.error) {
-      message('Kunde inte spara dagordningspunkten: ' + result.error.message, 'error');
-      return;
-    }
-
-    const wasEditing = Boolean(editingAgendaItemId);
-    const sectionLabel = '§' + payload.section_number + ' – ' + payload.title;
+    if(editingAgendaItemId){result=await db.from('agenda_items').update(payload).eq('id',editingAgendaItemId).eq('meeting_id',selectedMeetingId);}
+    else{result=await db.from('agenda_items').insert({...payload,created_by:currentUser.id});}
+    if(result.error){message('Kunde inte spara dagordningspunkten: '+result.error.message,'error');return;}
+    const wasEditing=Boolean(editingAgendaItemId);const sectionLabel='§'+payload.section_number+' – '+payload.title;
     void recordBoardActivity(wasEditing?'agenda_updated':'agenda_added',selectedMeetingId,(wasEditing?'Dagordningspunkt ändrad: ':'Dagordningspunkt tillagd: ')+sectionLabel,sectionLabel);
-    resetAgendaEditForm();
-    await loadAgenda();
-    message(wasEditing ? 'Dagordningspunkten har uppdaterats.' : 'Dagordningspunkten har lagts till.', 'ok');
+    resetAgendaEditForm();await loadAgenda();message(wasEditing?'Dagordningspunkten har uppdaterats.':'Dagordningspunkten har lagts till.','ok');
   });
 
   $('printAgenda').addEventListener('click', () => {
