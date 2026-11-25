@@ -275,6 +275,16 @@
       font-weight: 700;
       margin: 15px 0 4px;
     }
+    .brf6-fixed-heading{margin:18px 0 8px;padding:10px 12px;border-left:4px solid #315b7d;background:#eef4f8;border-radius:8px;color:#17324d}
+    .brf6-subheading-card{margin:8px 0 10px 12px;padding:14px;border:1px solid #dce5ec;border-radius:12px;background:#fff;box-shadow:0 2px 7px rgba(23,50,77,.04)}
+    .brf6-subheading-title{color:#17324d;font-size:1.03rem}
+    .brf6-notes{margin:9px 0;padding:10px 12px;background:#f7f9fb;border-radius:8px;white-space:pre-wrap;color:#425563}
+    .brf6-doc-list{margin-top:10px;padding-top:9px;border-top:1px solid #e7edf1}
+    .brf6-doc-row{display:flex;align-items:center;gap:8px;padding:4px 0}
+    .brf6-doc-link{background:transparent;padding:4px 0;text-align:left;color:#245b83;text-decoration:underline}
+    .brf6-card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+    .brf6-add-subheading{margin:5px 0 14px 12px;background:#eaf3ed;color:#27734b;font-weight:700}
+    @media(max-width:600px){.brf6-subheading-card{margin-left:5px;padding:11px}}
 
     .file-row {
       display: flex;
@@ -5011,15 +5021,26 @@ const agendaDocuments = linkedDocuments || [];
           subItems.forEach(subItem => {
             const subTitle = String(subItem.title).split('|').slice(2).join('|');
             const card = document.createElement('div');
-            card.style.cssText = 'margin:8px 0 8px 14px;padding:10px;border-left:3px solid #cbddeb;background:#f8fbfd;border-radius:8px;';
+            card.className = 'brf6-subheading-card';
             const titleNode = document.createElement('strong');
+            titleNode.className = 'brf6-subheading-title';
             titleNode.textContent = subTitle;
             card.appendChild(titleNode);
             if (subItem.description) {
               const note = document.createElement('p');
-              note.style.margin = '6px 0';
+              note.className = 'brf6-notes';
               note.textContent = subItem.description;
               card.appendChild(note);
+            }
+            const subItemDocs = agendaDocuments.filter(doc => String(doc.agenda_item_id || '') === String(subItem.id));
+            if (subItemDocs.length) {
+              const docBox = document.createElement('div'); docBox.className = 'brf6-doc-list';
+              subItemDocs.forEach(doc => {
+                const row = document.createElement('div'); row.className = 'brf6-doc-row';
+                const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'brf6-doc-link';
+                btn.textContent = '📄 ' + (doc.display_name || doc.file_name || 'Öppna dokument');
+                btn.addEventListener('click', () => openDocument(doc)); row.appendChild(btn); docBox.appendChild(row);
+              }); card.appendChild(docBox);
             }
             if (isAdminUser) {
               const actions = document.createElement('div');
@@ -5056,7 +5077,7 @@ const agendaDocuments = linkedDocuments || [];
             const add = document.createElement('button');
             add.type = 'button'; add.className = 'small';
             add.textContent = '+ Lägg till underrubrik';
-            add.style.margin = '4px 0 10px 14px';
+            add.className = 'brf6-add-subheading';
             add.addEventListener('click', async () => {
               const newTitle = prompt('Namn på underrubriken (t.ex. Umeå Energi):');
               if (newTitle === null || !newTitle.trim()) return;
@@ -5945,21 +5966,27 @@ async function loadDocumentAgendaSubpoints() {
     ) === String(sectionNumber)
   );
 
-  // §6 visas och väljs alltid i den fasta ordningen från dagordningen.
+  // §6: välj fasta punkter och även de namngivna underrubrikerna för dokumentkoppling.
   const items = String(sectionNumber) === '6'
-    ? reportHeadings
-        .map(title => sectionItems.find(item =>
-          String(item.title || '').trim().toLowerCase() === title.trim().toLowerCase()
-        ))
-        .filter(Boolean)
+    ? reportHeadings.flatMap(title => {
+        const anchor = sectionItems.find(item => String(item.title || '').trim().toLowerCase() === title.trim().toLowerCase());
+        if (!anchor) return [];
+        const marker = '__BRF6SUB__|' + String(anchor.id) + '|';
+        return [anchor, ...sectionItems.filter(item => String(item.title || '').startsWith(marker))];
+      })
     : sectionItems;
 
   items.forEach((item, index) => {
     const option = document.createElement('option');
     option.value = item.id;
-    option.textContent =
-      String.fromCharCode(97 + index) + ') ' +
-      (item.title || 'Dagordningspunkt');
+    if (String(sectionNumber) === '6' && String(item.title || '').startsWith('__BRF6SUB__|')) {
+      const subTitle = String(item.title).split('|').slice(2).join('|');
+      const anchorId = String(item.title).split('|')[1];
+      const anchor = sectionItems.find(x => String(x.id) === anchorId);
+      option.textContent = '↳ ' + (anchor?.title || 'Rapport') + ' / ' + subTitle;
+    } else {
+      option.textContent = String.fromCharCode(97 + reportHeadings.findIndex(t => t.toLowerCase() === String(item.title || '').trim().toLowerCase())) + ') ' + (item.title || 'Dagordningspunkt');
+    }
 
     select.appendChild(option);
   });
