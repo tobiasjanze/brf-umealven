@@ -8511,7 +8511,7 @@ async function buildAgendaPrintHtml(meetingId, heading) {
   return html + '</div>';
 }
 
-function openPrintableDocument(title, content, options = {}) {
+async function openPrintableDocument(title, content, options = {}) {
     // returnBlob används av e-postutskicket: samma PDFLib-motor,
     // men utan popup-fönster eller utskriftsmeddelanden.
     let pdfWindow = null;
