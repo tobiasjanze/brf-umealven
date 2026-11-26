@@ -9569,7 +9569,7 @@ async function loadUserRole(user) {
  syncTimerVisibility();
 })();
 </script>
-<!-- Fristående flytande mötestimer -->
+<!-- Fristående gemensam mötestimer -->
 <style>
 #meetingTimerLauncher,#meetingTimerWidget{transition:transform .38s ease-in-out,opacity .38s ease-in-out;}
 #meetingTimerLauncher{position:fixed;right:18px;bottom:100px;z-index:10050;border:0;border-radius:999px;padding:12px 16px;background:#1768B3;color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.22);cursor:pointer}
@@ -9584,29 +9584,35 @@ async function loadUserRole(user) {
 #meetingTimerWidget .mt-secondary{background:#e8eef4;color:#17324d}
 #meetingTimerWidget .mt-close{background:transparent;color:#17324d;padding:4px 8px;font-size:1.3rem}
 #meetingTimerWidget.mt-finished .mt-clock{color:#b42318}
+#meetingTimerWidget .mt-readonly{font-size:.85rem;color:#64748b;text-align:center;margin-top:8px}
 @media(max-width:600px){#meetingTimerLauncher{right:12px;bottom:92px}#meetingTimerWidget{right:12px;bottom:150px}}
 </style>
 <button id="meetingTimerLauncher" type="button" aria-label="Visa mötestimer">⏱ Mötestimer</button>
-<section id="meetingTimerWidget" class="hidden" role="dialog" aria-label="Mötestimer">
+<section id="meetingTimerWidget" class="hidden" role="dialog" aria-label="Gemensam mötestimer">
 <div class="mt-head"><span>Styrelsemöte</span><button class="mt-close" id="meetingTimerHide" aria-label="Dölj timer">×</button></div>
 <div id="meetingTimerDisplay" class="mt-clock">02:30:00</div>
-<div class="mt-controls"><button id="meetingTimerStartPause" class="mt-primary">Starta</button><button id="meetingTimerReset" class="mt-secondary">Återställ</button></div>
+<div class="mt-controls" id="meetingTimerAdminControls"><button id="meetingTimerStartPause" class="mt-primary">Starta</button><button id="meetingTimerReset" class="mt-secondary">Återställ</button></div>
+<div id="meetingTimerReadonly" class="mt-readonly hidden">Timer styrs av administratören</div>
 </section>
 <script>
 (function(){
- const widget=document.getElementById('meetingTimerWidget'),launcher=document.getElementById('meetingTimerLauncher'),display=document.getElementById('meetingTimerDisplay'),startPause=document.getElementById('meetingTimerStartPause'),reset=document.getElementById('meetingTimerReset'),hide=document.getElementById('meetingTimerHide');
+ const widget=document.getElementById('meetingTimerWidget'),launcher=document.getElementById('meetingTimerLauncher'),display=document.getElementById('meetingTimerDisplay'),startPause=document.getElementById('meetingTimerStartPause'),reset=document.getElementById('meetingTimerReset'),hide=document.getElementById('meetingTimerHide'),controls=document.getElementById('meetingTimerAdminControls'),readonly=document.getElementById('meetingTimerReadonly');
  if(!widget||!launcher||!display)return;
- const total=150*60*1000;let remaining=total,endAt=null,interval=null,running=false;
+ const total=150*60*1000;let remaining=total,endAt=null,interval=null,running=false,initialized=false,loading=false;
  function format(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return [h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');}
- function render(){display.textContent=format(remaining);widget.classList.toggle('mt-finished',remaining<=0);startPause.textContent=remaining<=0?'Starta om':running?'Pausa':'Starta';}
- function tick(){remaining=Math.max(0,endAt-Date.now());if(remaining<=0){running=false;endAt=null;clearInterval(interval);interval=null;widget.classList.add('mt-finished');}render();}
- function begin(){if(remaining<=0)remaining=total;running=true;endAt=Date.now()+remaining;clearInterval(interval);interval=setInterval(tick,250);render();}
- function pause(){if(running){remaining=Math.max(0,endAt-Date.now());running=false;endAt=null;clearInterval(interval);interval=null;render();}}
+ function admin(){return !!isAdminUser;}
+ function render(){display.textContent=format(remaining);widget.classList.toggle('mt-finished',remaining<=0);if(startPause)startPause.textContent=remaining<=0?'Starta om':running?'Pausa':'Starta';controls?.classList.toggle('hidden',!admin());readonly?.classList.toggle('hidden',admin());}
+ function tick(){remaining=Math.max(0,endAt-Date.now());if(remaining<=0){running=false;endAt=null;clearInterval(interval);interval=null;}render();}
+ function applyState(row){if(!row)return;running=!!row.running;endAt=row.ends_at?new Date(row.ends_at).getTime():null;remaining=running&&endAt?Math.max(0,endAt-Date.now()):Number(row.remaining_ms||total);if(running&&remaining<=0){running=false;endAt=null;remaining=0;}clearInterval(interval);interval=null;if(running)interval=setInterval(tick,250);render();}
+ async function loadState(){if(!currentUser||loading)return;loading=true;try{const {data,error}=await db.from('meeting_timer_state').select('*').eq('id',1).maybeSingle();if(!error&&data){applyState(data);initialized=true;}}catch(e){console.warn('Mötestimer läsning:',e);}finally{loading=false;}}
+ async function saveState(){if(!admin()||!currentUser)return;const payload={id:1,running,remaining_ms:Math.max(0,Math.round(remaining)),ends_at:running&&endAt?new Date(endAt).toISOString():null,updated_at:new Date().toISOString()};const {error}=await db.from('meeting_timer_state').upsert(payload,{onConflict:'id'});if(error)message?.('Mötestimern kunde inte synkroniseras. Kontrollera databastabellen.','error');}
+ async function begin(){if(!admin())return;if(remaining<=0)remaining=total;running=true;endAt=Date.now()+remaining;clearInterval(interval);interval=setInterval(tick,250);render();await saveState();}
+ async function pause(){if(!admin()||!running)return;remaining=Math.max(0,endAt-Date.now());running=false;endAt=null;clearInterval(interval);interval=null;render();await saveState();}
  launcher.addEventListener('click',()=>{widget.classList.toggle('hidden');if(!widget.classList.contains('hidden'))render();});
  hide.addEventListener('click',()=>widget.classList.add('hidden'));
- startPause.addEventListener('click',()=>{if(running)pause();else begin();});
- reset.addEventListener('click',()=>{clearInterval(interval);interval=null;running=false;endAt=null;remaining=total;render();});
- render();
+ startPause?.addEventListener('click',()=>{if(running)pause();else begin();});
+ reset?.addEventListener('click',async()=>{if(!admin())return;clearInterval(interval);interval=null;running=false;endAt=null;remaining=total;render();await saveState();});
+ render();loadState();setInterval(loadState,2000);
 })();
 </script>
 </body>
