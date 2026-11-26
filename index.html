@@ -9594,11 +9594,20 @@ async function loadUserRole(user) {
 #meetingTimerReadonly{display:block!important}
 #meetingTimerReadonly.hidden{display:none!important}
 @media(max-width:600px){#meetingTimerLauncher{right:12px;bottom:92px}#meetingTimerWidget{right:12px;bottom:150px}}
+#meetingTimerWidget .mt-digit-picker{display:none;align-items:center;justify-content:center;gap:4px;font-size:2rem;font-weight:800;color:#1768B3;margin:0 0 10px}
+#meetingTimerWidget .mt-digit-group{display:flex;gap:3px}
+#meetingTimerWidget .mt-digit-picker select{font-size:1.8rem;font-weight:800;color:#1768B3;background:#f0f6fc;border:1px solid #b7d3ec;border-radius:8px;padding:5px 3px;min-width:38px;text-align:center}
+#meetingTimerWidget .mt-digit-picker select:disabled{opacity:.6}
 </style>
 <button id="meetingTimerLauncher" type="button" aria-label="Visa mötestimer">⏱ Mötestimer</button>
 <section id="meetingTimerWidget" class="hidden" role="dialog" aria-label="Gemensam mötestimer">
 <div class="mt-head"><span>Styrelsemöte</span><button class="mt-close" id="meetingTimerHide" aria-label="Dölj timer">×</button></div>
 <div id="meetingTimerDisplay" class="mt-clock">02:30:00</div>
+<div id="meetingTimerDigitPicker" class="mt-digit-picker" aria-label="Ställ in nedräkningstid">
+<div class="mt-digit-group"><select aria-label="Timmor, första siffran" data-digit="0"></select><select aria-label="Timmor, andra siffran" data-digit="1"></select></div><span>:</span>
+<div class="mt-digit-group"><select aria-label="Minuter, första siffran" data-digit="2"></select><select aria-label="Minuter, andra siffran" data-digit="3"></select></div><span>:</span>
+<div class="mt-digit-group"><select aria-label="Sekunder, första siffran" data-digit="4"></select><select aria-label="Sekunder, andra siffran" data-digit="5"></select></div>
+</div>
 <div class="mt-controls" id="meetingTimerAdminControls"><button id="meetingTimerStartPause" class="mt-primary">Starta</button><button id="meetingTimerReset" class="mt-secondary">Återställ</button></div>
 <div id="meetingTimerReadonly" class="mt-readonly hidden">Timer styrs av administratören</div>
 </section>
@@ -9606,23 +9615,30 @@ async function loadUserRole(user) {
 (function(){
  const widget=document.getElementById('meetingTimerWidget'),launcher=document.getElementById('meetingTimerLauncher'),display=document.getElementById('meetingTimerDisplay'),startPause=document.getElementById('meetingTimerStartPause'),reset=document.getElementById('meetingTimerReset'),hide=document.getElementById('meetingTimerHide'),controls=document.getElementById('meetingTimerAdminControls'),readonly=document.getElementById('meetingTimerReadonly');
  if(!widget||!launcher||!display)return;
- const total=150*60*1000;let remaining=total,endAt=null,interval=null,running=false,initialized=false,loading=false,adminVerified=false,adminAllowed=false;
+ const DEFAULT_TOTAL=150*60*1000;let total=DEFAULT_TOTAL,remaining=total,endAt=null,interval=null,running=false,initialized=false,loading=false,adminVerified=false,adminAllowed=false;
+ const picker=document.getElementById('meetingTimerDigitPicker');
+ const digitSelects=picker?Array.from(picker.querySelectorAll('select[data-digit]')):[];
  function format(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return [h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');}
+ function pickerValue(){return digitSelects.map(s=>s.value).join('');}
+ function pickerMs(){const v=pickerValue();const h=Number(v.slice(0,2)),m=Number(v.slice(2,4)),s=Number(v.slice(4,6));return ((h*3600)+(m*60)+s)*1000;}
+ function setPicker(ms){const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;const digits=[...String(h).padStart(2,'0'),...String(m).padStart(2,'0'),...String(sec).padStart(2,'0')];digitSelects.forEach((el,i)=>{if(el)el.value=digits[i]||'0';});}
+ function setupPicker(){digitSelects.forEach((el,i)=>{el.innerHTML='';for(let n=0;n<=9;n++){if((i===2||i===4)&&n>5)continue;const opt=document.createElement('option');opt.value=String(n);opt.textContent=String(n);el.appendChild(opt);}el.addEventListener('change',()=>{if(admin()&&!running){total=pickerMs();remaining=total;render();}});});setPicker(DEFAULT_TOTAL);}
  function admin(){return adminVerified&&adminAllowed;}
  async function verifyTimerAdmin(){adminVerified=false;adminAllowed=false;render();try{if(!window.portalTimerUser)return;const {data,error}=await window.portalTimerDb.rpc('current_user_is_admin');if(error)throw error;adminAllowed=data===true;adminVerified=true;}catch(e){console.warn('Timer-behörighet kunde inte verifieras',e);adminAllowed=false;adminVerified=true;}render();}
  function render(){display.textContent=format(remaining);widget.classList.toggle('mt-finished',remaining<=0);if(startPause)startPause.textContent=remaining<=0?'Starta om':running?'Pausa':'Starta';if(controls){controls.classList.toggle('timer-admin-authorized',admin());controls.style.display=admin()?'flex':'none';}
+ if(picker){picker.style.display=admin()&&!running?'flex':'none';digitSelects.forEach(el=>el.disabled=!admin()||running);}
  readonly?.classList.toggle('hidden',admin());}
  function tick(){remaining=Math.max(0,endAt-Date.now());if(remaining<=0){running=false;endAt=null;clearInterval(interval);interval=null;}render();}
  function applyState(row){if(!row)return;running=!!row.running;endAt=row.ends_at?new Date(row.ends_at).getTime():null;remaining=running&&endAt?Math.max(0,endAt-Date.now()):Number(row.remaining_ms||total);if(running&&remaining<=0){running=false;endAt=null;remaining=0;}clearInterval(interval);interval=null;if(running)interval=setInterval(tick,250);render();}
  async function loadState(){if(!window.portalTimerUser||loading)return;loading=true;try{const {data,error}=await window.portalTimerDb.from('meeting_timer_state').select('*').eq('id',1).maybeSingle();if(!error&&data){applyState(data);initialized=true;}}catch(e){console.warn('Mötestimer läsning:',e);}finally{loading=false;}}
  async function saveState(){if(!admin()||!window.portalTimerUser)return;const payload={id:1,running,remaining_ms:Math.max(0,Math.round(remaining)),ends_at:running&&endAt?new Date(endAt).toISOString():null,updated_at:new Date().toISOString()};const {error}=await window.portalTimerDb.from('meeting_timer_state').upsert(payload,{onConflict:'id'});if(error)console.warn('Mötestimern kunde inte synkroniseras:',error);}
- async function begin(){if(!admin())return;if(remaining<=0)remaining=total;running=true;endAt=Date.now()+remaining;clearInterval(interval);interval=setInterval(tick,250);render();await saveState();}
+ async function begin(){if(!admin())return;if(!running){const chosen=pickerMs();if(chosen>0){total=chosen;remaining=chosen;}}if(remaining<=0)remaining=total;running=true;endAt=Date.now()+remaining;clearInterval(interval);interval=setInterval(tick,250);render();await saveState();}
  async function pause(){if(!admin()||!running)return;remaining=Math.max(0,endAt-Date.now());running=false;endAt=null;clearInterval(interval);interval=null;render();await saveState();}
  launcher.addEventListener('click',()=>{widget.classList.toggle('hidden');if(!widget.classList.contains('hidden'))render();});
  hide.addEventListener('click',()=>widget.classList.add('hidden'));
  startPause?.addEventListener('click',()=>{if(running)pause();else begin();});
- reset?.addEventListener('click',async()=>{if(!admin())return;clearInterval(interval);interval=null;running=false;endAt=null;remaining=total;render();await saveState();});
- render();verifyTimerAdmin();loadState();setInterval(loadState,2000);setInterval(verifyTimerAdmin,15000);
+ reset?.addEventListener('click',async()=>{if(!admin())return;clearInterval(interval);interval=null;running=false;endAt=null;total=DEFAULT_TOTAL;remaining=DEFAULT_TOTAL;setPicker(DEFAULT_TOTAL);render();await saveState();});
+ setupPicker();render();verifyTimerAdmin();loadState();setInterval(loadState,2000);setInterval(verifyTimerAdmin,15000);
 })();
 </script>
 </body>
