@@ -9542,8 +9542,10 @@ async function loadUserRole(user) {
  const active=()=>!nav.classList.contains('hidden');
  const mobile=()=>window.matchMedia('(max-width:1400px)').matches;
  const cancel=()=>{if(timer){clearTimeout(timer);timer=null;}};
- const show=()=>{if(active())nav.classList.remove('nav-auto-hidden','mobile-nav-idle');};
- const hide=()=>{if(active())nav.classList.add('nav-auto-hidden');};
+ const timerElements=()=>[document.getElementById('meetingTimerLauncher'),document.getElementById('meetingTimerWidget')].filter(Boolean);
+ const syncTimerVisibility=()=>{const concealed=nav.classList.contains('nav-auto-hidden')||nav.classList.contains('mobile-nav-idle')||nav.classList.contains('hidden');timerElements().forEach(el=>el.classList.toggle('timer-nav-hidden',concealed));};
+ const show=()=>{if(active())nav.classList.remove('nav-auto-hidden','mobile-nav-idle');syncTimerVisibility();};
+ const hide=()=>{if(active())nav.classList.add('nav-auto-hidden');syncTimerVisibility();};
  const timerReveal=()=>{if(!active()||mobile())return;show();cancel();timer=setTimeout(hide,3000);};
  const revealMobile=()=>{if(active()&&mobile()){show();accum=0;lastY=window.scrollY||0;}else timerReveal();};
  const mobileScroll=()=>{
@@ -9564,12 +9566,15 @@ async function loadUserRole(user) {
  const appObserver=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('nav-auto-hidden','mobile-nav-idle');}else{lastY=window.scrollY||0;accum=0;revealMobile();}}});
  appObserver.observe(nav,{attributes:true,attributeFilter:['class']});
  if(active())revealMobile();
+ syncTimerVisibility();
 })();
 </script>
 <!-- Fristående flytande mötestimer -->
 <style>
+#meetingTimerLauncher,#meetingTimerWidget{transition:transform .38s ease-in-out,opacity .38s ease-in-out;}
 #meetingTimerLauncher{position:fixed;right:18px;bottom:100px;z-index:10050;border:0;border-radius:999px;padding:12px 16px;background:#1768B3;color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.22);cursor:pointer}
 #meetingTimerWidget{position:fixed;right:18px;bottom:158px;z-index:10051;width:min(340px,calc(100vw - 32px));background:#fff;border:2px solid #1768B3;border-radius:18px;padding:18px;box-shadow:0 8px 28px rgba(0,0,0,.28);font-family:inherit;color:#17324d}
+#meetingTimerLauncher.timer-nav-hidden,#meetingTimerWidget.timer-nav-hidden{transform:translateY(150%);opacity:0;pointer-events:none;}
 #meetingTimerWidget.hidden{display:none!important}
 #meetingTimerWidget .mt-head{display:flex;justify-content:space-between;align-items:center;font-weight:700}
 #meetingTimerWidget .mt-clock{font-variant-numeric:tabular-nums;text-align:center;font-size:clamp(2.8rem,10vw,3.5rem);font-weight:800;letter-spacing:1px;padding:18px 0;color:#1768B3}
