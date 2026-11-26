@@ -3936,6 +3936,8 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
     SUPABASE_URL,
     SUPABASE_KEY
   );
+  // Säker brygga till den fristående mötestimern (separat script-scope).
+  window.portalTimerDb = db;
 
   const $ = id => document.getElementById(id);
 
@@ -4180,6 +4182,7 @@ $('annualResponsible')?.addEventListener('focus', loadContractResponsibleOptions
   // pågående hämtningar inte kan skriva över den nya användarens vy.
   authGeneration++;
   currentUser = user;
+  window.portalTimerUser = user;
 
   // Rensa all cachad data från föregående konto innan den nya sessionen laddas.
   meetings = [];
@@ -4228,6 +4231,7 @@ function showLogin() {
   authGeneration++;
   documentLoadGeneration++;
   currentUser = null;
+  window.portalTimerUser = null;
 
   // Rensa cachad information även när man loggar ut.
   meetings = [];
@@ -9605,13 +9609,13 @@ async function loadUserRole(user) {
  const total=150*60*1000;let remaining=total,endAt=null,interval=null,running=false,initialized=false,loading=false,adminVerified=false,adminAllowed=false;
  function format(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return [h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');}
  function admin(){return adminVerified&&adminAllowed;}
- async function verifyTimerAdmin(){adminVerified=false;adminAllowed=false;render();try{if(!currentUser)return;const {data,error}=await db.rpc('current_user_is_admin');if(error)throw error;adminAllowed=data===true;adminVerified=true;}catch(e){console.warn('Timer-behörighet kunde inte verifieras',e);adminAllowed=false;adminVerified=true;}render();}
+ async function verifyTimerAdmin(){adminVerified=false;adminAllowed=false;render();try{if(!window.portalTimerUser)return;const {data,error}=await window.portalTimerDb.rpc('current_user_is_admin');if(error)throw error;adminAllowed=data===true;adminVerified=true;}catch(e){console.warn('Timer-behörighet kunde inte verifieras',e);adminAllowed=false;adminVerified=true;}render();}
  function render(){display.textContent=format(remaining);widget.classList.toggle('mt-finished',remaining<=0);if(startPause)startPause.textContent=remaining<=0?'Starta om':running?'Pausa':'Starta';if(controls){controls.classList.toggle('timer-admin-authorized',admin());controls.style.display=admin()?'flex':'none';}
  readonly?.classList.toggle('hidden',admin());}
  function tick(){remaining=Math.max(0,endAt-Date.now());if(remaining<=0){running=false;endAt=null;clearInterval(interval);interval=null;}render();}
  function applyState(row){if(!row)return;running=!!row.running;endAt=row.ends_at?new Date(row.ends_at).getTime():null;remaining=running&&endAt?Math.max(0,endAt-Date.now()):Number(row.remaining_ms||total);if(running&&remaining<=0){running=false;endAt=null;remaining=0;}clearInterval(interval);interval=null;if(running)interval=setInterval(tick,250);render();}
- async function loadState(){if(!currentUser||loading)return;loading=true;try{const {data,error}=await db.from('meeting_timer_state').select('*').eq('id',1).maybeSingle();if(!error&&data){applyState(data);initialized=true;}}catch(e){console.warn('Mötestimer läsning:',e);}finally{loading=false;}}
- async function saveState(){if(!admin()||!currentUser)return;const payload={id:1,running,remaining_ms:Math.max(0,Math.round(remaining)),ends_at:running&&endAt?new Date(endAt).toISOString():null,updated_at:new Date().toISOString()};const {error}=await db.from('meeting_timer_state').upsert(payload,{onConflict:'id'});if(error)message?.('Mötestimern kunde inte synkroniseras. Kontrollera databastabellen.','error');}
+ async function loadState(){if(!window.portalTimerUser||loading)return;loading=true;try{const {data,error}=await window.portalTimerDb.from('meeting_timer_state').select('*').eq('id',1).maybeSingle();if(!error&&data){applyState(data);initialized=true;}}catch(e){console.warn('Mötestimer läsning:',e);}finally{loading=false;}}
+ async function saveState(){if(!admin()||!window.portalTimerUser)return;const payload={id:1,running,remaining_ms:Math.max(0,Math.round(remaining)),ends_at:running&&endAt?new Date(endAt).toISOString():null,updated_at:new Date().toISOString()};const {error}=await window.portalTimerDb.from('meeting_timer_state').upsert(payload,{onConflict:'id'});if(error)console.warn('Mötestimern kunde inte synkroniseras:',error);}
  async function begin(){if(!admin())return;if(remaining<=0)remaining=total;running=true;endAt=Date.now()+remaining;clearInterval(interval);interval=setInterval(tick,250);render();await saveState();}
  async function pause(){if(!admin()||!running)return;remaining=Math.max(0,endAt-Date.now());running=false;endAt=null;clearInterval(interval);interval=null;render();await saveState();}
  launcher.addEventListener('click',()=>{widget.classList.toggle('hidden');if(!widget.classList.contains('hidden'))render();});
