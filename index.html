@@ -370,9 +370,9 @@
   color: var(--blue);
 }
 
-.archive-icon-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
-.archive-icon-row svg { display:block; width:30px; height:30px; margin:0; }
-.archive-icon-row svg:first-child { width:22px; height:22px; }
+.home-card .archive-icon-row { display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:8px; margin:0 0 12px 0; width:auto; }
+.home-card .archive-icon-row svg { display:block; flex:0 0 38px; width:38px !important; height:38px !important; min-width:38px; max-width:38px; margin:0 !important; padding:8px; box-sizing:border-box; border-radius:12px; }
+.home-card .archive-icon-row svg:first-child { flex:0 0 28px; width:28px !important; height:28px !important; min-width:28px; max-width:28px; padding:5px; border-radius:9px; }
 .home-card strong {
   display: block;
   font-size: 1.15rem;
