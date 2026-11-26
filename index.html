@@ -9562,14 +9562,11 @@ async function loadUserRole(user) {
    else if(accum<-8){show();accum=0;}
  };
  document.addEventListener('scroll',()=>{if(mobile())mobileScroll();else timerReveal();},{passive:true});
- document.addEventListener('touchstart',revealMobile,{passive:true});
- document.addEventListener('pointerdown',revealMobile,{passive:true});
- document.addEventListener('keydown',revealMobile);
- window.addEventListener('resize',revealMobile);
+ // Beröring, klick, tangenttryck och resize ska inte i sig fälla fram menyn.
  let lastHidden=nav.classList.contains('hidden');
- const appObserver=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('nav-auto-hidden','mobile-nav-idle');}else{lastY=window.scrollY||0;accum=0;revealMobile();}}});
+ const appObserver=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('nav-auto-hidden','mobile-nav-idle');}else{lastY=window.scrollY||0;accum=0;syncTimerVisibility();}}});
  appObserver.observe(nav,{attributes:true,attributeFilter:['class']});
- if(active())revealMobile();
+ if(active()){lastY=window.scrollY||0;accum=0;}
  syncTimerVisibility();
 })();
 </script>
