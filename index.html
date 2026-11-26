@@ -3535,6 +3535,17 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 </button>
 <button class="home-card" data-open-tab="archive"><svg style="color:#B77900;background:#FFF1C2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="15" width="18" height="6" rx="1"/><path d="M5 15V9h14v6M9 18h6"/><path d="M12 3v9M9 9l3 3 3-3"/><path d="M8 3h2M14 3h2"/></svg><strong>Arkiv – tidigare möten</strong><span>Visa tidigare dagordningar och mötesunderlag</span></button>
         </div>
+
+        <button id="annualArchiveHomeBtn" type="button" class="home-card" style="margin-top:14px;width:100%;text-align:left">
+          <svg style="color:#6B7280;background:#E5E7EB" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/><path d="M4.5 4.5 3 6M19.5 4.5 21 6"/></svg>
+          <strong>Årshjulsarkiv – tidigare år</strong>
+          <span>Visa historiska aktiviteter från årshjulet</span>
+        </button>
+        <section id="annualArchiveHomeView" class="panel hidden" style="margin-top:14px">
+          <div class="toolbar"><button id="annualArchiveHomeBack" type="button">← Till startsidan</button></div>
+          <h2>Årshjulsarkiv</h2><p class="muted">Arkiverade aktiviteter är sparade som historik och kan inte redigeras här.</p>
+          <div id="annualArchiveHomeContent"><p class="muted">Hämtar arkivet ...</p></div>
+        </section>
       </div>
     </section>
       
@@ -7671,8 +7682,60 @@ if (home) {
 
     annualEventsLoadError = false;
     annualEvents = data || [];
+    await archivePastAnnualEvents();
     renderAnnualWheel();
     if (currentUser) renderHomeDashboard();
+  }
+
+  async function archivePastAnnualEvents() {
+    if (!currentUser) return;
+    const todayYear = new Date().getFullYear();
+    const candidates = annualEvents.filter(item => {
+      const dateValue = item.event_date || item.end_date || item.start_date;
+      if (dateValue && Number(String(dateValue).slice(0,4)) < todayYear) return true;
+      return false;
+    });
+    for (const item of candidates) {
+      const archiveYear = Number(String(item.event_date || item.end_date || item.start_date).slice(0,4));
+      const payload = { original_event_id: String(item.id), archive_year: archiveYear, event_snapshot: item };
+      const { error: archiveError } = await db.from('annual_events_archive').upsert(payload, { onConflict: 'original_event_id,archive_year' });
+      if (archiveError) { console.error('Årshjulsarkivering:', archiveError); continue; }
+      const { error: deleteError } = await db.from('annual_events').delete().eq('id', item.id);
+      if (deleteError) console.error('Kunde inte flytta aktivitet från årshjulet:', deleteError);
+    }
+    if (candidates.length) {
+      const { data, error } = await db.from('annual_events').select('*').order('event_date',{ascending:true,nullsFirst:false});
+      if (!error) annualEvents = data || [];
+    }
+  }
+
+  async function showAnnualArchiveHome() {
+    const section = $('annualArchiveHomeView');
+    const cards = document.querySelector('.home-cards');
+    if (!section) return;
+    section.classList.remove('hidden');
+    if (cards) cards.classList.add('hidden');
+    $('annualArchiveHomeContent').innerHTML = '<p class="muted">Hämtar arkivet ...</p>';
+    const { data, error } = await db.from('annual_events_archive').select('*').order('archive_year',{ascending:false});
+    if (error) {
+      $('annualArchiveHomeContent').innerHTML = '<p class="muted">Årshjulsarkivet kunde inte hämtas. Kontrollera att arkivtabellen är skapad i Supabase.</p>';
+      console.error(error); return;
+    }
+    if (!data || !data.length) {
+      $('annualArchiveHomeContent').innerHTML = '<p class="muted">Arkivet är ännu tomt.</p>'; return;
+    }
+    const years = [...new Set(data.map(row => row.archive_year))].sort((a,b)=>b-a);
+    $('annualArchiveHomeContent').innerHTML = years.map(year => {
+      const rows = data.filter(row => Number(row.archive_year) === Number(year));
+      return '<details class="panel"><summary><strong>' + esc(year) + '</strong> – ' + rows.length + ' arkiverade aktiviteter</summary>' +
+        rows.map(row => {
+          const item = row.event_snapshot || {};
+          return '<div class="item"><h3>' + esc(item.title || 'Aktivitet utan namn') + '</h3><p class="muted">' + esc(annualEventDateLabel(item)) + '</p>' +
+            (item.responsible ? '<p>Ansvarig: ' + esc(item.responsible) + '</p>' : '') +
+            (item.status ? '<p>Status: ' + esc(item.status) + '</p>' : '') +
+            (item.notes ? '<p>' + esc(item.notes) + '</p>' : '') + '</div>';
+        }).join('') + '</details>';
+    }).join('');
   }
 
   function annualEventMonth(item) {
@@ -8037,6 +8100,13 @@ if (home) {
     }
   });
 
+
+  $('annualArchiveHomeBtn')?.addEventListener('click', showAnnualArchiveHome);
+  $('annualArchiveHomeBack')?.addEventListener('click', () => {
+    $('annualArchiveHomeView')?.classList.add('hidden');
+    document.querySelector('.home-cards')?.classList.remove('hidden');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
 
   // ===== NAVIGERING =====
 
