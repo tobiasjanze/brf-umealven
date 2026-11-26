@@ -9575,13 +9575,13 @@ async function loadUserRole(user) {
 </script>
 <!-- Fristående gemensam mötestimer -->
 <style>
-#meetingTimerLauncher,#meetingTimerWidget{transition:transform .38s ease-in-out,opacity .38s ease-in-out;}
+#meetingTimerLauncher,#meetingTimerWidget{transition:transform .38s ease-in-out,opacity .38s ease-in-out}
 #meetingTimerLauncher{position:fixed;right:18px;bottom:100px;z-index:10050;border:0;border-radius:999px;padding:12px 16px;background:#1768B3;color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.22);cursor:pointer}
-#meetingTimerWidget{position:fixed;right:18px;bottom:158px;z-index:10051;width:min(340px,calc(100vw - 32px));background:#fff;border:2px solid #1768B3;border-radius:18px;padding:18px;box-shadow:0 8px 28px rgba(0,0,0,.28);font-family:inherit;color:#17324d}
-#meetingTimerLauncher.timer-nav-hidden,#meetingTimerWidget.timer-nav-hidden{transform:translateY(150%);opacity:0;pointer-events:none;}
+#meetingTimerWidget{position:fixed;right:18px;bottom:158px;z-index:10051;width:min(360px,calc(100vw - 32px));background:#fff;border:2px solid #1768B3;border-radius:18px;padding:18px;box-shadow:0 8px 28px rgba(0,0,0,.28);font-family:inherit;color:#17324d}
+#meetingTimerLauncher.timer-nav-hidden,#meetingTimerWidget.timer-nav-hidden{transform:translateY(150%);opacity:0;pointer-events:none}
 #meetingTimerWidget.hidden{display:none!important}
 #meetingTimerWidget .mt-head{display:flex;justify-content:space-between;align-items:center;font-weight:700}
-#meetingTimerWidget .mt-clock{font-variant-numeric:tabular-nums;text-align:center;font-size:clamp(2.8rem,10vw,3.5rem);font-weight:800;letter-spacing:1px;padding:18px 0;color:#1768B3}
+#meetingTimerWidget .mt-clock{font-variant-numeric:tabular-nums;text-align:center;font-size:clamp(2.8rem,10vw,3.5rem);font-weight:800;letter-spacing:1px;padding:12px 0;color:#1768B3}
 #meetingTimerWidget .mt-controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 #meetingTimerWidget button{border:0;border-radius:10px;padding:10px 13px;font-weight:700;cursor:pointer}
 #meetingTimerWidget .mt-primary{background:#1768B3;color:white}
@@ -9594,19 +9594,24 @@ async function loadUserRole(user) {
 #meetingTimerReadonly{display:block!important}
 #meetingTimerReadonly.hidden{display:none!important}
 @media(max-width:600px){#meetingTimerLauncher{right:12px;bottom:92px}#meetingTimerWidget{right:12px;bottom:150px}}
-#meetingTimerWidget .mt-digit-picker{display:none;align-items:center;justify-content:center;gap:4px;font-size:2rem;font-weight:800;color:#1768B3;margin:0 0 10px}
-#meetingTimerWidget .mt-digit-group{display:flex;gap:3px}
-#meetingTimerWidget .mt-digit-picker select{font-size:1.8rem;font-weight:800;color:#1768B3;background:#f0f6fc;border:1px solid #b7d3ec;border-radius:8px;padding:5px 3px;min-width:38px;text-align:center}
-#meetingTimerWidget .mt-digit-picker select:disabled{opacity:.6}
+#meetingTimerWheelPicker{display:none;justify-content:center;gap:10px;margin:4px 0 14px}
+#meetingTimerWheelPicker .mt-wheel-column{width:86px;text-align:center}
+#meetingTimerWheelPicker .mt-wheel-label{font-size:.78rem;font-weight:700;color:#64748b;margin-bottom:5px}
+#meetingTimerWheelPicker .mt-wheel{height:124px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;border:1px solid #c7dcef;border-radius:13px;background:linear-gradient(180deg,#eaf4fc,#fff);box-shadow:inset 0 0 8px rgba(23,50,77,.08);overscroll-behavior:contain}
+#meetingTimerWheelPicker .mt-wheel::-webkit-scrollbar{display:none}
+#meetingTimerTimerWheelPicker .mt-wheel-item{scroll-snap-align:center}
+#meetingTimerWheelPicker .mt-wheel-item{height:40px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;color:#1768B3;scroll-snap-align:center;cursor:pointer;user-select:none}
+#meetingTimerWheelPicker .mt-wheel-item.selected{background:#d8ebfb;color:#124f88;border-top:1px solid #b6d5ef;border-bottom:1px solid #b6d5ef}
+#meetingTimerWheelPicker .mt-wheel:disabled{opacity:.6}
 </style>
 <button id="meetingTimerLauncher" type="button" aria-label="Visa mötestimer">⏱ Mötestimer</button>
 <section id="meetingTimerWidget" class="hidden" role="dialog" aria-label="Gemensam mötestimer">
 <div class="mt-head"><span>Styrelsemöte</span><button class="mt-close" id="meetingTimerHide" aria-label="Dölj timer">×</button></div>
 <div id="meetingTimerDisplay" class="mt-clock">02:30:00</div>
-<div id="meetingTimerDigitPicker" class="mt-digit-picker" aria-label="Ställ in nedräkningstid">
-<div class="mt-digit-group"><select aria-label="Timmor, första siffran" data-digit="0"></select><select aria-label="Timmor, andra siffran" data-digit="1"></select></div><span>:</span>
-<div class="mt-digit-group"><select aria-label="Minuter, första siffran" data-digit="2"></select><select aria-label="Minuter, andra siffran" data-digit="3"></select></div><span>:</span>
-<div class="mt-digit-group"><select aria-label="Sekunder, första siffran" data-digit="4"></select><select aria-label="Sekunder, andra siffran" data-digit="5"></select></div>
+<div id="meetingTimerWheelPicker" aria-label="Ställ in nedräkningstid">
+<div class="mt-wheel-column"><div class="mt-wheel-label">Timmar</div><div class="mt-wheel" data-wheel="hours" tabindex="0" aria-label="Välj timmar"></div></div>
+<div class="mt-wheel-column"><div class="mt-wheel-label">Minuter</div><div class="mt-wheel" data-wheel="minutes" tabindex="0" aria-label="Välj minuter"></div></div>
+<div class="mt-wheel-column"><div class="mt-wheel-label">Sekunder</div><div class="mt-wheel" data-wheel="seconds" tabindex="0" aria-label="Välj sekunder"></div></div>
 </div>
 <div class="mt-controls" id="meetingTimerAdminControls"><button id="meetingTimerStartPause" class="mt-primary">Starta</button><button id="meetingTimerReset" class="mt-secondary">Återställ</button></div>
 <div id="meetingTimerReadonly" class="mt-readonly hidden">Timer styrs av administratören</div>
@@ -9615,29 +9620,29 @@ async function loadUserRole(user) {
 (function(){
  const widget=document.getElementById('meetingTimerWidget'),launcher=document.getElementById('meetingTimerLauncher'),display=document.getElementById('meetingTimerDisplay'),startPause=document.getElementById('meetingTimerStartPause'),reset=document.getElementById('meetingTimerReset'),hide=document.getElementById('meetingTimerHide'),controls=document.getElementById('meetingTimerAdminControls'),readonly=document.getElementById('meetingTimerReadonly');
  if(!widget||!launcher||!display)return;
- const DEFAULT_TOTAL=150*60*1000;let total=DEFAULT_TOTAL,remaining=total,endAt=null,interval=null,running=false,initialized=false,loading=false,adminVerified=false,adminAllowed=false;
- const picker=document.getElementById('meetingTimerDigitPicker');
- const digitSelects=picker?Array.from(picker.querySelectorAll('select[data-digit]')):[];
+ const DEFAULT_TOTAL=150*60*1000;let total=DEFAULT_TOTAL,remaining=total,endAt=null,interval=null,running=false,loading=false,adminVerified=false,adminAllowed=false,wheelEditing=false;
+ const picker=document.getElementById('meetingTimerWheelPicker'),wheels=picker?Array.from(picker.querySelectorAll('.mt-wheel[data-wheel]')):[];
+ const wheelValues={hours:99,minutes:59,seconds:59};
+ const ROW=40;
  function format(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return [h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');}
- function pickerValue(){return digitSelects.map(s=>s.value).join('');}
- function pickerMs(){const v=pickerValue();const h=Number(v.slice(0,2)),m=Number(v.slice(2,4)),s=Number(v.slice(4,6));return ((h*3600)+(m*60)+s)*1000;}
- function setPicker(ms){const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;const digits=[...String(h).padStart(2,'0'),...String(m).padStart(2,'0'),...String(sec).padStart(2,'0')];digitSelects.forEach((el,i)=>{if(el)el.value=digits[i]||'0';});}
- function setupPicker(){digitSelects.forEach((el,i)=>{el.innerHTML='';for(let n=0;n<=9;n++){if((i===2||i===4)&&n>5)continue;const opt=document.createElement('option');opt.value=String(n);opt.textContent=String(n);el.appendChild(opt);}el.addEventListener('change',()=>{if(admin()&&!running){total=pickerMs();remaining=total;render();}});});setPicker(DEFAULT_TOTAL);}
+ function wheelVal(name){const el=wheels.find(w=>w.dataset.wheel===name);return el?Math.round(el.scrollTop/ROW):0;}
+ function pickerMs(){return (wheelVal('hours')*3600+wheelVal('minutes')*60+wheelVal('seconds'))*1000;}
+ function setPicker(ms){const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;wheels.forEach(el=>{const v=el.dataset.wheel==='hours'?h:el.dataset.wheel==='minutes'?m:sec;el.scrollTop=v*ROW;highlight(el);});}
+ function highlight(el){const idx=Math.round(el.scrollTop/ROW);el.querySelectorAll('.mt-wheel-item').forEach((item,i)=>item.classList.toggle('selected',i===idx));}
+ function setupPicker(){wheels.forEach(el=>{const max=wheelValues[el.dataset.wheel];for(let n=0;n<=max;n++){const item=document.createElement('div');item.className='mt-wheel-item';item.textContent=String(n).padStart(2,'0');item.dataset.value=n;item.addEventListener('click',()=>{if(admin()&&!running)el.scrollTo({top:n*ROW,behavior:'smooth'});});el.appendChild(item);}el.addEventListener('scroll',()=>{highlight(el);if(admin()&&!running){wheelEditing=true;total=pickerMs();remaining=total;render();}}, {passive:true});el.addEventListener('scrollend',()=>{if(admin()&&!running){total=pickerMs();remaining=total;render();}}, {passive:true});});setPicker(DEFAULT_TOTAL);}
  function admin(){return adminVerified&&adminAllowed;}
  async function verifyTimerAdmin(){adminVerified=false;adminAllowed=false;render();try{if(!window.portalTimerUser)return;const {data,error}=await window.portalTimerDb.rpc('current_user_is_admin');if(error)throw error;adminAllowed=data===true;adminVerified=true;}catch(e){console.warn('Timer-behörighet kunde inte verifieras',e);adminAllowed=false;adminVerified=true;}render();}
- function render(){display.textContent=format(remaining);widget.classList.toggle('mt-finished',remaining<=0);if(startPause)startPause.textContent=remaining<=0?'Starta om':running?'Pausa':'Starta';if(controls){controls.classList.toggle('timer-admin-authorized',admin());controls.style.display=admin()?'flex':'none';}
- if(picker){picker.style.display=admin()&&!running?'flex':'none';digitSelects.forEach(el=>el.disabled=!admin()||running);}
- readonly?.classList.toggle('hidden',admin());}
+ function render(){display.textContent=format(remaining);widget.classList.toggle('mt-finished',remaining<=0);if(startPause)startPause.textContent=remaining<=0?'Starta om':running?'Pausa':'Starta';if(controls){controls.classList.toggle('timer-admin-authorized',admin());controls.style.display=admin()?'flex':'none';}if(picker){picker.style.display=admin()&&!running?'flex':'none';wheels.forEach(el=>{el.style.pointerEvents=admin()&&!running?'auto':'none';el.setAttribute('aria-disabled',String(!admin()||running));});}readonly?.classList.toggle('hidden',admin());}
  function tick(){remaining=Math.max(0,endAt-Date.now());if(remaining<=0){running=false;endAt=null;clearInterval(interval);interval=null;}render();}
- function applyState(row){if(!row)return;running=!!row.running;endAt=row.ends_at?new Date(row.ends_at).getTime():null;remaining=running&&endAt?Math.max(0,endAt-Date.now()):Number(row.remaining_ms||DEFAULT_TOTAL);if(running&&remaining<=0){running=false;endAt=null;remaining=0;}if(!running){total=remaining>0?remaining:DEFAULT_TOTAL;setPicker(total);}clearInterval(interval);interval=null;if(running)interval=setInterval(tick,250);render();}
- async function loadState(){if(!window.portalTimerUser||loading)return;loading=true;try{const {data,error}=await window.portalTimerDb.from('meeting_timer_state').select('*').eq('id',1).maybeSingle();if(!error&&data){applyState(data);initialized=true;}}catch(e){console.warn('Mötestimer läsning:',e);}finally{loading=false;}}
+ function applyState(row){if(!row||wheelEditing)return;running=!!row.running;endAt=row.ends_at?new Date(row.ends_at).getTime():null;remaining=running&&endAt?Math.max(0,endAt-Date.now()):Number(row.remaining_ms||DEFAULT_TOTAL);if(running&&remaining<=0){running=false;endAt=null;remaining=0;}if(!running){total=remaining>0?remaining:DEFAULT_TOTAL;setPicker(total);}clearInterval(interval);interval=null;if(running)interval=setInterval(tick,250);render();}
+ async function loadState(){if(!window.portalTimerUser||loading||wheelEditing)return;loading=true;try{const {data,error}=await window.portalTimerDb.from('meeting_timer_state').select('*').eq('id',1).maybeSingle();if(!error&&data){applyState(data);}}catch(e){console.warn('Mötestimer läsning:',e);}finally{loading=false;}}
  async function saveState(){if(!admin()||!window.portalTimerUser)return;const payload={id:1,running,remaining_ms:Math.max(0,Math.round(remaining)),ends_at:running&&endAt?new Date(endAt).toISOString():null,updated_at:new Date().toISOString()};const {error}=await window.portalTimerDb.from('meeting_timer_state').upsert(payload,{onConflict:'id'});if(error)console.warn('Mötestimern kunde inte synkroniseras:',error);}
- async function begin(){if(!admin())return;if(!running){const chosen=pickerMs();if(chosen>0){total=chosen;remaining=chosen;}}if(remaining<=0)remaining=total;running=true;endAt=Date.now()+remaining;clearInterval(interval);interval=setInterval(tick,250);render();await saveState();}
+ async function begin(){if(!admin())return;wheelEditing=false;const chosen=pickerMs();if(chosen>0){total=chosen;remaining=chosen;}if(remaining<=0)remaining=total;running=true;endAt=Date.now()+remaining;clearInterval(interval);interval=setInterval(tick,250);render();await saveState();}
  async function pause(){if(!admin()||!running)return;remaining=Math.max(0,endAt-Date.now());running=false;endAt=null;clearInterval(interval);interval=null;render();await saveState();}
  launcher.addEventListener('click',()=>{widget.classList.toggle('hidden');if(!widget.classList.contains('hidden'))render();});
  hide.addEventListener('click',()=>widget.classList.add('hidden'));
  startPause?.addEventListener('click',()=>{if(running)pause();else begin();});
- reset?.addEventListener('click',async()=>{if(!admin())return;clearInterval(interval);interval=null;running=false;endAt=null;total=DEFAULT_TOTAL;remaining=DEFAULT_TOTAL;setPicker(DEFAULT_TOTAL);render();await saveState();});
+ reset?.addEventListener('click',async()=>{if(!admin())return;wheelEditing=false;clearInterval(interval);interval=null;running=false;endAt=null;total=DEFAULT_TOTAL;remaining=DEFAULT_TOTAL;setPicker(DEFAULT_TOTAL);render();await saveState();});
  setupPicker();render();verifyTimerAdmin();loadState();setInterval(loadState,2000);setInterval(verifyTimerAdmin,15000);
 })();
 </script>
