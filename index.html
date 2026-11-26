@@ -3533,19 +3533,15 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   <strong>Årshjul</strong>
   <span>Återkommande aktiviteter och viktiga datum</span>
 </button>
-<button class="home-card" data-open-tab="archive"><svg style="color:#B77900;background:#FFF1C2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="15" width="18" height="6" rx="1"/><path d="M5 15V9h14v6M9 18h6"/><path d="M12 3v9M9 9l3 3 3-3"/><path d="M8 3h2M14 3h2"/></svg><strong>Arkiv – tidigare möten</strong><span>Visa tidigare dagordningar och mötesunderlag</span></button>
+<button id="sharedArchiveHomeBtn" class="home-card" type="button"><svg style="color:#B77900;background:#FFF1C2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="15" width="18" height="6" rx="1"/><path d="M5 15V9h14v6M9 18h6"/><path d="M12 3v9M9 9l3 3 3-3"/></svg><strong>Arkiv</strong><span>Möten, dagordningar och tidigare årshjul</span></button>
         </div>
 
-        <button id="annualArchiveHomeBtn" type="button" class="home-card" style="margin-top:14px;width:100%;text-align:left">
-          <svg style="color:#6B7280;background:#E5E7EB" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/><path d="M4.5 4.5 3 6M19.5 4.5 21 6"/></svg>
-          <strong>Årshjulsarkiv – tidigare år</strong>
-          <span>Visa historiska aktiviteter från årshjulet</span>
-        </button>
-        <section id="annualArchiveHomeView" class="panel hidden" style="margin-top:14px">
-          <div class="toolbar"><button id="annualArchiveHomeBack" type="button">← Till startsidan</button></div>
-          <h2>Årshjulsarkiv</h2><p class="muted">Arkiverade aktiviteter är sparade som historik och kan inte redigeras här.</p>
-          <div id="annualArchiveHomeContent"><p class="muted">Hämtar arkivet ...</p></div>
-        </section>
+        <section id="sharedArchiveHomeView" class="panel hidden" style="margin-top:14px">
+<div class="toolbar"><button id="sharedArchiveHomeBack" type="button">← Till startsidan</button></div><h2>Arkiv</h2>
+<div class="home-cards">
+<button id="archiveMeetingsChoice" class="home-card" type="button"><strong>Möten och dagordningar</strong><span>Visa tidigare möten och dagordningar</span></button>
+<button id="archiveAnnualChoice" class="home-card" type="button"><strong>Årshjulsarkiv</strong><span>Visa hela årshjul från tidigare år</span></button></div>
+<section id="annualArchiveHomeView" class="hidden" style="margin-top:14px"><div class="toolbar"><button id="annualArchiveHomeBack" type="button">← Till arkivet</button></div><h2>Årshjulsarkiv</h2><p class="muted">Årsarkiven är sparade som kompletta historiska ögonblicksbilder och kan inte redigeras.</p><div id="annualArchiveHomeContent"><p class="muted">Hämtar arkivet ...</p></div></section></section>
       </div>
     </section>
       
@@ -7688,35 +7684,32 @@ if (home) {
   }
 
   async function archivePastAnnualEvents() {
-    if (!currentUser) return;
-    const todayYear = new Date().getFullYear();
-    const candidates = annualEvents.filter(item => {
-      const dateValue = item.event_date || item.end_date || item.start_date;
-      if (dateValue && Number(String(dateValue).slice(0,4)) < todayYear) return true;
-      return false;
-    });
-    for (const item of candidates) {
-      const archiveYear = Number(String(item.event_date || item.end_date || item.start_date).slice(0,4));
-      const payload = { original_event_id: String(item.id), archive_year: archiveYear, event_snapshot: item };
-      const { error: archiveError } = await db.from('annual_events_archive').upsert(payload, { onConflict: 'original_event_id,archive_year' });
-      if (archiveError) { console.error('Årshjulsarkivering:', archiveError); continue; }
-      const { error: deleteError } = await db.from('annual_events').delete().eq('id', item.id);
-      if (deleteError) console.error('Kunde inte flytta aktivitet från årshjulet:', deleteError);
+    // Arkivera hela årshjulet som en årsbild under januari, endast administratör.
+    if (!currentUser || !annualEvents.length || !isAdminUser) return;
+    const now = new Date();
+    if (now.getMonth() !== 0) return;
+    const archiveYear = now.getFullYear() - 1;
+    const { data: existing, error: checkError } = await db.from('annual_wheel_year_archive')
+      .select('archive_year').eq('archive_year', archiveYear).maybeSingle();
+    if (checkError) { console.warn('Kontroll av årshjulsarkiv:', checkError); return; }
+    if (existing) return;
+    const snapshot = annualEvents.map(item => ({...item}));
+    const { error: saveError } = await db.from('annual_wheel_year_archive')
+      .insert({ archive_year: archiveYear, events_snapshot: snapshot });
+    if (saveError) {
+      console.error('Årshjulet kunde inte arkiveras:', saveError);
+      message('Årshjulet kunde inte arkiveras. Det aktiva årshjulet har inte ändrats.', 'error');
+      return;
     }
-    if (candidates.length) {
-      const { data, error } = await db.from('annual_events').select('*').order('event_date',{ascending:true,nullsFirst:false});
-      if (!error) annualEvents = data || [];
-    }
+    message('Årshjulet för ' + archiveYear + ' har arkiverats.', 'ok');
   }
 
   async function showAnnualArchiveHome() {
     const section = $('annualArchiveHomeView');
-    const cards = document.querySelector('.home-cards');
     if (!section) return;
     section.classList.remove('hidden');
-    if (cards) cards.classList.add('hidden');
-    $('annualArchiveHomeContent').innerHTML = '<p class="muted">Hämtar arkivet ...</p>';
-    const { data, error } = await db.from('annual_events_archive').select('*').order('archive_year',{ascending:false});
+    $('annualArchiveHomeContent').innerHTML = '<p class="muted">Hämtar årsarkiv ...</p>';
+    const { data, error } = await db.from('annual_wheel_year_archive').select('*').order('archive_year',{ascending:false});
     if (error) {
       $('annualArchiveHomeContent').innerHTML = '<p class="muted">Årshjulsarkivet kunde inte hämtas. Kontrollera att arkivtabellen är skapad i Supabase.</p>';
       console.error(error); return;
@@ -7724,17 +7717,13 @@ if (home) {
     if (!data || !data.length) {
       $('annualArchiveHomeContent').innerHTML = '<p class="muted">Arkivet är ännu tomt.</p>'; return;
     }
-    const years = [...new Set(data.map(row => row.archive_year))].sort((a,b)=>b-a);
-    $('annualArchiveHomeContent').innerHTML = years.map(year => {
-      const rows = data.filter(row => Number(row.archive_year) === Number(year));
-      return '<details class="panel"><summary><strong>' + esc(year) + '</strong> – ' + rows.length + ' arkiverade aktiviteter</summary>' +
-        rows.map(row => {
-          const item = row.event_snapshot || {};
-          return '<div class="item"><h3>' + esc(item.title || 'Aktivitet utan namn') + '</h3><p class="muted">' + esc(annualEventDateLabel(item)) + '</p>' +
-            (item.responsible ? '<p>Ansvarig: ' + esc(item.responsible) + '</p>' : '') +
-            (item.status ? '<p>Status: ' + esc(item.status) + '</p>' : '') +
-            (item.notes ? '<p>' + esc(item.notes) + '</p>' : '') + '</div>';
-        }).join('') + '</details>';
+    $('annualArchiveHomeContent').innerHTML = data.map(row => {
+      const events = Array.isArray(row.events_snapshot) ? row.events_snapshot : [];
+      return '<details class="panel"><summary><strong>' + esc(row.archive_year) + '</strong> – ' + events.length + ' aktiviteter</summary>' +
+        events.map(item => '<div class="item"><h3>' + esc(item.title || 'Aktivitet utan namn') + '</h3><p class="muted">' + esc(annualEventDateLabel(item)) + '</p>' +
+          (item.responsible ? '<p>Ansvarig: ' + esc(item.responsible) + '</p>' : '') +
+          (item.status ? '<p>Status: ' + esc(item.status) + '</p>' : '') +
+          (item.notes ? '<p>' + esc(item.notes) + '</p>' : '') + '</div>').join('') + '</details>';
     }).join('');
   }
 
@@ -8101,11 +8090,21 @@ if (home) {
   });
 
 
-  $('annualArchiveHomeBtn')?.addEventListener('click', showAnnualArchiveHome);
-  $('annualArchiveHomeBack')?.addEventListener('click', () => {
+  $('sharedArchiveHomeBtn')?.addEventListener('click', () => {
+    $('sharedArchiveHomeView')?.classList.remove('hidden');
+    document.querySelector('.home-cards')?.classList.add('hidden');
     $('annualArchiveHomeView')?.classList.add('hidden');
+  });
+  $('sharedArchiveHomeBack')?.addEventListener('click', () => {
+    $('sharedArchiveHomeView')?.classList.add('hidden');
     document.querySelector('.home-cards')?.classList.remove('hidden');
     window.scrollTo({top:0,behavior:'smooth'});
+  });
+  $('archiveMeetingsChoice')?.addEventListener('click', () => showTab('archive'));
+  $('archiveAnnualChoice')?.addEventListener('click', showAnnualArchiveHome);
+  $('annualArchiveHomeBack')?.addEventListener('click', () => {
+    $('annualArchiveHomeView')?.classList.add('hidden');
+    $('sharedArchiveHomeView')?.classList.remove('hidden');
   });
 
   // ===== NAVIGERING =====
