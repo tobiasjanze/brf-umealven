@@ -3938,6 +3938,7 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
   let annualEventsLoadError = false;
   let selectedAnnualMonth = null;
   let selectedMeetingId = null;
+  let editingArchivedMeeting = false;
   let agendaItems = [];
   let currentMinutes = {};
   let loading = false;
@@ -5239,7 +5240,9 @@ if (sectionDocuments.length > 0) {
     if(is6){refreshSection6AnchorSelect();await ensureSection6Anchors();}
   });
 
-  $('agendaForm').addEventListener('submit', async event => {
+    async function finishArchivedAgendaEdit(){ if(!editingArchivedMeeting)return; editingArchivedMeeting=false; selectedMeetingId=null; $('selectedMeetingPanel').classList.add('hidden'); showTab('archive'); const v=$('archiveAgendaViewer'); if(v) v.remove(); renderArchivedMeetings(); message('Den arkiverade dagordningen har sparats och återgår till arkivet.','ok'); }
+
+$('agendaForm').addEventListener('submit', async event => {
     event.preventDefault();
     if (!selectedMeetingId) { message('Välj först ett möte.','error'); return; }
     if (!isAdminUser) { message('Du har inte behörighet att ändra dagordningen.','error'); return; }
@@ -5253,7 +5256,7 @@ if (sectionDocuments.length > 0) {
       const payload={meeting_id:selectedMeetingId,section_number:'6',title:'__BRF6SUB__|'+String(anchor.id)+'|'+subTitle,description:$('agendaSubheadingDescription').value.trim(),created_by:currentUser.id};
       const {error}=await db.from('agenda_items').insert(payload);
       if(error){message('Kunde inte spara underrubriken: '+error.message,'error');return;}
-      resetAgendaEditForm();await loadAgenda();message('Underrubriken har lagts till.','ok');return;
+      resetAgendaEditForm();await loadAgenda();message('Underrubriken har lagts till.','ok');if(editingArchivedMeeting){await finishArchivedAgendaEdit();}return;
     }
     if(!['1','2','3','4','5','7','8','9','10','11'].includes(selectedSection)){message('Underpunkter kan endast läggas till under punkt 1–5 och 7–11.','error');return;}
     const payload={meeting_id:selectedMeetingId,section_number:$('agendaSection').value,title:$('agendaTitle').value.trim(),description:$('agendaDescription').value.trim()};
@@ -5263,7 +5266,7 @@ if (sectionDocuments.length > 0) {
     if(result.error){message('Kunde inte spara dagordningspunkten: '+result.error.message,'error');return;}
     const wasEditing=Boolean(editingAgendaItemId);const sectionLabel='§'+payload.section_number+' – '+payload.title;
     void recordBoardActivity(wasEditing?'agenda_updated':'agenda_added',selectedMeetingId,(wasEditing?'Dagordningspunkt ändrad: ':'Dagordningspunkt tillagd: ')+sectionLabel,sectionLabel);
-    resetAgendaEditForm();await loadAgenda();message(wasEditing?'Dagordningspunkten har uppdaterats.':'Dagordningspunkten har lagts till.','ok');
+    resetAgendaEditForm();await loadAgenda();message(wasEditing?'Dagordningspunkten har uppdaterats.':'Dagordningspunkten har lagts till.','ok');if(editingArchivedMeeting){await finishArchivedAgendaEdit();}
   });
 
   $('printAgenda').addEventListener('click', async () => {
@@ -8460,8 +8463,9 @@ document.addEventListener("click", async event => {
   const root=$("tab-archive");
   let view=$("archiveAgendaViewer");
   if(!view){view=document.createElement("div");view.id="archiveAgendaViewer";view.className="panel";root.appendChild(view);}
-  view.innerHTML="<h2>Arkiverad dagordning</h2><p><strong>"+esc(meetingTitle(m))+"</strong></p><p class='muted'>"+esc(dateText(meetingDate(m)))+"</p><button type='button' id='archiveBackBtn'>Tillbaka till arkivet</button><div id='archiveAgendaReadonly'></div>";
+  view.innerHTML="<h2>Arkiverad dagordning</h2><p><strong>"+esc(meetingTitle(m))+"</strong></p><p class='muted'>"+esc(dateText(meetingDate(m)))+"</p><button type='button' id='archiveBackBtn'>Tillbaka till arkivet</button>"+(isAdminUser?" <button type='button' id='archiveEditBtn' class='primary'>Redigera</button>":"")+"<div id='archiveAgendaReadonly'></div>";
   $("archiveBackBtn").addEventListener("click",()=>{view.remove();});
+  if(isAdminUser && $("archiveEditBtn")) $("archiveEditBtn").addEventListener("click",async()=>{ editingArchivedMeeting=true; showTab("meetings"); selectedMeetingId=m.id; $("selectedMeetingPanel").classList.remove("hidden"); $("selectedMeetingHeading").innerHTML="Redigera arkiverad dagordning – "+esc(meetingTitle(m))+"<br><span style=\"font-size:0.65em;font-weight:400;\">"+esc(dateText(meetingDate(m)))+"</span>"; await loadAgenda(); message("Du redigerar nu en arkiverad dagordning. Mötet behåller sitt arkivdatum.","ok"); });
   const [itemsResult,docsResult]=await Promise.all([
     db.from("agenda_items").select("*").eq("meeting_id",m.id).order("created_at",{ascending:true}),
     db.from("meeting_documents").select("*").eq("meeting_id",m.id)
