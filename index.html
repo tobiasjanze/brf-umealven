@@ -8431,6 +8431,15 @@ function showHome() {
 function showTab(tabName) {
   if (!portalNavigationAllowed()) return;
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+  // Rensa panelen när man återgår till Möten efter redigering av arkiverad dagordning.
+  if (tabName === 'meetings' && editingArchivedMeeting) {
+    editingArchivedMeeting = false;
+    selectedMeetingId = null;
+    agendaItems = [];
+    $('selectedMeetingPanel')?.classList.add('hidden');
+  }
+
   if (currentUser) portalRefreshForTab(tabName);
   $('homeView').classList.add('hidden');
   $('appNav').classList.remove('hidden');
@@ -8465,7 +8474,7 @@ document.addEventListener("click", async event => {
   if(!view){view=document.createElement("div");view.id="archiveAgendaViewer";view.className="panel";root.appendChild(view);}
   view.innerHTML="<h2>Arkiverad dagordning</h2><p><strong>"+esc(meetingTitle(m))+"</strong></p><p class='muted'>"+esc(dateText(meetingDate(m)))+"</p><button type='button' id='archiveBackBtn'>Tillbaka till arkivet</button>"+(isAdminUser?" <button type='button' id='archiveEditBtn' class='primary'>Redigera</button>":"")+"<div id='archiveAgendaReadonly'></div>";
   $("archiveBackBtn").addEventListener("click",()=>{view.remove();});
-  if(isAdminUser && $("archiveEditBtn")) $("archiveEditBtn").addEventListener("click",async()=>{ editingArchivedMeeting=true; showTab("meetings"); selectedMeetingId=m.id; $("selectedMeetingPanel").classList.remove("hidden"); $("selectedMeetingHeading").innerHTML="Redigera arkiverad dagordning – "+esc(meetingTitle(m))+"<br><span style=\"font-size:0.65em;font-weight:400;\">"+esc(dateText(meetingDate(m)))+"</span>"; await loadAgenda(); message("Du redigerar nu en arkiverad dagordning. Mötet behåller sitt arkivdatum.","ok"); });
+  if(isAdminUser && $("archiveEditBtn")) $("archiveEditBtn").addEventListener("click",async()=>{ showTab("meetings"); editingArchivedMeeting=true; selectedMeetingId=m.id; $("selectedMeetingPanel").classList.remove("hidden"); $("selectedMeetingHeading").innerHTML="Redigera arkiverad dagordning – "+esc(meetingTitle(m))+"<br><span style=\"font-size:0.65em;font-weight:400;\">"+esc(dateText(meetingDate(m)))+"</span>"; await loadAgenda(); message("Du redigerar nu en arkiverad dagordning. Mötet behåller sitt arkivdatum.","ok"); });
   const [itemsResult,docsResult]=await Promise.all([
     db.from("agenda_items").select("*").eq("meeting_id",m.id).order("created_at",{ascending:true}),
     db.from("meeting_documents").select("*").eq("meeting_id",m.id)
