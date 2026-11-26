@@ -8488,6 +8488,11 @@ function showHome() {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   if (currentUser) { loadMeetings(); loadContracts(); loadAnnualEvents(); }
   $('homeView').classList.remove('hidden');
+  // Återställ arkivets undermenyer när hemknappen används.
+  $('sharedArchiveHomeView')?.classList.add('hidden');
+  $('annualArchiveHomeView')?.classList.add('hidden');
+  $('archiveChoiceCards')?.classList.remove('hidden');
+  document.querySelector('.home-cards')?.classList.remove('hidden');
   renderHomeDashboard();
   $('appNav').classList.remove('hidden');
 
