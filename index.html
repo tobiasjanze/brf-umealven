@@ -9561,7 +9561,12 @@ async function loadUserRole(user) {
    if(accum>10){hide();accum=0;}
    else if(accum<-8){show();accum=0;}
  };
- document.addEventListener('scroll',()=>{if(mobile())mobileScroll();else timerReveal();},{passive:true});
+ // Registrera avsiktlig scrollgest, så att scroll-event vid sidbyten/scroll-reset inte visar menyn.
+ let scrollGesture=false,gestureTimer=null;
+ const markScrollGesture=()=>{scrollGesture=true;if(gestureTimer)clearTimeout(gestureTimer);gestureTimer=setTimeout(()=>scrollGesture=false,700);};
+ document.addEventListener('touchmove',markScrollGesture,{passive:true});
+ document.addEventListener('wheel',markScrollGesture,{passive:true});
+ document.addEventListener('scroll',()=>{if(!scrollGesture)return;if(mobile())mobileScroll();else timerReveal();},{passive:true});
  // Beröring, klick, tangenttryck och resize ska inte i sig fälla fram menyn.
  let lastHidden=nav.classList.contains('hidden');
  const appObserver=new MutationObserver(()=>{const hidden=nav.classList.contains('hidden');if(hidden!==lastHidden){lastHidden=hidden;if(hidden){cancel();nav.classList.remove('nav-auto-hidden','mobile-nav-idle');}else{lastY=window.scrollY||0;accum=0;syncTimerVisibility();}}});
