@@ -3538,9 +3538,9 @@ button.yearwheel-month.month-color-3:not(.active):not(:hover) {
 
         <section id="sharedArchiveHomeView" class="panel hidden" style="margin-top:14px">
 <div class="toolbar"><button id="sharedArchiveHomeBack" type="button">← Till startsidan</button></div><h2>Arkiv</h2>
-<div class="home-cards">
-<button id="archiveMeetingsChoice" class="home-card" type="button"><strong>Möten och dagordningar</strong><span>Visa tidigare möten och dagordningar</span></button>
-<button id="archiveAnnualChoice" class="home-card" type="button"><strong>Årshjulsarkiv</strong><span>Visa hela årshjul från tidigare år</span></button></div>
+<div id="archiveChoiceCards" class="home-cards">
+<button id="archiveMeetingsChoice" class="home-card" type="button"><svg style="color:#1768B3;background:#DCEBFA" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M7 14h3M7 17h6"/></svg><strong>Möten och dagordningar</strong><span>Visa tidigare möten och dagordningar</span></button>
+<button id="archiveAnnualChoice" class="home-card" type="button"><svg style="color:#B64C77;background:#F9E0E7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 3.8A9 9 0 0 1 18 7l1.5-1M19.5 6v3h-3"/><path d="M16 20.2A9 9 0 0 1 6 17l-1.5 1M4.5 18v-3h3"/></svg><strong>Årshjulsarkiv</strong><span>Visa hela årshjul från tidigare år</span></button></div>
 <section id="annualArchiveHomeView" class="hidden" style="margin-top:14px"><div class="toolbar"><button id="annualArchiveHomeBack" type="button">← Till arkivet</button></div><h2>Årshjulsarkiv</h2><p class="muted">Årsarkiven är sparade som kompletta historiska ögonblicksbilder och kan inte redigeras.</p><div id="annualArchiveHomeContent"><p class="muted">Hämtar arkivet ...</p></div></section></section>
       </div>
     </section>
@@ -7708,6 +7708,7 @@ if (home) {
     const section = $('annualArchiveHomeView');
     if (!section) return;
     section.classList.remove('hidden');
+    $('archiveChoiceCards')?.classList.add('hidden');
     $('annualArchiveHomeContent').innerHTML = '<p class="muted">Hämtar årsarkiv ...</p>';
     const { data, error } = await db.from('annual_wheel_year_archive').select('*').order('archive_year',{ascending:false});
     if (error) {
@@ -8104,7 +8105,7 @@ if (home) {
   $('archiveAnnualChoice')?.addEventListener('click', showAnnualArchiveHome);
   $('annualArchiveHomeBack')?.addEventListener('click', () => {
     $('annualArchiveHomeView')?.classList.add('hidden');
-    $('sharedArchiveHomeView')?.classList.remove('hidden');
+    $('archiveChoiceCards')?.classList.remove('hidden');
   });
 
   // ===== NAVIGERING =====
